@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const parsed = JSON.parse(savedUserStr);
         if (parsed?.id) return parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return SEED_USERS[0];
   });
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const parsed = JSON.parse(savedUsersStr);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return SEED_USERS;
   });
@@ -44,14 +44,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsAuthLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session?.user) {
           const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
-            
+
           if (profile) {
             setCurrentUserState(profile as User);
             setIsAuthenticated(true);
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setCurrentUserState(parsed);
                 setIsAuthenticated(true);
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       } catch (err) {
@@ -77,8 +77,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAuthLoading(false);
       }
     };
-    
+
+    const fetchUsers = async () => {
+      try {
+        const { data: dbUsers } = await supabase.from('users').select('*');
+        if (dbUsers && Array.isArray(dbUsers) && dbUsers.length > 0) {
+          setUsers(dbUsers as User[]);
+          localStorage.setItem('bconnect_roxas_users_v11', JSON.stringify(dbUsers));
+        }
+      } catch (e) {
+        console.warn('Fetch users notice:', e);
+      }
+    };
+
     checkSession();
+    fetchUsers();
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('bconnect_users_sync');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'USER_REGISTERED' && event.data.payload) {
+            setUsers((prev) => {
+              const filtered = prev.filter((u) => u.id !== event.data.payload.id && u.email !== event.data.payload.email);
+              const updated = [...filtered, event.data.payload];
+              localStorage.setItem('bconnect_roxas_users_v11', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        };
+      } catch (e) {}
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -87,7 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .select('*')
           .eq('id', session.user.id)
           .single();
-          
+
         if (profile) {
           setCurrentUserState(profile as User);
           setIsAuthenticated(true);

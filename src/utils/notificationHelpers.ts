@@ -4,8 +4,8 @@ import { NotificationItem, User, Case, AgencyType, UserRole } from '../types';
  * Determines whether a given notification belongs to the active user based on role, agency, barangay, and case ownership.
  */
 export function isNotificationForUser(
-  notif: NotificationItem, 
-  user: User, 
+  notif: NotificationItem,
+  user: User,
   cases: Case[] = []
 ): boolean {
   if (!user || !notif) return false;
@@ -18,6 +18,13 @@ export function isNotificationForUser(
 
   // Find related case if any
   const relatedCase = notif.caseId ? cases.find((c) => c.id === notif.caseId) : undefined;
+
+  const isMdrrmoUser =
+    userAgencyType === 'MDRRMO' ||
+    userRole === 'MDRRMO_ADMIN' ||
+    userRole === 'MDRRMO_OFFICER' ||
+    (typeof userRole === 'string' && userRole.startsWith('MDRRMO')) ||
+    (user.agencyName && user.agencyName.toUpperCase().includes('MDRRMO'));
 
   // 1. Direct User targeting exclusivity:
   // If explicitly targeted to a specific userId, ONLY that user may receive it.
@@ -35,7 +42,9 @@ export function isNotificationForUser(
   // 3. Exclusivity check on targetAgencyTypes:
   // If targetAgencyTypes is explicitly specified, the active user's agencyType must be included.
   if (notif.targetAgencyTypes && notif.targetAgencyTypes.length > 0) {
-    const isTargeted = notif.targetAgencyTypes.includes(userAgencyType) || 
+    const isTargeted = 
+      notif.targetAgencyTypes.includes(userAgencyType) ||
+      (isMdrrmoUser && notif.targetAgencyTypes.includes('MDRRMO')) ||
       (userAgencyType === 'ADMIN' && notif.targetAgencyTypes.includes('ADMIN'));
     if (!isTargeted && userRole !== 'SYSTEM_ADMIN') {
       return false;
@@ -46,7 +55,7 @@ export function isNotificationForUser(
   if (notif.targetAgency) {
     const targetAg = notif.targetAgency.toUpperCase();
     if (targetAg === 'RESIDENT' && userAgencyType !== 'RESIDENT') return false;
-    if (targetAg === 'MDRRMO' && userAgencyType !== 'MDRRMO') return false;
+    if (targetAg === 'MDRRMO' && !isMdrrmoUser) return false;
     if (targetAg === 'LGU' && userAgencyType !== 'LGU' && userRole !== 'SYSTEM_ADMIN') return false;
     if (targetAg === 'ADMIN' && userAgencyType !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') return false;
   }
@@ -65,9 +74,9 @@ export function isNotificationForUser(
     // A. Residents MUST NEVER see internal officer accounts or administrative system provisions
     const titleLower = notif.title.toLowerCase();
     const msgLower = notif.message.toLowerCase();
-    
+
     if (
-      titleLower.includes('account registered') || 
+      titleLower.includes('account registered') ||
       titleLower.includes('new account') ||
       titleLower.includes('account created') ||
       titleLower.includes('new user') ||
@@ -95,13 +104,13 @@ export function isNotificationForUser(
         return false;
       }
 
-      const isReporter = 
+      const isReporter =
         relatedCase.residentReporterId === userId ||
         relatedCase.createdBy.toLowerCase().includes(userName) ||
         (relatedCase.complainants && relatedCase.complainants.some((c) => c.name.toLowerCase() === userName || c.id === userId));
 
-      const isPersonInvolved = 
-        relatedCase.personsInvolved && 
+      const isPersonInvolved =
+        relatedCase.personsInvolved &&
         relatedCase.personsInvolved.some((p) => p.name.toLowerCase() === userName || p.id === userId);
 
       if (isReporter || isPersonInvolved) {
@@ -122,8 +131,8 @@ export function isNotificationForUser(
 
     // E. Targeted explicitly to residents
     if (
-      notif.targetAgencyTypes?.includes('RESIDENT') || 
-      notif.targetRoles?.includes('RESIDENT') || 
+      notif.targetAgencyTypes?.includes('RESIDENT') ||
+      notif.targetRoles?.includes('RESIDENT') ||
       notif.targetAgency === 'RESIDENT'
     ) {
       return true;
@@ -133,62 +142,55 @@ export function isNotificationForUser(
   }
 
   // ----------------------------------------------------
-  // MDRRMO OFFICIAL / RESPONDER ROLE FILTERING ("MDRRMO only")
+  // MDRRMO OFFICIAL / RESPONDER ROLE FILTERING ("MDRRMO municipal-wide")
+  // Any account registered as MDRRMO receives all resident reports across all barangays
   // ----------------------------------------------------
-  if (userAgencyType === 'MDRRMO') {
-    // Must NEVER see resident-only private advisories or individual citizen summons
-    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'RESIDENT') {
+  if (isMdrrmoUser) {
+    // Must NEVER see private summons or resident personal tracking targeted to another user
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'RESIDENT' && notif.targetUserId) {
       return false;
     }
-    if (notif.targetAgency === 'RESIDENT') {
-      return false;
-    }
-    if (notif.targetRoles?.includes('RESIDENT') && !notif.targetRoles.some(r => r.startsWith('MDRRMO_'))) {
+    if (notif.targetAgency === 'RESIDENT' && notif.targetUserId) {
       return false;
     }
 
-    // Must NEVER see LGU-only administrative notices
-    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'LGU') {
+    // Must NEVER see LGU-only internal administrative memos
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'LGU' && !notif.isAccidentEmergency) {
       return false;
     }
-    if (notif.targetAgency === 'LGU') {
+    if (notif.targetAgency === 'LGU' && !notif.isAccidentEmergency) {
       return false;
     }
 
-    // Emergency accident alerts and sirens are always prioritized for MDRRMO
+    // Emergency accident alerts, resident reports, sirens, and dispatches are always delivered to MDRRMO
     if (
-      notif.isAccidentEmergency || 
-      (notif as any).isMdrrmoIncident || 
+      notif.isAccidentEmergency ||
+      (notif as any).isMdrrmoIncident ||
       (notif as any).isMdrrmoEmergency ||
+      notif.targetAgencyTypes?.includes('MDRRMO') ||
+      notif.targetAgency === 'MDRRMO' ||
+      notif.targetAgency === user.agencyName ||
       notif.priority === 'urgent'
     ) {
+      // MDRRMO operates municipal-wide across all barangays of Roxas without restriction
       return true;
     }
 
-    // Targeted specifically to MDRRMO
-    if (
-      notif.targetAgencyTypes?.includes('MDRRMO') || 
-      notif.targetAgency === 'MDRRMO' ||
-      notif.targetAgency === user.agencyName
-    ) {
-      if (userBarangay && notif.targetBarangay && notif.targetBarangay !== 'ALL' && notif.targetBarangay !== userBarangay) {
-        return false;
-      }
-      return true;
-    }
-
-    // Related case handled by or involving MDRRMO (vehicular accidents, traffic crashes, rescue)
+    // Related case handled by or involving MDRRMO (or any incident report filed by a resident)
     if (relatedCase) {
-      const isMdrrmoCase = 
-        relatedCase.category === 'Vehicular Accident' || 
-        relatedCase.originatingAgency.includes('MDRRMO') || 
-        relatedCase.originatingAgency.includes('Traffic') ||
+      const isMdrrmoRelevantCase =
+        relatedCase.isCitizenReport ||
+        relatedCase.isAccidentEmergency ||
+        (relatedCase.category as string).toLowerCase().includes('accident') ||
+        (relatedCase.category as string).toLowerCase().includes('vehicular') ||
+        relatedCase.originatingAgency?.includes('MDRRMO') ||
+        relatedCase.originatingAgency?.includes('Resident') ||
+        relatedCase.originatingAgency?.includes('Traffic') ||
+        relatedCase.currentHandlingAgency?.includes('MDRRMO') ||
         relatedCase.priority === 'Urgent';
 
-      if (isMdrrmoCase) {
-        if (!userBarangay || relatedCase.barangay === userBarangay || relatedCase.originatingAgency.includes(userBarangay || '')) {
-          return true;
-        }
+      if (isMdrrmoRelevantCase) {
+        return true;
       }
     }
 
@@ -220,7 +222,7 @@ export function isNotificationForUser(
 
     // Targeted specifically to LGU or Municipal Executive
     if (
-      notif.targetAgencyTypes?.includes('LGU') || 
+      notif.targetAgencyTypes?.includes('LGU') ||
       notif.targetAgency === 'LGU' ||
       (notif.targetAgency && notif.targetAgency.toLowerCase().includes('lgu')) ||
       (notif.targetAgency && notif.targetAgency.toLowerCase().includes('municipal'))
@@ -230,7 +232,7 @@ export function isNotificationForUser(
 
     // LGU administrators also oversee administrative system alerts if targeted to ADMIN
     if (
-      (userRole === 'LGU_ADMINISTRATOR') && 
+      (userRole === 'LGU_ADMINISTRATOR') &&
       (notif.targetAgencyTypes?.includes('ADMIN') || notif.targetAgency === 'ADMIN' || notif.type === 'system')
     ) {
       return true;
@@ -238,10 +240,10 @@ export function isNotificationForUser(
 
     // Related case involving LGU governance, cross-barangay disputes, or inter-agency referrals
     if (relatedCase) {
-      const isLguCase = 
-        relatedCase.isInterAgency || 
-        relatedCase.category === 'Public Nuisance & Environmental Hazard' ||
-        relatedCase.category === 'Boundary & Property Conflict' ||
+      const isLguCase =
+        (relatedCase as any).isInterAgency ||
+        (relatedCase.category as string).includes('Nuisance') ||
+        (relatedCase.category as string).includes('Boundary') ||
         relatedCase.originatingAgency.includes('LGU') ||
         relatedCase.originatingAgency.includes('Municipal');
 

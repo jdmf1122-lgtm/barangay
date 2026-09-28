@@ -55,7 +55,7 @@ async function migrateUsers() {
           continue;
         }
         
-        const existingUser = listData.users.find(u => u.email === user.email);
+        const existingUser = listData.users.find((u: any) => u.email === user.email);
         if (!existingUser) {
           console.error(`Could not find existing user ${user.email} in auth list.`);
           continue;

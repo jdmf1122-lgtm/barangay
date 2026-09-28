@@ -37,6 +37,21 @@ export const useNotifications = () => {
     };
     setNotifications((prev) => [newNotif, ...(prev || [])]);
     supabase.from('notifications').insert(newNotif).then(({error}) => { if (error) console.error(error) });
+
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('bconnect_notifs_sync');
+        bc.postMessage({ type: 'NEW_NOTIFICATION', payload: newNotif });
+        bc.close();
+      } catch (e) {}
+    }
+    try {
+      supabase.channel('notifications_realtime_sync').send({
+        type: 'broadcast',
+        event: 'notif_event',
+        payload: { type: 'NEW_NOTIFICATION', data: newNotif }
+      });
+    } catch (e) {}
   };
 
   const markNotificationAsRead = (id: string) => {

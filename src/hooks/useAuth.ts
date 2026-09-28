@@ -213,6 +213,14 @@ export const useAuth = () => {
     // 5. Establish current session
     login(newUser);
 
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('bconnect_users_sync');
+        bc.postMessage({ type: 'USER_REGISTERED', payload: newUser });
+        bc.close();
+      } catch (e) {}
+    }
+
     logActivity('ACCOUNT_CREATED', undefined, `Registered new official user account: ${newUser.name} (${newUser.position}, ${newUser.agencyName}) under role tier ${newUser.role}.`);
     triggerNotification(
       'New Account Registered',

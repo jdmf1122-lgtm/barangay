@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ShieldAlert,
   FileCheck,
@@ -11,7 +11,9 @@ import {
   Siren,
   Ambulance,
   Activity,
-  MapPin
+  MapPin,
+  Radio,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -20,19 +22,29 @@ import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { formatDateShort } from '../../utils/reportGenerators';
 import { sendAutomatedResponderSMS, startSmsResendInterval } from '../../utils/smsService';
+import { ROXAS_BARANGAYS } from '../../types';
 
 export const MdrrmoDashboard: React.FC = () => {
   const { currentUser, users } = useAuth();
-  const { cases, setSelectedCaseId } = useCases();
+  const { cases, setSelectedCaseId, markIncidentAsSeenAndResponded } = useCases();
   const { triggerNotification } = useNotifications();
   const { setIsNewCaseModalOpen, setActiveTab } = useUI();
 
   const currentBarangay = currentUser.barangay;
+  const [barangayFilter, setBarangayFilter] = useState<string>('ALL');
 
-  // MDRRMO monitors all incidents municipal-wide or targeted to a specific barangay if assigned
-  const mdrrmoCases = currentBarangay
-    ? cases.filter((c) => c.barangay === currentBarangay || c.originatingAgency.includes(currentBarangay))
-    : cases;
+  // MDRRMO monitors all incidents municipal-wide across all 20 component barangays
+  const mdrrmoCases = barangayFilter === 'ALL'
+    ? cases
+    : cases.filter((c) => c.barangay === barangayFilter);
+
+  // Active unacknowledged resident reports & emergency alerts
+  const incomingResidentAlerts = cases.filter(
+    (c) => (c.isCitizenReport || c.isAccidentEmergency) &&
+      !c.emergencyAlarmAcknowledged &&
+      c.status !== 'Resolved' &&
+      c.status !== 'Closed'
+  );
 
   const totalIncidents = mdrrmoCases.length;
   const resolvedCount = mdrrmoCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
@@ -131,6 +143,71 @@ export const MdrrmoDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Live Incoming Resident Incident Reports Alert Banner */}
+      {incomingResidentAlerts.length > 0 && (
+        <div id="mdrrmo-live-incoming-alerts" className="bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+              </span>
+              <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
+                🚨 Live Resident Reports Received ({incomingResidentAlerts.length})
+              </h3>
+            </div>
+            <span className="text-[11px] font-bold px-2.5 py-0.5 bg-rose-200 text-rose-900 rounded-full">
+              Real-Time Push Connected
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {incomingResidentAlerts.slice(0, 4).map((c) => (
+              <div key={c.id} className="bg-white border border-rose-200 rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded">
+                      #{c.id}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      {formatDateShort(c.dateReported)}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{c.title}</h4>
+                  <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-1">
+                    <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                    <span className="truncate">Brgy. {c.barangay} • {c.specificLocation}</span>
+                  </p>
+                  {c.reporterName && (
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Reported by resident: <strong className="text-slate-700">{c.reporterName}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+                  <button
+                    onClick={() => setSelectedCaseId(c.id)}
+                    className="flex-1 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <span>View Report</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => markIncidentAsSeenAndResponded(c.id)}
+                    className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Check className="w-3 h-3" />
+                    <span>Acknowledge</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
@@ -197,13 +274,26 @@ export const MdrrmoDashboard: React.FC = () => {
               Active Incident Stream & Dispatch Queue
             </h3>
           </div>
-          <button
-            onClick={() => setActiveTab('cases')}
-            className="text-xs font-bold text-orange-700 hover:text-orange-800 flex items-center gap-1 cursor-pointer"
-          >
-            <span>View All Cases</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <select
+              value={barangayFilter}
+              onChange={(e) => setBarangayFilter(e.target.value)}
+              className="py-1 px-2.5 bg-slate-50 hover:bg-white text-slate-800 text-xs font-bold rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+              title="Filter incident queue by barangay"
+            >
+              <option value="ALL">All Roxas Barangays ({ROXAS_BARANGAYS.length})</option>
+              {ROXAS_BARANGAYS.map((b) => (
+                <option key={b} value={b}>Brgy. {b}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setActiveTab('cases')}
+              className="text-xs font-bold text-orange-700 hover:text-orange-800 flex items-center gap-1 cursor-pointer"
+            >
+              <span>View All</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

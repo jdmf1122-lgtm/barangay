@@ -25,7 +25,7 @@ export const CaseList: React.FC = () => {
   const { cases, setSelectedCaseId } = useCases();
   const { setIsNewCaseModalOpen, searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
 
-  const isBarangayOfficer = currentUser?.agencyType === 'MDRRMO' && !!currentUser?.barangay;
+  const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
   const userBarangay = currentUser?.barangay;
 
   // Filter logic

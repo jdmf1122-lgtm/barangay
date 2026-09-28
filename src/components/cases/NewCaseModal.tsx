@@ -32,7 +32,7 @@ export const NewCaseModal: React.FC = () => {
   const { createCase } = useCases();
   const { isNewCaseModalOpen, setIsNewCaseModalOpen } = useUI();
 
-  const isBarangayOfficer = currentUser?.agencyType === 'MDRRMO' && !!currentUser?.barangay;
+  const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
 
   // Form State - Accident Core
   const [title, setTitle] = useState('');

@@ -49,6 +49,23 @@ export const useCases = () => {
     };
     notifState.setNotifications((prev) => [newNotif, ...(prev || [])]);
     supabase.from('notifications').insert(newNotif).then(({ error }) => { if (error) console.error(error) });
+
+    // Instant local cross-tab broadcast (0ms latency)
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('bconnect_notifs_sync');
+        bc.postMessage({ type: 'NEW_NOTIFICATION', payload: newNotif });
+        bc.close();
+      } catch (e) {}
+    }
+    // Remote network broadcast
+    try {
+      supabase.channel('notifications_realtime_sync').send({
+        type: 'broadcast',
+        event: 'notif_event',
+        payload: { type: 'NEW_NOTIFICATION', data: newNotif }
+      });
+    } catch (e) {}
   };
 
   const createCase = (data: Partial<Case>): string => {
@@ -148,6 +165,23 @@ export const useCases = () => {
 
     setCases((prev) => [newCaseItem, ...prev]);
     supabase.from('cases').insert(newCaseItem).then(({ error }) => { if (error) console.error(error) });
+
+    // Instant local cross-tab broadcast (0ms latency)
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('bconnect_cases_sync');
+        bc.postMessage({ type: 'NEW_CASE', payload: newCaseItem });
+        bc.close();
+      } catch (e) {}
+    }
+    // Remote network broadcast
+    try {
+      supabase.channel('cases_realtime_sync').send({
+        type: 'broadcast',
+        event: 'case_event',
+        payload: { type: 'NEW_CASE', data: newCaseItem }
+      });
+    } catch (e) {}
 
     logActivity('CASE_CREATED', caseId, `Registered new case ${caseId} (${newCaseItem.title}) at ${currentUser.agencyName}`);
 
@@ -252,6 +286,23 @@ export const useCases = () => {
           resolutionSummary: updatedCase.resolutionSummary, dateLastUpdated: updatedCase.dateLastUpdated,
           statusHistory: updatedCase.statusHistory, timeline: updatedCase.timeline
         }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
+
+        // Broadcast updated case
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          try {
+            const bc = new BroadcastChannel('bconnect_cases_sync');
+            bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
+            bc.close();
+          } catch (e) {}
+        }
+        try {
+          supabase.channel('cases_realtime_sync').send({
+            type: 'broadcast',
+            event: 'case_event',
+            payload: { type: 'UPDATE_CASE', data: updatedCase }
+          });
+        } catch (e) {}
+
         return updatedCase;
       })
     );
@@ -324,8 +375,24 @@ export const useCases = () => {
           emergencyAlarmAcknowledged: true,
           emergencyFirstRespondersDispatched: true,
           timeline: updatedCase.timeline,
-          dateLastUpdated: now
         }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
+
+        // Broadcast updated case to all users
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          try {
+            const bc = new BroadcastChannel('bconnect_cases_sync');
+            bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
+            bc.close();
+          } catch (e) {}
+        }
+        try {
+          supabase.channel('cases_realtime_sync').send({
+            type: 'broadcast',
+            event: 'case_event',
+            payload: { type: 'UPDATE_CASE', data: updatedCase }
+          });
+        } catch (e) {}
+
         return updatedCase;
       })
     );

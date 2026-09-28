@@ -41,7 +41,7 @@ export const CaseDetailModal: React.FC = () => {
   if (!selectedCase) return null;
 
   // Strict Role-Based Access Control (RBAC) jurisdictional check
-  const isBarangayOfficer = (currentUser?.agencyType === 'MDRRMO' || (currentUser?.agencyType as string) === 'BARANGAY') && !!currentUser?.barangay;
+  const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
   const isResidentUser = currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT';
 
   const isBarangayUnauthorized = isBarangayOfficer && 
