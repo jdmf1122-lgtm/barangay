@@ -138,9 +138,10 @@ export const useAuth = () => {
       }
 
       // 5. Try Node backend auth endpoint if running
-      if (cleanQuery) {
+      const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_URL) || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3001' : '');
+      if (backendUrl && cleanQuery) {
         try {
-          const backendRes = await fetch('http://localhost:3001/api/auth/login', {
+          const backendRes = await fetch(`${backendUrl}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identifier: cleanQuery, passcode: cleanPasscode })
@@ -264,13 +265,16 @@ export const useAuth = () => {
     }
 
     // 4. Try backend sync if running
-    try {
-      fetch('http://localhost:3001/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      }).catch(() => {});
-    } catch (e) {}
+    const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_URL) || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3001' : '');
+    if (backendUrl) {
+      try {
+        fetch(`${backendUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
     // 5. Update in-memory and local storage user state
     setUsers((prev) => {

@@ -147,23 +147,26 @@ export async function sendAutomatedResponderSMS(
   storeSmsDispatches(newRecords);
 
   // Dispatch to backend carrier API endpoint (fire & forget with graceful fallback)
-  try {
-    fetch('http://localhost:3001/api/sms/broadcast-alert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        caseId: caseInfo.id,
-        message: smsBody,
-        dispatches: newRecords,
-        timestamp: now,
-        isResend: !!caseInfo.isResend,
-        resendCount: caseInfo.resendCount || 0
-      })
-    }).catch((err) => {
-      console.warn('Backend SMS broadcast endpoint notice:', err);
-    });
-  } catch (e) {
-    console.warn('SMS dispatch network notice:', e);
+  const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_URL) || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3001' : '');
+  if (backendUrl) {
+    try {
+      fetch(`${backendUrl}/api/sms/broadcast-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caseId: caseInfo.id,
+          message: smsBody,
+          dispatches: newRecords,
+          timestamp: now,
+          isResend: !!caseInfo.isResend,
+          resendCount: caseInfo.resendCount || 0
+        })
+      }).catch((err) => {
+        console.warn('Backend SMS broadcast endpoint notice:', err);
+      });
+    } catch (e) {
+      console.warn('SMS dispatch error:', e);
+    }
   }
 
   const logPrefix = caseInfo.isResend

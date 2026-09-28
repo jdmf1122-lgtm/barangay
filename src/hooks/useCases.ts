@@ -213,16 +213,19 @@ export const useCases = () => {
       }
     });
 
-    // 2. Guarantee database persistence via backend admin service role (bypasses RLS & network latency)
-    try {
-      fetch('http://localhost:3001/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dbPayload)
-      }).catch((netErr) => {
-        console.warn('Backend sync notice:', netErr);
-      });
-    } catch (e) {}
+    // 2. Guarantee database persistence via backend admin service role (when running on localhost or with configured backend)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3001' : '');
+    if (backendUrl) {
+      try {
+        fetch(`${backendUrl}/api/cases`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dbPayload)
+        }).catch((netErr) => {
+          console.warn('Backend sync notice:', netErr);
+        });
+      } catch (e) {}
+    }
 
     // Instant local cross-tab broadcast (0ms latency)
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
