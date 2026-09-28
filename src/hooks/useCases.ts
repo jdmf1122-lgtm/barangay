@@ -96,7 +96,7 @@ export const useCases = () => {
         id: `TL-${Date.now()}-1-${Math.random().toString(36).substring(2, 6)}`,
         caseId,
         title: 'Report Received & Case Registered',
-        description: `Case registered by ${currentUser.name} at ${currentUser.agencyName}. Initial classification: ${data.category}.`,
+        description: `Case registered by ${currentUser.name} at ${currentUser.agencyName}. Initial classification: ${data.category}.${data.incidentTime ? ` Incident occurrence time: ${data.incidentTime}.` : ''}`,
         stage: 'Report Filed',
         actorName: currentUser.name,
         actorRole: currentUser.position,
@@ -184,7 +184,7 @@ export const useCases = () => {
     const SUPABASE_CASE_COLUMNS = new Set([
       'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
       'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
-      'incidentTime', 'barangay', 'specificLocation', 'complainants', 'respondents',
+      'barangay', 'specificLocation', 'complainants', 'respondents',
       'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
       'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
       'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
@@ -201,7 +201,7 @@ export const useCases = () => {
 
     const dbPayload: Record<string, any> = {};
     for (const key of Object.keys(newCaseItem)) {
-      if (SUPABASE_CASE_COLUMNS.has(key)) {
+      if (SUPABASE_CASE_COLUMNS.has(key) && (newCaseItem as any)[key] !== undefined) {
         dbPayload[key] = (newCaseItem as any)[key];
       }
     }
@@ -209,7 +209,7 @@ export const useCases = () => {
     // 1. Direct client insert into Supabase cases table
     supabase.from('cases').insert(dbPayload).then(({ error }) => {
       if (error) {
-        console.warn('Direct Supabase insert notice:', error.message);
+        console.error('Direct Supabase insert error:', error.message, error);
       }
     });
 
