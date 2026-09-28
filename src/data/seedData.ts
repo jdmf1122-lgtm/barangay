@@ -10,7 +10,19 @@ export const SEED_USERS: User[] = [
     agencyName: 'MDRRMO Roxas Emergency & Rescue Operations',
     position: 'MDRRMO Operations Head & Emergency Dispatcher',
     badgeOrIdNumber: 'MDRRMO-ROX-2026',
-    email: 'mdrrmo@roxas.gov.ph'
+    email: 'mdrrmo@roxas.gov.ph',
+    phone: '0919-555-8821'
+  },
+  {
+    id: 'USR-MDRRMO-02',
+    name: 'Officer Randy Alcantara',
+    role: 'MDRRMO_OFFICER',
+    agencyType: 'MDRRMO',
+    agencyName: 'MDRRMO Roxas Quick Response & Rescue Team',
+    position: 'Emergency Medical Responder (EMR Lead)',
+    badgeOrIdNumber: 'MDRRMO-EMR-02',
+    email: 'responder.mdrrmo@roxas.gov.ph',
+    phone: '0917-888-2628'
   },
 
   // --- MUNICIPAL & INTER-AGENCY OVERSIGHT ACCOUNTS ---

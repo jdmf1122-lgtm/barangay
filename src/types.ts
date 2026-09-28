@@ -1,11 +1,11 @@
 export type AgencyType = 'MDRRMO' | 'LGU' | 'ADMIN' | 'RESIDENT';
 
-export type UserRole = 
+export type UserRole =
   | 'RESIDENT'
-  | 'MDRRMO_ADMIN' 
-  | 'MDRRMO_OFFICER' 
-  | 'LGU_OFFICER' 
-  | 'LGU_ADMINISTRATOR' 
+  | 'MDRRMO_ADMIN'
+  | 'MDRRMO_OFFICER'
+  | 'LGU_OFFICER'
+  | 'LGU_ADMINISTRATOR'
   | 'SYSTEM_ADMIN';
 
 export interface IncidentPhoto {
@@ -46,13 +46,13 @@ export interface User {
   residentIdNumber?: string;
 }
 
-export type CaseStatus = 
+export type CaseStatus =
   | 'Resolved'
   | 'Unresolved';
 
 export type PriorityLevel = 'Low' | 'Medium' | 'High' | 'Urgent';
 
-export type IncidentCategory = 
+export type IncidentCategory =
   | 'Motorcycle vs Motorcycle Collision'
   | 'Motorcycle vs Car / SUV Collision'
   | 'Motorcycle vs Tricycle Collision'
@@ -112,14 +112,14 @@ export interface TimelineEvent {
   caseId: string;
   title: string;
   description: string;
-  stage: 
-    | 'Report Filed'
-    | 'Initial Assessment'
-    | 'Barangay Action / Lupon'
-    | 'LGU Action'
-    | 'Status Update'
-    | 'Resolution'
-    | 'Case Closure';
+  stage:
+  | 'Report Filed'
+  | 'Initial Assessment'
+  | 'Barangay Action / Lupon'
+  | 'LGU Action'
+  | 'Status Update'
+  | 'Resolution'
+  | 'Case Closure';
   actorName: string;
   actorRole: string;
   actorAgency: string;
@@ -137,24 +137,27 @@ export interface Case {
   description: string;
   initialNarrative: string;
   currentNarrativeSummary?: string;
-  dateReported: string; // ISO string
+  dateReported: string;
   incidentDate: string;
+  incidentTime?: string;
   barangay: string;
+  sitio?: string;
   specificLocation: string;
-  
+  reporterName?: string;
+
   // Persons
   complainants: PersonInvolved[];
   respondents: PersonInvolved[];
   witnesses: PersonInvolved[];
   personsInvolved: PersonInvolved[];
-  
+
   // Officials Tracking
   isInvolvingOfficial: boolean;
   officialInvolvedType?: 'Barangay Official' | 'Municipal / LGU Official' | 'None';
   officialInvolvedName?: string;
   officialInvolvedPosition?: string;
   officialInvolvedAgency?: string;
-  
+
   // Ownership & Agency Routing
   originatingAgency: string;
   currentHandlingAgency: string;
@@ -162,16 +165,16 @@ export interface Case {
   assignedPersonnelContact?: string;
   priority: PriorityLevel;
   status: CaseStatus;
-  
 
-  
+
+
 
   // Outcomes
   resolutionSummary?: string;
   dateResolved?: string;
   dateClosed?: string;
   outcomeType?: 'Amicably Settled' | 'Referred to Prosecutor / Court' | 'Referred to Higher Authority' | 'Administrative Sanction' | 'Dismissed / Withdrawn' | 'Mediated' | 'Pending Action';
-  
+
   // Updates
   isCitizenReport?: boolean;
   residentReporterId?: string;
@@ -181,7 +184,7 @@ export interface Case {
   isAccidentProneArea?: boolean;
   emergencyAlarmAcknowledged?: boolean;
   emergencyFirstRespondersDispatched?: boolean;
-  
+
   // Vehicular Crash & Accident Specifics
   vehiclesInvolved?: VehicleCrashDetail[];
   collisionImpactType?: 'Head-On Collision' | 'Rear-End Impact' | 'Side-Swipe / T-Bone' | 'Intersection Collision' | 'Hit-and-Run' | 'Single Vehicle Skid / Rollover' | 'Pedestrian Impact' | 'Fixed Obstacle Collision' | 'Other Impact';
@@ -196,7 +199,7 @@ export interface Case {
   statusHistory: StatusHistoryItem[];
   timeline: TimelineEvent[];
   imageUrls?: string[];
-  
+
   // Metadata
   dateCreated: string;
   dateLastUpdated: string;
@@ -248,13 +251,13 @@ export interface NotificationItem {
 }
 
 // Graph Algorithm Types
-export type GraphNodeType = 
-  | 'case' 
-  | 'incident' 
-  | 'person' 
-  | 'official' 
-  | 'barangay' 
-  | 'agency' 
+export type GraphNodeType =
+  | 'case'
+  | 'incident'
+  | 'person'
+  | 'official'
+  | 'barangay'
+  | 'agency'
   | 'location';
 
 export type Person = PersonInvolved;
@@ -296,13 +299,13 @@ export interface GraphEdge {
   source: string;
   target: string;
   label: string;
-  type: 
-    | 'INVOLVED_IN' 
-    | 'COMPLAINED_AGAINST' 
-    | 'REPORTED_IN' 
-    | 'INVOLVES_OFFICIAL' 
-    | 'LOCATED_AT' 
-    | 'RELATED_CASE';
+  type:
+  | 'INVOLVED_IN'
+  | 'COMPLAINED_AGAINST'
+  | 'REPORTED_IN'
+  | 'INVOLVES_OFFICIAL'
+  | 'LOCATED_AT'
+  | 'RELATED_CASE';
   weight?: number;
 }
 
@@ -328,7 +331,7 @@ export interface AnnualStatistics {
   casesInvolvingBarangayOfficials: number;
   casesInvolvingLocalOfficials: number;
   casesInvolvingOfficials?: number;
-  
+
   // Breakdown
   casesByBarangay: Record<string, number>;
   casesByCategory: Record<string, number>;
@@ -337,32 +340,47 @@ export interface AnnualStatistics {
 
 export const ROXAS_BARANGAYS = [
   'Bagumbayan',
+  'Cantil',
+  'Dangay',
+  'Happy Valley',
+  'Libertad',
+  'Libtong',
+  'Little Tanauan',
+  'Mabuhay',
+  'Maraska',
   'Odiong',
+  'Paclasan',
   'San Aquilino',
+  'San Isidro',
+  'San Jose',
+  'San Mariano',
   'San Miguel',
+  'San Rafael',
+  'San Vicente',
+  'Uyao',
   'Victoria'
 ] as const;
 
 export const AGENCIES_LIST = [
-  { 
-    id: 'MDRRMO_OPERATIONS', 
-    name: 'Municipal Disaster Risk Reduction & Management Office (MDRRMO Roxas)', 
+  {
+    id: 'MDRRMO_OPERATIONS',
+    name: 'Municipal Disaster Risk Reduction & Management Office (MDRRMO Roxas)',
     type: 'MDRRMO',
     description: 'Emergency rescue dispatch, vehicular accident response, emergency medical evacuation, and public safety oversight.',
-    jurisdictionScope: 'Municipality of Roxas (All 5 Barangays)'
+    jurisdictionScope: 'Municipality of Roxas (All 20 Barangays)'
   },
-  { 
-    id: 'RESIDENT_COMMUNITY', 
-    name: 'Resident Citizen Community Portal', 
+  {
+    id: 'RESIDENT_COMMUNITY',
+    name: 'Resident Citizen Community Portal',
     type: 'RESIDENT',
     description: 'Direct citizen incident filing, accident hazard alarms, hearing schedule notices, and status tracking.',
     jurisdictionScope: 'Verified Roxas Residents (Barangay Restricted)'
   },
-  { 
-    id: 'LGU_MUNICIPAL', 
-    name: 'Municipal Government of Roxas (LGU Executive & Administration)', 
+  {
+    id: 'LGU_MUNICIPAL',
+    name: 'Municipal Government of Roxas (LGU Executive & Administration)',
     type: 'LGU',
     description: 'Municipal administration, ordinance enforcement, Katarungang Pambarangay oversight, MENRO, MSWDO, and cross-barangay governance.',
-    jurisdictionScope: 'Municipal Administration & Oversight'
+    jurisdictionScope: 'Municipal Administration & Oversight (All 20 Barangays)'
   }
 ] as const;

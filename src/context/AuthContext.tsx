@@ -18,27 +18,64 @@ export const AuthContext = createContext<AuthState | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
-  const [currentUser, setCurrentUserState] = useState<User>(SEED_USERS[0]);
-  const [users, setUsers] = useState<User[]>(SEED_USERS);
+  const [currentUser, setCurrentUserState] = useState<User>(() => {
+    const savedUserStr = localStorage.getItem('bconnect_roxas_user_v11');
+    if (savedUserStr) {
+      try {
+        const parsed = JSON.parse(savedUserStr);
+        if (parsed?.id) return parsed;
+      } catch (e) {}
+    }
+    return SEED_USERS[0];
+  });
+  const [users, setUsers] = useState<User[]>(() => {
+    const savedUsersStr = localStorage.getItem('bconnect_roxas_users_v11');
+    if (savedUsersStr) {
+      try {
+        const parsed = JSON.parse(savedUsersStr);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return SEED_USERS;
+  });
 
   useEffect(() => {
     const checkSession = async () => {
       setIsAuthLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile) {
-          setCurrentUserState(profile as User);
-          setIsAuthenticated(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profile) {
+            setCurrentUserState(profile as User);
+            setIsAuthenticated(true);
+            localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profile));
+            localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
+          }
+        } else {
+          const savedAuth = localStorage.getItem('bconnect_roxas_auth_status_v11');
+          const savedUserStr = localStorage.getItem('bconnect_roxas_user_v11');
+          if (savedAuth === 'true' && savedUserStr) {
+            try {
+              const parsed = JSON.parse(savedUserStr);
+              if (parsed?.id) {
+                setCurrentUserState(parsed);
+                setIsAuthenticated(true);
+              }
+            } catch (e) {}
+          }
         }
+      } catch (err) {
+        console.warn('Session check error, fallback to local:', err);
+      } finally {
+        setIsAuthLoading(false);
       }
-      setIsAuthLoading(false);
     };
     
     checkSession();
@@ -54,9 +91,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (profile) {
           setCurrentUserState(profile as User);
           setIsAuthenticated(true);
+          localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profile));
+          localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
         }
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
+        localStorage.removeItem('bconnect_roxas_user_v11');
+        localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
       }
     });
 

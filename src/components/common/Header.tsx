@@ -87,8 +87,22 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
       case 'submit_report': return 'Citizen Incident Report & Evidence Submission';
       case 'my_reports': return 'Citizen Reports & Resolution Tracker';
 
-      case 'dashboard': return 'Multi-Agency Operational Dashboard';
-      case 'cases': return 'Incident & Complaint Ledger';
+      case 'dashboard': 
+        if (currentUser.agencyType === 'MDRRMO') {
+          return currentUser.role === 'MDRRMO_ADMIN' 
+            ? 'MDRRMO Operations Hub & Emergency Dispatch' 
+            : 'MDRRMO Incident Response & Triage';
+        }
+        if (currentUser.agencyType === 'LGU') {
+          return currentUser.role === 'LGU_ADMINISTRATOR' 
+            ? 'LGU Executive Administration Dashboard' 
+            : 'LGU Departmental Action & Grievance Desk';
+        }
+        return 'Multi-Agency Operational Dashboard';
+      case 'cases': 
+        if (currentUser.agencyType === 'MDRRMO') return 'Crash Blotter & Emergency Incident Queue';
+        if (currentUser.agencyType === 'LGU') return 'Municipal Incident & Case Masterfile';
+        return 'Incident & Complaint Ledger';
       case 'graph': return 'Inter-Agency Case Relationship Graph';
       case 'transparency': return 'Inter-Agency Transparency & Oversight';
       case 'annual_narrative': return 'Annual Case Narrative & Governance Report';
@@ -420,10 +434,6 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                     <span className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
                       {currentUser.agencyType}
                     </span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-600">
-                    <span>Badge / ID:</span>
-                    <span className="font-mono font-medium text-slate-800">{currentUser.badgeOrIdNumber || 'GOV-OFFICIAL'}</span>
                   </div>
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Email:</span>

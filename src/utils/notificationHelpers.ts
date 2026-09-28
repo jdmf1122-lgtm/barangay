@@ -8,7 +8,7 @@ export function isNotificationForUser(
   user: User, 
   cases: Case[] = []
 ): boolean {
-  if (!user) return false;
+  if (!user || !notif) return false;
 
   const userAgencyType = user.agencyType;
   const userRole = user.role;
@@ -19,21 +19,50 @@ export function isNotificationForUser(
   // Find related case if any
   const relatedCase = notif.caseId ? cases.find((c) => c.id === notif.caseId) : undefined;
 
-  // 1. Direct User targeting
-  if (notif.targetUserId && notif.targetUserId === userId) {
-    return true;
+  // 1. Direct User targeting exclusivity:
+  // If explicitly targeted to a specific userId, ONLY that user may receive it.
+  if (notif.targetUserId) {
+    return notif.targetUserId === userId;
   }
 
-  // 2. Direct Resident Name match
-  if (notif.targetResidentName && notif.targetResidentName.toLowerCase() === userName) {
-    return true;
+  // 2. Direct Resident Name match exclusivity:
+  // If targeted to a specific resident name, ONLY that resident may receive it.
+  if (notif.targetResidentName) {
+    if (userAgencyType !== 'RESIDENT' && userRole !== 'RESIDENT') return false;
+    return notif.targetResidentName.toLowerCase() === userName;
+  }
+
+  // 3. Exclusivity check on targetAgencyTypes:
+  // If targetAgencyTypes is explicitly specified, the active user's agencyType must be included.
+  if (notif.targetAgencyTypes && notif.targetAgencyTypes.length > 0) {
+    const isTargeted = notif.targetAgencyTypes.includes(userAgencyType) || 
+      (userAgencyType === 'ADMIN' && notif.targetAgencyTypes.includes('ADMIN'));
+    if (!isTargeted && userRole !== 'SYSTEM_ADMIN') {
+      return false;
+    }
+  }
+
+  // 4. Exclusivity check on targetAgency string:
+  if (notif.targetAgency) {
+    const targetAg = notif.targetAgency.toUpperCase();
+    if (targetAg === 'RESIDENT' && userAgencyType !== 'RESIDENT') return false;
+    if (targetAg === 'MDRRMO' && userAgencyType !== 'MDRRMO') return false;
+    if (targetAg === 'LGU' && userAgencyType !== 'LGU' && userRole !== 'SYSTEM_ADMIN') return false;
+    if (targetAg === 'ADMIN' && userAgencyType !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') return false;
+  }
+
+  // 5. Exclusivity check on targetRoles:
+  if (notif.targetRoles && notif.targetRoles.length > 0) {
+    if (!notif.targetRoles.includes(userRole) && userRole !== 'SYSTEM_ADMIN') {
+      return false;
+    }
   }
 
   // ----------------------------------------------------
-  // RESIDENT ROLE FILTERING
+  // RESIDENT ROLE FILTERING ("Residents only & own barangay only")
   // ----------------------------------------------------
   if (userAgencyType === 'RESIDENT' || userRole === 'RESIDENT') {
-    // RESIDENTS MUST NEVER SEE ACCOUNT REGISTRATION OR ADMINISTRATIVE SYSTEM NOTIFICATIONS
+    // A. Residents MUST NEVER see internal officer accounts or administrative system provisions
     const titleLower = notif.title.toLowerCase();
     const msgLower = notif.message.toLowerCase();
     
@@ -43,29 +72,29 @@ export function isNotificationForUser(
       titleLower.includes('account created') ||
       titleLower.includes('new user') ||
       titleLower.includes('officer authorized') ||
+      titleLower.includes('system account') ||
       msgLower.includes('has been authorized in the b-connect network') ||
-      msgLower.includes('registered new official user account')
+      msgLower.includes('registered new official user account') ||
+      msgLower.includes('provisioned')
     ) {
       return false;
     }
 
-
-
-    // If targeted explicitly for residents
-    if (notif.targetAgencyTypes?.includes('RESIDENT') || notif.targetRoles?.includes('RESIDENT') || notif.targetAgency === 'RESIDENT') {
-      if (notif.targetBarangay && userBarangay && notif.targetBarangay !== userBarangay) {
+    // B. Strict Barangay Isolation for Residents:
+    // If targeted to a specific barangay and NOT 'ALL', it MUST match this resident's home barangay.
+    if (notif.targetBarangay && notif.targetBarangay !== 'ALL') {
+      if (!userBarangay || notif.targetBarangay !== userBarangay) {
         return false;
       }
-      return true;
     }
 
-    // Community advisory for resident's barangay
-    if (notif.type === 'advisory' && (notif.targetBarangay === userBarangay || !notif.targetBarangay)) {
-      return true;
-    }
-
-    // Check if the notification relates to a case filed by or involving this resident
+    // C. Check if related to a case filed by or directly involving this resident
     if (relatedCase) {
+      // Must be in resident's barangay
+      if (userBarangay && relatedCase.barangay && relatedCase.barangay !== userBarangay) {
+        return false;
+      }
+
       const isReporter = 
         relatedCase.residentReporterId === userId ||
         relatedCase.createdBy.toLowerCase().includes(userName) ||
@@ -78,79 +107,160 @@ export function isNotificationForUser(
       if (isReporter || isPersonInvolved) {
         return true;
       }
+
+      // If not reporter or person involved, residents don't see another resident's private case updates
+      return false;
     }
 
-    return false;
-  }
-
-  // ----------------------------------------------------
-  // MDRRMO OFFICIAL / RESPONDER ROLE FILTERING
-  // ----------------------------------------------------
-  if (userAgencyType === 'MDRRMO' || (userAgencyType as string) === 'BARANGAY') {
-    // If targeted to MDRRMO agency or broadcast
-    if (notif.targetAgencyTypes?.includes('MDRRMO') || (notif.targetAgencyTypes as any)?.includes('BARANGAY') || notif.targetAgency === 'MDRRMO' || notif.targetAgency === 'BARANGAY') {
-      if (!userBarangay || !notif.targetBarangay || notif.targetBarangay === userBarangay) {
+    // D. Community advisory for resident's barangay (or municipal-wide 'ALL' / untargeted)
+    if (notif.type === 'advisory') {
+      if (!notif.targetBarangay || notif.targetBarangay === 'ALL' || notif.targetBarangay === userBarangay) {
         return true;
       }
+      return false;
     }
 
-    // If targeted specifically to this barangay sector
-    if (userBarangay && notif.targetBarangay && notif.targetBarangay === userBarangay) {
-      return true;
-    }
-
-    if (notif.targetAgency === user.agencyName) {
-      return true;
-    }
-
-    // Check if case is located in or handled by this sector
-    if (relatedCase) {
-      if (!userBarangay || relatedCase.barangay === userBarangay || relatedCase.originatingAgency.includes(userBarangay || '')) {
-        return true;
-      }
-    }
-
-    // Emergency accident alerts are always visible to MDRRMO
-    if (notif.isAccidentEmergency || notif.priority === 'urgent') {
-      return true;
-    }
-
-    return false;
-  }
-
-  // ----------------------------------------------------
-  // LGU / MUNICIPAL EXECUTIVE & ADMIN FILTERING
-  // ----------------------------------------------------
-  if (userAgencyType === 'LGU' || userRole === 'LGU_ADMINISTRATOR' || userRole === 'LGU_OFFICER') {
-    // LGU as Admin sees all municipal alerts, referrals, welfare cases, and directives
+    // E. Targeted explicitly to residents
     if (
-      notif.targetAgencyTypes?.includes('LGU') || 
-      notif.targetAgencyTypes?.includes('ADMIN') ||
-      notif.targetAgency === 'LGU' || 
-      notif.targetAgency === 'ADMIN' ||
-      (notif.targetAgency && notif.targetAgency.toLowerCase().includes('lgu')) ||
-      (notif.targetAgency && notif.targetAgency.toLowerCase().includes('municipal')) ||
-      notif.type === 'system'
+      notif.targetAgencyTypes?.includes('RESIDENT') || 
+      notif.targetRoles?.includes('RESIDENT') || 
+      notif.targetAgency === 'RESIDENT'
     ) {
       return true;
     }
 
-    if (relatedCase) {
+    return false;
+  }
+
+  // ----------------------------------------------------
+  // MDRRMO OFFICIAL / RESPONDER ROLE FILTERING ("MDRRMO only")
+  // ----------------------------------------------------
+  if (userAgencyType === 'MDRRMO') {
+    // Must NEVER see resident-only private advisories or individual citizen summons
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'RESIDENT') {
+      return false;
+    }
+    if (notif.targetAgency === 'RESIDENT') {
+      return false;
+    }
+    if (notif.targetRoles?.includes('RESIDENT') && !notif.targetRoles.some(r => r.startsWith('MDRRMO_'))) {
+      return false;
+    }
+
+    // Must NEVER see LGU-only administrative notices
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'LGU') {
+      return false;
+    }
+    if (notif.targetAgency === 'LGU') {
+      return false;
+    }
+
+    // Emergency accident alerts and sirens are always prioritized for MDRRMO
+    if (
+      notif.isAccidentEmergency || 
+      (notif as any).isMdrrmoIncident || 
+      (notif as any).isMdrrmoEmergency ||
+      notif.priority === 'urgent'
+    ) {
       return true;
     }
 
-    return true;
+    // Targeted specifically to MDRRMO
+    if (
+      notif.targetAgencyTypes?.includes('MDRRMO') || 
+      notif.targetAgency === 'MDRRMO' ||
+      notif.targetAgency === user.agencyName
+    ) {
+      if (userBarangay && notif.targetBarangay && notif.targetBarangay !== 'ALL' && notif.targetBarangay !== userBarangay) {
+        return false;
+      }
+      return true;
+    }
+
+    // Related case handled by or involving MDRRMO (vehicular accidents, traffic crashes, rescue)
+    if (relatedCase) {
+      const isMdrrmoCase = 
+        relatedCase.category === 'Vehicular Accident' || 
+        relatedCase.originatingAgency.includes('MDRRMO') || 
+        relatedCase.originatingAgency.includes('Traffic') ||
+        relatedCase.priority === 'Urgent';
+
+      if (isMdrrmoCase) {
+        if (!userBarangay || relatedCase.barangay === userBarangay || relatedCase.originatingAgency.includes(userBarangay || '')) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // ----------------------------------------------------
+  // LGU / MUNICIPAL EXECUTIVE & ADMIN FILTERING ("Municipal LGU only")
+  // ----------------------------------------------------
+  if (userAgencyType === 'LGU' || userRole === 'LGU_ADMINISTRATOR' || userRole === 'LGU_OFFICER') {
+    // Must NEVER see resident-only private advisories or individual citizen summons
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'RESIDENT') {
+      return false;
+    }
+    if (notif.targetAgency === 'RESIDENT') {
+      return false;
+    }
+
+    // Must NEVER see MDRRMO-only responder dispatches or sirens
+    if (notif.targetAgencyTypes?.length === 1 && notif.targetAgencyTypes[0] === 'MDRRMO') {
+      return false;
+    }
+    if (notif.targetAgency === 'MDRRMO') {
+      return false;
+    }
+    if (notif.isAccidentEmergency && !notif.targetAgencyTypes?.includes('LGU')) {
+      return false;
+    }
+
+    // Targeted specifically to LGU or Municipal Executive
+    if (
+      notif.targetAgencyTypes?.includes('LGU') || 
+      notif.targetAgency === 'LGU' ||
+      (notif.targetAgency && notif.targetAgency.toLowerCase().includes('lgu')) ||
+      (notif.targetAgency && notif.targetAgency.toLowerCase().includes('municipal'))
+    ) {
+      return true;
+    }
+
+    // LGU administrators also oversee administrative system alerts if targeted to ADMIN
+    if (
+      (userRole === 'LGU_ADMINISTRATOR') && 
+      (notif.targetAgencyTypes?.includes('ADMIN') || notif.targetAgency === 'ADMIN' || notif.type === 'system')
+    ) {
+      return true;
+    }
+
+    // Related case involving LGU governance, cross-barangay disputes, or inter-agency referrals
+    if (relatedCase) {
+      const isLguCase = 
+        relatedCase.isInterAgency || 
+        relatedCase.category === 'Public Nuisance & Environmental Hazard' ||
+        relatedCase.category === 'Boundary & Property Conflict' ||
+        relatedCase.originatingAgency.includes('LGU') ||
+        relatedCase.originatingAgency.includes('Municipal');
+
+      if (isLguCase) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // ----------------------------------------------------
   // SYSTEM ADMIN ROLE FILTERING
   // ----------------------------------------------------
   if (userAgencyType === 'ADMIN' || userRole === 'SYSTEM_ADMIN') {
-    // Admin sees all system, security, registration, and network notifications
     return true;
   }
 
-  return true;
+  return false;
 }
 
 /**

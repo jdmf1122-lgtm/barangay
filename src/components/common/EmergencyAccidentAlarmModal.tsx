@@ -1,37 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  AlertTriangle, 
-  Siren, 
-  Volume2, 
-  VolumeX, 
-  MapPin, 
-  Clock, 
-  Phone, 
-  User, 
-  Car, 
-  ShieldCheck, 
-  CheckCircle2, 
-  X, 
-  ExternalLink,
-  Ambulance,
-  Radio
-} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
-import { playAccidentAlarmSound, stopAccidentAlarmSound, playActionBeep } from '../../utils/alarmAudio';
-import { formatDate } from '../../utils/reportGenerators';
+import {
+  sendAutomatedResponderSMS,
+  getStoredSmsDispatches,
+  SmsDispatchRecord,
+  getActiveSmsResendStatus,
+  stopSmsResendInterval,
+  buildAlertSmsMessage
+} from '../../utils/smsService';
 
 export const EmergencyAccidentAlarmModal: React.FC = () => {
-  const { currentUser } = useAuth();
-  const { cases, setSelectedCaseId, addCaseTimelineEvent, logActivity } = useCases();
-  const { notifications } = useNotifications();
+  const { currentUser, users } = useAuth();
+  const { cases, setSelectedCaseId, addCaseTimelineEvent, markIncidentAsSeenAndResponded } = useCases();
+  const { notifications, markNotificationAsRead } = useNotifications();
   const { setActiveTab } = useUI();
 
-  const [activeAccidentNotif, setActiveAccidentNotif] = useState<any | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isDispatched, setIsDispatched] = useState(false);
+  const [activeEmergencyNotif, setActiveEmergencyNotif] = useState<any | null>(null);
+  const [isSeenAndResponded, setIsSeenAndResponded] = useState(false);
+  const [smsDispatches, setSmsDispatches] = useState<SmsDispatchRecord[]>([]);
+  const [resendStatus, setResendStatus] = useState<{ isActive: boolean; resendCount: number; lastSentAt?: string }>({ isActive: false, resendCount: 0 });
+
   const [acknowledgedIds, setAcknowledgedIds] = useState<string[]>(() => {
     try {
       return JSON.parse(sessionStorage.getItem('acknowledged_accident_alarms') || '[]');
@@ -40,275 +31,321 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
   });
 
+  const acknowledgeIncidentAlert = (alertId?: string, caseId?: string) => {
+    const idsToAdd: string[] = [];
+    if (alertId) idsToAdd.push(alertId);
+    if (caseId) idsToAdd.push(caseId);
+
+    if (idsToAdd.length > 0) {
+      setAcknowledgedIds((prev) => {
+        const next = Array.from(new Set([...prev, ...idsToAdd]));
+        try {
+          sessionStorage.setItem('acknowledged_accident_alarms', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+  };
+
   const isMdrrmoOfficer = currentUser?.agencyType === 'MDRRMO';
   const userBarangay = currentUser?.barangay;
 
-  // Listen for unacknowledged accident emergency notifications for MDRRMO
+  // Track recurring interval SMS resend ticks
+  useEffect(() => {
+    const updateResend = () => {
+      const caseId = activeEmergencyNotif?.caseId;
+      if (caseId) {
+        setResendStatus(getActiveSmsResendStatus(caseId));
+        const stored = getStoredSmsDispatches().filter((d) => d.caseId === caseId);
+        if (stored.length > 0) {
+          setSmsDispatches(stored);
+        }
+      }
+    };
+
+    updateResend();
+
+    const handleTick = (e: any) => {
+      if (!activeEmergencyNotif?.caseId || e.detail?.caseId === activeEmergencyNotif?.caseId) {
+        updateResend();
+      }
+    };
+
+    window.addEventListener('mdrrmo_sms_interval_tick', handleTick);
+    window.addEventListener('mdrrmo_sms_interval_stopped', handleTick);
+
+    return () => {
+      window.removeEventListener('mdrrmo_sms_interval_tick', handleTick);
+      window.removeEventListener('mdrrmo_sms_interval_stopped', handleTick);
+    };
+  }, [activeEmergencyNotif]);
+
+  // Listen for unacknowledged incident reports received by the MDRRMO monitoring system.
+  // The notification will NOT stop until responders mark the incident as 'seen/responded'.
+  // No audible alert or alarm should be triggered — SMS text only.
   useEffect(() => {
     if (!isMdrrmoOfficer) {
-      stopAccidentAlarmSound();
-      setActiveAccidentNotif(null);
+      setActiveEmergencyNotif(null);
       return;
     }
 
-    const urgentAccidentNotif = notifications.find((n) => {
-      if (acknowledgedIds.includes(n.id)) return false;
+    // If responder has already confirmed receipt or marked as seen, do not re-open
+    if (isSeenAndResponded) {
+      return;
+    }
 
-      // Check if it's an accident alert (MDRRMO receives municipal-wide or sector targeted)
+    // 1. Scan for any active incident in cases that has not yet been marked as seen/responded
+    const unacknowledgedCase = cases.find((c) => {
+      const isTargetedBarangay = !userBarangay || c.barangay === userBarangay || !c.barangay;
+      const isEmergencyOrCitizen = c.isCitizenReport || c.isAccidentEmergency || c.priority === 'Urgent' || c.originatingAgency.includes('Resident');
+      const isNotResolved = c.status !== 'Resolved' && c.status !== 'Closed';
+      const isNotAcknowledged = !c.emergencyAlarmAcknowledged && !acknowledgedIds.includes(c.id);
+      return isTargetedBarangay && isEmergencyOrCitizen && isNotResolved && isNotAcknowledged;
+    });
+
+    // 2. Scan for unacknowledged emergency notifications
+    const unacknowledgedNotif = notifications.find((n) => {
+      if (n.isRead) return false;
+      if (acknowledgedIds.includes(n.id)) return false;
+      if (n.caseId && acknowledgedIds.includes(n.caseId)) return false;
+
       const isTargetedBarangay = !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
-      const isAccidentFlag = 
-        n.isAccidentEmergency || 
-        n.title.toLowerCase().includes('accident') || 
-        n.title.toLowerCase().includes('banggaan') || 
+      const isEmergencyIncident =
+        n.isAccidentEmergency ||
+        n.isMdrrmoEmergency ||
+        n.isMdrrmoIncident ||
+        n.title.toLowerCase().includes('accident') ||
+        n.title.toLowerCase().includes('emergency') ||
+        n.title.toLowerCase().includes('banggaan') ||
         n.title.toLowerCase().includes('vehicular') ||
         n.title.toLowerCase().includes('disgrasya') ||
         n.message.toLowerCase().includes('accident') ||
+        n.message.toLowerCase().includes('emergency') ||
         n.message.toLowerCase().includes('vehicular') ||
-        n.message.toLowerCase().includes('banggaan');
+        n.message.toLowerCase().includes('banggaan') ||
+        n.message.toLowerCase().includes('sms sent');
 
-      const isUrgent = n.priority === 'urgent' || n.type === 'pending_alert';
+      const isUrgent = n.priority === 'urgent' || n.type === 'pending_alert' || n.type === 'case_registered';
+      const related = n.caseId ? cases.find((c) => c.id === n.caseId) : null;
+      const isCaseAcknowledged = related ? (!!related.emergencyAlarmAcknowledged || acknowledgedIds.includes(related.id)) : false;
 
-      return isTargetedBarangay && isAccidentFlag && isUrgent;
+      return isTargetedBarangay && isEmergencyIncident && isUrgent && !isCaseAcknowledged;
     });
 
-    if (urgentAccidentNotif) {
-      setActiveAccidentNotif(urgentAccidentNotif);
-      if (!isMuted) {
-        playAccidentAlarmSound();
+    const target = unacknowledgedCase
+      ? {
+          id: `NOTIF-${unacknowledgedCase.id}`,
+          title: `🚨 EMERGENCY INCIDENT REPORT: Brgy. ${unacknowledgedCase.barangay}`,
+          message: `URGENT MDRRMO DISPATCH: ${unacknowledgedCase.title} reported at ${unacknowledgedCase.sitio ? `${unacknowledgedCase.sitio}, ` : ''}${unacknowledgedCase.barangay}. Case #${unacknowledgedCase.id}. Automated SMS dispatched to MDRRMO account!`,
+          caseId: unacknowledgedCase.id,
+          timestamp: unacknowledgedCase.dateReported || new Date().toISOString(),
+          priority: 'urgent',
+          targetBarangay: unacknowledgedCase.barangay
+        }
+      : unacknowledgedNotif;
+
+    const isTargetAcknowledged = target
+      ? acknowledgedIds.includes(target.id) || (target.caseId && acknowledgedIds.includes(target.caseId))
+      : false;
+
+    if (target && !isTargetAcknowledged) {
+      setActiveEmergencyNotif(target);
+
+      // Populate or generate automated SMS dispatch to MDRRMO account (SMS text only, no sound)
+      const related = target.caseId ? cases.find((c) => c.id === target.caseId) : null;
+      const stored = target.caseId ? getStoredSmsDispatches().filter((d) => d.caseId === target.caseId) : [];
+
+      if (stored.length > 0) {
+        setSmsDispatches(stored);
+      } else {
+        const caseId = target.caseId || `EMG-${Date.now().toString().slice(-4)}`;
+        sendAutomatedResponderSMS(
+          {
+            id: caseId,
+            title: related?.title || target.title,
+            category: related?.category || 'Critical Emergency',
+            incidentType: related?.category || related?.title || target.title,
+            location: related?.specificLocation || (target.targetBarangay ? `Barangay ${target.targetBarangay}, Roxas` : 'Roxas Municipal Sector'),
+            barangay: related?.barangay || target.targetBarangay,
+            sitio: related?.sitio,
+            incidentDate: related?.incidentDate,
+            incidentTime: related?.incidentTime,
+            reporterName: related?.reporterName || related?.createdBy || 'Resident Citizen',
+            priority: 'URGENT'
+          },
+          users
+        ).then((records) => {
+          setSmsDispatches(records);
+        });
       }
     } else {
-      setActiveAccidentNotif(null);
-      stopAccidentAlarmSound();
+      setActiveEmergencyNotif(null);
     }
+  }, [notifications, cases, isMdrrmoOfficer, userBarangay, users, acknowledgedIds, isSeenAndResponded]);
 
-    return () => {
-      stopAccidentAlarmSound();
-    };
-  }, [notifications, isMdrrmoOfficer, userBarangay, acknowledgedIds, isMuted]);
-
-  if (!activeAccidentNotif || !isMdrrmoOfficer) {
+  if (!activeEmergencyNotif || !isMdrrmoOfficer) {
     return null;
   }
 
-  const relatedCase = activeAccidentNotif.caseId 
-    ? cases.find((c) => c.id === activeAccidentNotif.caseId) 
+  const relatedCase = activeEmergencyNotif.caseId
+    ? cases.find((c) => c.id === activeEmergencyNotif.caseId)
     : undefined;
 
-  const handleMute = () => {
-    stopAccidentAlarmSound();
-    setIsMuted(true);
-  };
-
-  const handleAcknowledge = () => {
-    stopAccidentAlarmSound();
-    playActionBeep(600, 0.2);
-    const newAcknowledged = [...acknowledgedIds, activeAccidentNotif.id];
-    setAcknowledgedIds(newAcknowledged);
+  const formatTimestampHeader = (isoStr?: string) => {
     try {
-      sessionStorage.setItem('acknowledged_accident_alarms', JSON.stringify(newAcknowledged));
-    } catch {}
-    setActiveAccidentNotif(null);
+      const d = isoStr ? new Date(isoStr) : new Date();
+      const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', '');
+      const day = d.getDate();
+      const month = d.toLocaleDateString('en-US', { month: 'short' });
+      const year = d.getFullYear().toString().slice(-2);
+      return `${time}, ${day}${month}${year}`;
+    } catch {
+      return 'Just now';
+    }
   };
 
-  const handleDispatchTanod = () => {
-    playActionBeep(750, 0.25);
-    setIsDispatched(true);
-    stopAccidentAlarmSound();
+  const handleMarkSeenAndResponded = () => {
+    setIsSeenAndResponded(true);
 
-    if (relatedCase) {
+    const targetNotifId = activeEmergencyNotif?.id;
+    const targetCaseId = activeEmergencyNotif?.caseId || relatedCase?.id;
+
+    // 1. Halt recurring interval SMS resend
+    if (targetCaseId) {
+      stopSmsResendInterval(targetCaseId);
+    }
+
+    // 2. Persist IDs to acknowledgedIds so it will NEVER trigger again
+    acknowledgeIncidentAlert(targetNotifId, targetCaseId);
+
+    // 3. Mark relevant notification(s) as read in notification system
+    if (targetNotifId && markNotificationAsRead) {
+      markNotificationAsRead(targetNotifId);
+    }
+    if (targetCaseId && markNotificationAsRead) {
+      notifications
+        .filter((n) => n.caseId === targetCaseId)
+        .forEach((n) => markNotificationAsRead(n.id));
+    }
+
+    // 4. Formally acknowledge incident in case state & database
+    if (targetCaseId && markIncidentAsSeenAndResponded) {
+      markIncidentAsSeenAndResponded(targetCaseId);
+    } else if (relatedCase) {
       addCaseTimelineEvent(
         relatedCase.id,
-        '🚨 Barangay Tanod & First Responders Dispatched',
-        `Punong Barangay ${currentUser.name} ordered immediate deployment of Barangay ${userBarangay} Tanod and Peace Desk First Responders to the accident location: ${relatedCase.specificLocation || 'Accident Site'}.`,
-        'Barangay Action / Lupon'
+        '🚨 Incident Marked as Seen & Responded by MDRRMO',
+        `MDRRMO Officer ${currentUser.name} (${currentUser.position}) acknowledged and marked the emergency alert as 'Seen / Responded'. Automated SMS interval notifications halted. Emergency Rescue & Ambulance Units deployed to ${relatedCase.specificLocation || 'incident site'}.`,
+        'LGU Action'
       );
     }
 
-    logActivity(
-      'EMERGENCY_DISPATCH',
-      `Dispatched Barangay ${userBarangay} First Responders for accident report #${activeAccidentNotif.caseId || 'ACCIDENT'}`,
-      activeAccidentNotif.caseId
-    );
-
+    // 5. Dismiss alert popup
     setTimeout(() => {
-      handleAcknowledge();
-    }, 2000);
+      setActiveEmergencyNotif(null);
+      setIsSeenAndResponded(false);
+    }, 150);
   };
 
   const handleViewCase = () => {
-    stopAccidentAlarmSound();
-    handleAcknowledge();
-    if (activeAccidentNotif.caseId) {
-      setSelectedCaseId(activeAccidentNotif.caseId);
+    const caseIdToView = activeEmergencyNotif?.caseId || relatedCase?.id;
+    handleMarkSeenAndResponded();
+    if (caseIdToView) {
+      setSelectedCaseId(caseIdToView);
       setActiveTab('cases');
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
-      <div 
-        id="emergency-accident-alarm-modal"
-        className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-rose-600 overflow-hidden ring-8 ring-rose-500/30 animate-pulse-subtle"
-      >
-        {/* Flashing Emergency Header */}
-        <div className="bg-gradient-to-r from-rose-700 via-red-600 to-rose-800 text-white p-5 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-2xl animate-bounce">
-              <Siren className="w-7 h-7 text-amber-200" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider rounded-md">
-                  LIVE EMERGENCY ALARM
-                </span>
-                <span className="text-xs text-rose-200 font-semibold">
-                  Brgy. {userBarangay} Jurisdiction
-                </span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-black text-white leading-tight mt-0.5">
-                🚨 ROAD / VEHICULAR ACCIDENT REPORTED!
-              </h2>
-            </div>
-          </div>
+  const smsMessage =
+    smsDispatches[0]?.message ||
+    (relatedCase
+      ? buildAlertSmsMessage({
+          id: relatedCase.id,
+          title: relatedCase.title,
+          category: relatedCase.category,
+          incidentType: relatedCase.category || relatedCase.title,
+          barangay: relatedCase.barangay,
+          sitio: relatedCase.sitio,
+          incidentDate: relatedCase.incidentDate,
+          incidentTime: relatedCase.incidentTime,
+          reporterName: relatedCase.reporterName
+        })
+      : `ALERT: Emergency Incident reported at Roxas on ${new Date().toLocaleDateString()} by Resident Citizen. Please verify and respond.`);
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={isMuted ? () => { setIsMuted(false); playAccidentAlarmSound(); } : handleMute}
-              className="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition cursor-pointer"
-              title={isMuted ? "Unmute Alarm Siren" : "Mute Siren Sound"}
-            >
-              {isMuted ? <VolumeX className="w-5 h-5 text-amber-200" /> : <Volume2 className="w-5 h-5 text-white animate-pulse" />}
-            </button>
-            <button
-              onClick={handleAcknowledge}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-              title="Acknowledge Alert"
-            >
-              <X className="w-5 h-5" />
-            </button>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div
+        id="emergency-accident-alarm-modal"
+        role="dialog"
+        aria-modal="true"
+        className="w-full max-w-[350px] sm:max-w-[390px] bg-white rounded-lg shadow-2xl p-6 border border-slate-200/80 flex flex-col gap-3 font-sans animate-in zoom-in-95 duration-150"
+      >
+        {/* Header: Red Triangle Icon & Two-line Title */}
+        <div className="flex items-start gap-3.5">
+          <div className="shrink-0 mt-0.5">
+            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 2.2L1.2 21.4C1.0 21.8 1.3 22.3 1.8 22.3H22.2C22.7 22.3 23.0 21.8 22.8 21.4L12 2.2Z"
+                fill="#D32F2F"
+              />
+              <rect x="11.1" y="8" width="1.8" height="6.2" rx="0.9" fill="#FFFFFF" />
+              <circle cx="12" cy="17.2" r="1.1" fill="#FFFFFF" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-[21px] font-normal text-slate-800 leading-tight">
+              Emergency alert:
+            </h2>
+            <h3 className="text-[21px] font-bold text-slate-900 leading-tight">
+              Extreme
+            </h3>
           </div>
         </div>
 
-        {/* Content Body */}
-        <div className="p-6 space-y-5 bg-gradient-to-b from-rose-50/40 to-white">
-          {/* Main Emergency Message */}
-          <div className="p-4 bg-rose-100/70 border border-rose-200 rounded-2xl">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-extrabold text-sm text-rose-950">
-                  {activeAccidentNotif.title}
-                </h3>
-                <p className="text-xs text-rose-800 mt-1 leading-relaxed">
-                  {activeAccidentNotif.message}
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Content Body: MDRRMO (Timestamp) and Alert text */}
+        <div className="text-slate-800 text-[14px] sm:text-[15px] leading-relaxed font-normal space-y-2 pt-1">
+          <p className="font-semibold text-slate-900 text-xs sm:text-sm">
+            MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
+          </p>
+          <p className="text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+            {smsMessage}
+          </p>
 
-          {/* Incident Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
-                <MapPin className="w-3.5 h-3.5 text-rose-600" />
-                <span>Accident Location</span>
-              </div>
-              <p className="font-semibold text-slate-900 line-clamp-2">
-                {relatedCase?.specificLocation || `Barangay ${userBarangay}, Roxas, Oriental Mindoro`}
-              </p>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
-                <Car className="w-3.5 h-3.5 text-blue-600" />
-                <span>Vehicle / Hazard Type</span>
-              </div>
-              <p className="font-semibold text-slate-900">
-                {relatedCase?.accidentVehicleDetails || relatedCase?.category || 'Motorcycle / Vehicle Collision / Road Hazard'}
-              </p>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
-                <User className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Reporting Resident</span>
-              </div>
-              <p className="font-semibold text-slate-900">
-                {relatedCase?.createdBy || 'Barangay Resident Citizen'}
-              </p>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span>Time Reported</span>
-              </div>
-              <p className="font-semibold text-slate-900">
-                {formatDate(activeAccidentNotif.timestamp)}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Hotline Quick dial badges */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-blue-700 animate-bounce" />
-              <span className="font-bold text-blue-950">Emergency Hotlines:</span>
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className="px-2 py-0.5 bg-white border border-blue-200 rounded font-mono font-bold text-blue-800">
-                LGU Roxas: 0998-598-5712
+          {/* Active resend notice */}
+          {resendStatus.isActive && (
+            <div className="text-[11px] text-amber-900 bg-amber-50 rounded px-2.5 py-1.5 border border-amber-200/70 flex items-center justify-between mt-2">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                <span>SMS alert actively resending</span>
               </span>
-              <span className="px-2 py-0.5 bg-white border border-rose-200 rounded font-mono font-bold text-rose-800">
-                RHU Ambulance: 0917-888-2628
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
-            <button
-              id="btn-alarm-dispatch-tanod"
-              onClick={handleDispatchTanod}
-              disabled={isDispatched}
-              className={`w-full sm:flex-1 py-3 px-4 rounded-2xl font-black text-xs text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer ${
-                isDispatched 
-                  ? 'bg-emerald-600 ring-2 ring-emerald-400' 
-                  : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 active:scale-98'
-              }`}
-            >
-              {isDispatched ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                  <span>Tanods Dispatched! Acknowledged</span>
-                </>
-              ) : (
-                <>
-                  <Radio className="w-4 h-4 text-amber-300 animate-pulse" />
-                  <span>🚨 Deploy Barangay Tanod & First Responders</span>
-                </>
+              {resendStatus.resendCount > 0 && (
+                <span className="font-mono text-amber-950 font-bold">
+                  Resent: {resendStatus.resendCount}x
+                </span>
               )}
-            </button>
+            </div>
+          )}
+        </div>
 
-            {relatedCase && (
-              <button
-                id="btn-alarm-view-case"
-                onClick={handleViewCase}
-                className="w-full sm:w-auto py-3 px-4 rounded-2xl font-bold text-xs bg-slate-900 hover:bg-slate-800 text-white shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open Docket #{relatedCase.id}</span>
-              </button>
-            )}
-
+        {/* Bottom Actions: Right-aligned OK button */}
+        <div className="flex items-center justify-end gap-2 pt-3">
+          {relatedCase && (
             <button
-              id="btn-alarm-ack-close"
-              onClick={handleAcknowledge}
-              className="w-full sm:w-auto py-3 px-4 rounded-2xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+              id="btn-alarm-view-case"
+              onClick={handleViewCase}
+              className="px-2.5 py-1 text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition cursor-pointer tracking-wider uppercase"
             >
-              Acknowledge
+              VIEW DOCKET
             </button>
-          </div>
+          )}
+          <button
+            id="btn-alarm-mark-seen-responded"
+            onClick={handleMarkSeenAndResponded}
+            disabled={isSeenAndResponded}
+            className="px-4 py-1.5 text-sm sm:text-base font-bold text-[#00796B] hover:text-[#004D40] hover:bg-emerald-50 rounded transition cursor-pointer tracking-wide active:scale-95 uppercase font-sans"
+          >
+            {isSeenAndResponded ? 'ACKNOWLEDGED' : 'OK'}
+          </button>
         </div>
       </div>
     </div>

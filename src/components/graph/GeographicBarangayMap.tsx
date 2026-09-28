@@ -69,6 +69,150 @@ export const SYSTEM_BARANGAYS_GEO: SystemBarangayGeo[] = [
     ]
   },
   {
+    name: 'Cantil',
+    code: 'CTL',
+    lat: 12.5742,
+    lng: 121.5120,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Southern agricultural sector known for rice fields and peaceful rural settlements.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Bukid', 'Purok 3 Ilaya', 'Purok 4 Riverside'],
+    hallLocation: 'Barangay Proper, Cantil, Roxas',
+    contactEmergency: '0918-123-4567 (Brgy. Hall)',
+    boundary: [
+      [12.5810, 121.5050],
+      [12.5810, 121.5190],
+      [12.5670, 121.5190],
+      [12.5670, 121.5050]
+    ]
+  },
+  {
+    name: 'Dangay',
+    code: 'DNG',
+    lat: 12.5861,
+    lng: 121.5367,
+    zoom: 15,
+    zoneType: 'Coastal & Maritime',
+    description: 'Major maritime seaport hub connecting Roxas to Visayas and nautical highway shipping lanes.',
+    puroks: ['Purok 1 Port Area', 'Purok 2 Coastal', 'Purok 3 Terminal', 'Purok 4 Centro'],
+    hallLocation: 'Port Access Road, Dangay, Roxas',
+    contactEmergency: '0919-234-5678 (Brgy. Hall)',
+    boundary: [
+      [12.5930, 121.5290],
+      [12.5930, 121.5440],
+      [12.5790, 121.5440],
+      [12.5790, 121.5290]
+    ]
+  },
+  {
+    name: 'Happy Valley',
+    code: 'HPV',
+    lat: 12.5620,
+    lng: 121.4920,
+    zoom: 15,
+    zoneType: 'Upland & Watershed',
+    description: 'Southwestern valley community surrounded by agro-forestry and rolling hills.',
+    puroks: ['Purok 1 Valley View', 'Purok 2 Centro', 'Purok 3 Upper Slope', 'Purok 4 Green Valley'],
+    hallLocation: 'Valley Road, Happy Valley, Roxas',
+    contactEmergency: '0920-345-6789 (Brgy. Hall)',
+    boundary: [
+      [12.5690, 121.4850],
+      [12.5690, 121.4990],
+      [12.5550, 121.4990],
+      [12.5550, 121.4850]
+    ]
+  },
+  {
+    name: 'Libertad',
+    code: 'LBT',
+    lat: 12.5780,
+    lng: 121.5040,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Central agricultural community connecting municipal transit arteries to local farmlands.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Pag-asa', 'Purok 3 Masagana', 'Purok 4 Silangan'],
+    hallLocation: 'Libertad Proper, Roxas',
+    contactEmergency: '0921-456-7890 (Brgy. Hall)',
+    boundary: [
+      [12.5850, 121.4970],
+      [12.5850, 121.5110],
+      [12.5710, 121.5110],
+      [12.5710, 121.4970]
+    ]
+  },
+  {
+    name: 'Libtong',
+    code: 'LTG',
+    lat: 12.6010,
+    lng: 121.4620,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Western inland sector featuring fertile plains, coconut groves, and farming cooperatives.',
+    puroks: ['Purok 1 Main', 'Purok 2 Ricefields', 'Purok 3 Centro', 'Purok 4 West End'],
+    hallLocation: 'Libtong Road, Roxas',
+    contactEmergency: '0922-567-8901 (Brgy. Hall)',
+    boundary: [
+      [12.6080, 121.4550],
+      [12.6080, 121.4690],
+      [12.5940, 121.4690],
+      [12.5940, 121.4550]
+    ]
+  },
+  {
+    name: 'Little Tanauan',
+    code: 'LTN',
+    lat: 12.5930,
+    lng: 121.4550,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Quiet farming and residential community on the western rural boundary of Roxas.',
+    puroks: ['Purok 1 Centro', 'Purok 2 San Roque', 'Purok 3 Riverside', 'Purok 4 Bukid'],
+    hallLocation: 'Tanauan Center, Little Tanauan, Roxas',
+    contactEmergency: '0923-678-9012 (Brgy. Hall)',
+    boundary: [
+      [12.6000, 121.4480],
+      [12.6000, 121.4620],
+      [12.5860, 121.4620],
+      [12.5860, 121.4480]
+    ]
+  },
+  {
+    name: 'Mabuhay',
+    code: 'MBH',
+    lat: 12.5550,
+    lng: 121.4800,
+    zoom: 15,
+    zoneType: 'Upland & Watershed',
+    description: 'Southern upland community bordered by forests, agro-farming, and natural streams.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Hillside', 'Purok 3 Ilaya', 'Purok 4 Silangan'],
+    hallLocation: 'Barangay Proper, Mabuhay, Roxas',
+    contactEmergency: '0924-789-0123 (Brgy. Hall)',
+    boundary: [
+      [12.5620, 121.4730],
+      [12.5620, 121.4870],
+      [12.5480, 121.4870],
+      [12.5480, 121.4730]
+    ]
+  },
+  {
+    name: 'Maraska',
+    code: 'MRK',
+    lat: 12.5710,
+    lng: 121.4720,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Agricultural expanse supporting diversified cropping and community livelihoods.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Kaunlaran', 'Purok 3 Maligaya', 'Purok 4 Pagkakaisa'],
+    hallLocation: 'Maraska Highway Junction, Roxas',
+    contactEmergency: '0925-890-1234 (Brgy. Hall)',
+    boundary: [
+      [12.5780, 121.4650],
+      [12.5780, 121.4790],
+      [12.5640, 121.4790],
+      [12.5640, 121.4650]
+    ]
+  },
+  {
     name: 'Odiong',
     code: 'ODG',
     lat: 12.5983,
@@ -84,6 +228,24 @@ export const SYSTEM_BARANGAYS_GEO: SystemBarangayGeo[] = [
       [12.6050, 121.5060],
       [12.5910, 121.5060],
       [12.5910, 121.4915]
+    ]
+  },
+  {
+    name: 'Paclasan',
+    code: 'PCL',
+    lat: 12.5850,
+    lng: 121.5240,
+    zoom: 15,
+    zoneType: 'Poblacion Commercial',
+    description: 'Densely populated poblacion barangay near the market center, commercial stalls, and municipal roads.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Market View', 'Purok 3 Coastal Road', 'Purok 4 Commercial'],
+    hallLocation: 'Morente Avenue / Paclasan Proper, Roxas',
+    contactEmergency: '0926-901-2345 (Brgy. Hall)',
+    boundary: [
+      [12.5920, 121.5170],
+      [12.5920, 121.5310],
+      [12.5780, 121.5310],
+      [12.5780, 121.5170]
     ]
   },
   {
@@ -105,21 +267,57 @@ export const SYSTEM_BARANGAYS_GEO: SystemBarangayGeo[] = [
     ]
   },
   {
-    name: 'Victoria',
-    code: 'VCT',
-    lat: 12.6101,
-    lng: 121.4862,
+    name: 'San Isidro',
+    code: 'SIS',
+    lat: 12.6150,
+    lng: 121.4950,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Northeastern community of farmers, growers, and trade routes linking to neighboring towns.',
+    puroks: ['Purok 1 Silangan', 'Purok 2 Centro', 'Purok 3 Riverside', 'Purok 4 Bukid'],
+    hallLocation: 'San Isidro Proper, Roxas',
+    contactEmergency: '0927-012-3456 (Brgy. Hall)',
+    boundary: [
+      [12.6220, 121.4880],
+      [12.6220, 121.5020],
+      [12.6080, 121.5020],
+      [12.6080, 121.4880]
+    ]
+  },
+  {
+    name: 'San Jose',
+    code: 'SJS',
+    lat: 12.5680,
+    lng: 121.5250,
+    zoom: 15,
+    zoneType: 'Coastal & Maritime',
+    description: 'Southeastern coastal territory known for small-craft fishing, aquaculture, and mangrove zones.',
+    puroks: ['Purok 1 Baybayin', 'Purok 2 Centro', 'Purok 3 Silangan', 'Purok 4 Mangrove'],
+    hallLocation: 'San Jose Coastal Road, Roxas',
+    contactEmergency: '0928-123-4567 (Brgy. Hall)',
+    boundary: [
+      [12.5750, 121.5180],
+      [12.5750, 121.5320],
+      [12.5610, 121.5320],
+      [12.5610, 121.5180]
+    ]
+  },
+  {
+    name: 'San Mariano',
+    code: 'SMR',
+    lat: 12.6220,
+    lng: 121.4750,
     zoom: 15,
     zoneType: 'Upland & Watershed',
-    description: 'Northern inland and upland community hosting agro-forestry zones, boundary easements, and watershed streams.',
-    puroks: ['Purok 1 Heights', 'Purok 2 Centro', 'Purok 3 Spring Watershed', 'Purok 4 Mountain View'],
-    hallLocation: 'Highland Road, Brgy. Victoria, Roxas',
-    contactEmergency: '0922-789-0156 (Brgy. Hall)',
+    description: 'Northern frontier barangay featuring highland agro-forestry, mountain views, and spring sources.',
+    puroks: ['Purok 1 Mountain View', 'Purok 2 Centro', 'Purok 3 Watershed', 'Purok 4 Green Hills'],
+    hallLocation: 'Highland Road, San Mariano, Roxas',
+    contactEmergency: '0929-234-5678 (Brgy. Hall)',
     boundary: [
-      [12.6175, 121.4790],
-      [12.6175, 121.4940],
-      [12.6030, 121.4940],
-      [12.6030, 121.4790]
+      [12.6290, 121.4680],
+      [12.6290, 121.4820],
+      [12.6150, 121.4820],
+      [12.6150, 121.4680]
     ]
   },
   {
@@ -138,6 +336,78 @@ export const SYSTEM_BARANGAYS_GEO: SystemBarangayGeo[] = [
       [12.6130, 121.4775],
       [12.5995, 121.4775],
       [12.5995, 121.4635]
+    ]
+  },
+  {
+    name: 'San Rafael',
+    code: 'SRF',
+    lat: 12.5810,
+    lng: 121.4650,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Interior agricultural district with expansive grain production and community cooperatives.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Kaunlaran', 'Purok 3 Riverside', 'Purok 4 Masagana'],
+    hallLocation: 'San Rafael Hall, Roxas',
+    contactEmergency: '0930-345-6789 (Brgy. Hall)',
+    boundary: [
+      [12.5880, 121.4580],
+      [12.5880, 121.4720],
+      [12.5740, 121.4720],
+      [12.5740, 121.4580]
+    ]
+  },
+  {
+    name: 'San Vicente',
+    code: 'SVC',
+    lat: 12.6120,
+    lng: 121.4580,
+    zoom: 15,
+    zoneType: 'Inland Agricultural',
+    description: 'Northwestern agricultural basin with fruit-bearing orchards, coconut trees, and rural roads.',
+    puroks: ['Purok 1 Centro', 'Purok 2 Maligaya', 'Purok 3 San Isidro Link', 'Purok 4 West Valley'],
+    hallLocation: 'San Vicente Proper, Roxas',
+    contactEmergency: '0931-456-7890 (Brgy. Hall)',
+    boundary: [
+      [12.6190, 121.4510],
+      [12.6190, 121.4650],
+      [12.6050, 121.4650],
+      [12.6050, 121.4510]
+    ]
+  },
+  {
+    name: 'Uyao',
+    code: 'UYO',
+    lat: 12.5760,
+    lng: 121.5310,
+    zoom: 15,
+    zoneType: 'Coastal & Maritime',
+    description: 'Coastal settlement between Dangay and San Jose with seaside communities and fishing grounds.',
+    puroks: ['Purok 1 Coastal', 'Purok 2 Centro', 'Purok 3 Highway Buffer', 'Purok 4 Fishermans Wharf'],
+    hallLocation: 'Seaside Highway, Uyao, Roxas',
+    contactEmergency: '0932-567-8901 (Brgy. Hall)',
+    boundary: [
+      [12.5830, 121.5240],
+      [12.5830, 121.5380],
+      [12.5690, 121.5380],
+      [12.5690, 121.5240]
+    ]
+  },
+  {
+    name: 'Victoria',
+    code: 'VCT',
+    lat: 12.6101,
+    lng: 121.4862,
+    zoom: 15,
+    zoneType: 'Upland & Watershed',
+    description: 'Northern inland and upland community hosting agro-forestry zones, boundary easements, and watershed streams.',
+    puroks: ['Purok 1 Heights', 'Purok 2 Centro', 'Purok 3 Spring Watershed', 'Purok 4 Mountain View'],
+    hallLocation: 'Highland Road, Brgy. Victoria, Roxas',
+    contactEmergency: '0922-789-0156 (Brgy. Hall)',
+    boundary: [
+      [12.6175, 121.4790],
+      [12.6175, 121.4940],
+      [12.6030, 121.4940],
+      [12.6030, 121.4790]
     ]
   }
 ];

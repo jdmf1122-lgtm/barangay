@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
-import { 
-  Camera, 
-  Upload, 
-  Image as ImageIcon, 
-  Trash2, 
-  Send, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  ShieldCheck, 
-  MapPin, 
-  Phone, 
-  User, 
-  FileText, 
-  Calendar, 
-  PlusCircle, 
-  Search, 
-  Printer, 
-  Sparkles, 
-  HelpCircle, 
-  ExternalLink, 
-  ChevronRight, 
-  Building2, 
-  Eye, 
-  Shield, 
+import {
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Send,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  ShieldCheck,
+  MapPin,
+  Phone,
+  User,
+  FileText,
+  Calendar,
+  PlusCircle,
+  Search,
+  Printer,
+  Sparkles,
+  HelpCircle,
+  ExternalLink,
+  ChevronRight,
+  Building2,
+  Eye,
+  Shield,
   Info,
   X,
   MessageSquare
@@ -33,10 +33,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
-import { 
-  ROXAS_BARANGAYS, 
-  IncidentCategory, 
-  PriorityLevel, 
+import {
+  ROXAS_BARANGAYS,
+  IncidentCategory,
+  PriorityLevel,
   Case,
   PersonInvolved
 } from '../../types';
@@ -52,11 +52,12 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   const { setActiveTab } = useUI();
 
   const [portalTab, setPortalTab] = useState<'overview' | 'submit' | 'my_reports'>(initialTab);
-  
+
   // Incident submission form state - Vehicular Accidents
   const [reportTitle, setReportTitle] = useState('');
   const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
+  const [reportSitio, setReportSitio] = useState('');
   const [reportLocation, setReportLocation] = useState('');
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportTime, setReportTime] = useState('14:00');
@@ -82,9 +83,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   // Filter reports submitted by or involving this resident/barangay
   const myReports = (cases || []).filter(c => {
-    const isReporter = c.residentReporterId === currentUser.id || 
-                       c.createdBy?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
-                       c.complainants?.some(p => p.name.toLowerCase() === currentUser.name.toLowerCase());
+    const isReporter = c.residentReporterId === currentUser.id ||
+      c.createdBy?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+      c.complainants?.some(p => p.name.toLowerCase() === currentUser.name.toLowerCase());
     const isSameBarangay = c.barangay === (currentUser.barangay || 'San Aquilino');
     return isReporter || (currentUser.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
   });
@@ -93,10 +94,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     if (!reportSearch.trim()) return true;
     const q = reportSearch.toLowerCase();
     return c.id.toLowerCase().includes(q) ||
-           c.title.toLowerCase().includes(q) ||
-           c.category.toLowerCase().includes(q) ||
-           c.status.toLowerCase().includes(q) ||
-           c.specificLocation.toLowerCase().includes(q);
+      c.title.toLowerCase().includes(q) ||
+      c.category.toLowerCase().includes(q) ||
+      c.status.toLowerCase().includes(q) ||
+      c.specificLocation.toLowerCase().includes(q);
   });
 
 
@@ -113,8 +114,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       alert('Pakilahad ang Salaysay o Detalye ng Pangyayari (Please provide the narrative description).');
       return;
     }
-    if (!reportLocation.trim()) {
-      alert('Pakilagay ang Tiyak na Lokasyon o Purok/Sitio (Please specify the location or Purok).');
+    if (!reportSitio.trim() && !reportLocation.trim()) {
+      alert('Pakilagay ang Sitio/Purok o Tiyak na Lokasyon (Please specify the Sitio or location).');
       return;
     }
 
@@ -126,11 +127,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
         const filePath = `${currentUser.id}/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('report-images')
           .upload(filePath, file);
-          
+
         if (uploadError) {
           console.error('Error uploading image:', uploadError);
         } else {
@@ -167,7 +168,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       }
     ] : [];
 
-    const isAccidentReport = 
+    const isAccidentReport =
       reportCategory === 'Traffic / Vehicular Incident' ||
       reportTitle.toLowerCase().includes('accident') ||
       reportTitle.toLowerCase().includes('banggaan') ||
@@ -179,14 +180,22 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       reportNarrative.toLowerCase().includes('nabangga') ||
       reportNarrative.toLowerCase().includes('crash');
 
+    const finalSitio = reportSitio.trim() || reportLocation.trim();
+    const finalLocation = reportLocation.trim()
+      ? `${reportSitio.trim() ? `${reportSitio.trim()}, ` : ''}${reportLocation.trim()}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`
+      : `${finalSitio}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
+
     const newCaseId = createCase({
       title: reportTitle.trim(),
       category: reportCategory,
       description: reportNarrative.trim().substring(0, 180) + '...',
       initialNarrative: reportNarrative.trim(),
       incidentDate: reportDate,
+      incidentTime: reportTime,
       barangay: reportBarangay,
-      specificLocation: `${reportLocation.trim()}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`,
+      sitio: finalSitio,
+      specificLocation: finalLocation,
+      reporterName: complainantPerson.name,
       complainants: [complainantPerson],
       respondents: respondentPersons,
       witnesses: witnessPersons,
@@ -201,8 +210,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       residentReporterId: currentUser.id,
       isRemainedAtBarangay: true,
       barangayRetentionReason: isAccidentReport ? 'Emergency first responder dispatch & Lupon desk blotter' : 'Ongoing mediation / Lupon conciliation',
-      barangayRetentionNotes: isAccidentReport 
-        ? '🚨 ROAD ACCIDENT REPORT: Dispatched urgent alert to Punong Barangay and Tanod First Responders.' 
+      barangayRetentionNotes: isAccidentReport
+        ? '🚨 ROAD ACCIDENT REPORT: Dispatched urgent alert to Punong Barangay and Tanod First Responders.'
         : 'Citizen report received via B-CONNECT Resident Portal. Queued for Barangay Secretary / Lupon Tagapamayapa review.',
       isConfidential: isAnonymous,
       imageUrls: uploadedImageUrls
@@ -214,6 +223,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     // Reset Form
     setReportTitle('');
     setReportNarrative('');
+    setReportSitio('');
     setReportLocation('');
     setRespondentName('');
     setWitnessName('');
@@ -238,7 +248,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      
+
       {/* ----------------- TOP WELCOME & RESIDENT HERO ----------------- */}
       <div className="bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         {/* Ambient background decoration */}
@@ -251,7 +261,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
               <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
             </div>
-            
+
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               Welcome, {currentUser.name}!
             </h1>
@@ -268,11 +278,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 setPortalTab('submit');
                 setSubmittedSuccessCaseId(null);
               }}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-sm ${
-                portalTab === 'submit'
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-sm ${portalTab === 'submit'
                   ? 'bg-white text-emerald-950 ring-2 ring-white/40'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-              }`}
+                }`}
             >
               <PlusCircle className="w-4 h-4" />
               <span>Report Incident</span>
@@ -284,11 +293,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 setPortalTab('my_reports');
                 setSubmittedSuccessCaseId(null);
               }}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer border ${
-                portalTab === 'my_reports'
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer border ${portalTab === 'my_reports'
                   ? 'bg-white text-emerald-950 border-white'
                   : 'bg-emerald-900/60 hover:bg-emerald-900 border-emerald-700/60 text-emerald-100'
-              }`}
+                }`}
             >
               <Clock className="w-4 h-4" />
               <span>My Reports ({myReports.length})</span>
@@ -324,7 +332,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       {/* ----------------- TAB 1: SUBMIT INCIDENT REPORT (FORM WITH PHOTOS) ----------------- */}
       {portalTab === 'submit' && (
         <div className="space-y-6">
-          
+
           {/* Submission Success Banner */}
           {submittedSuccessCaseId && (
             <div className="bg-emerald-50 border-2 border-emerald-500 rounded-3xl p-6 shadow-md space-y-4 animate-in fade-in zoom-in-95 duration-200">
@@ -339,7 +347,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <p className="text-xs text-emerald-800 leading-relaxed">
                     Your report has been officially forwarded to the <strong>Barangay {reportBarangay} Lupon & Desk Officer</strong>. It has been assigned an official Tracking Reference Number:
                   </p>
-                  
+
                   <div className="inline-flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-emerald-300 shadow-xs mt-2">
                     <span className="text-xs text-slate-500 font-bold uppercase">Reference Code:</span>
                     <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
@@ -399,7 +407,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
             </div>
 
             <form onSubmit={handleSubmitReport} className="space-y-6">
-              
+
               {/* 1. Category & Title */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-5 space-y-1.5">
@@ -470,17 +478,31 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   )}
                 </div>
 
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800">
-                    Specific Location / Purok / Sitio / Landmark <span className="text-rose-500">*</span>
+                    Sitio / Purok <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="input-report-sitio"
+                    type="text"
+                    required
+                    placeholder="e.g., Sitio Riverside or Purok 3"
+                    value={reportSitio}
+                    onChange={(e) => setReportSitio(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Specific Landmark / Street
                   </label>
                   <div className="relative">
                     <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       id="input-report-location"
                       type="text"
-                      required
-                      placeholder="e.g., Purok 3, across San Aquilino Elementary School / Near Bridge"
+                      placeholder="e.g., Near Elementary School / Bridge"
                       value={reportLocation}
                       onChange={(e) => setReportLocation(e.target.value)}
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -521,11 +543,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     Urgency Level
                   </label>
                   <div className="flex items-center gap-2 pt-1">
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${
-                      !isUrgent 
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800' 
+                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${!isUrgent
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}>
+                      }`}>
                       <input
                         type="radio"
                         name="urgency"
@@ -536,11 +557,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                       <span>Normal</span>
                     </label>
 
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${
-                      isUrgent 
-                        ? 'bg-rose-50 border-rose-500 text-rose-800' 
+                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${isUrgent
+                        ? 'bg-rose-50 border-rose-500 text-rose-800'
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}>
+                      }`}>
                       <input
                         type="radio"
                         name="urgency"
@@ -580,10 +600,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <label className="cursor-pointer flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition border border-slate-200">
                     <Upload className="w-4 h-4 text-emerald-600" />
                     <span>Choose Images</span>
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept="image/*" 
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
                       onChange={(e) => {
                         if (e.target.files) {
                           setSelectedFiles(Array.from(e.target.files));
@@ -602,8 +622,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                       <div key={i} className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 rounded-md flex items-center gap-1 shadow-xs">
                         <ImageIcon className="w-3 h-3" />
                         <span className="truncate max-w-[100px]">{f.name}</span>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
                           className="text-rose-500 hover:text-rose-700 ml-1 cursor-pointer"
                         >
@@ -885,7 +905,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       {portalTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             {/* Quick Action Card 1: File Report */}
             <div className="p-6 rounded-3xl bg-white border border-emerald-200 hover:border-emerald-400 transition shadow-sm space-y-4 flex flex-col justify-between">
               <div className="space-y-2">

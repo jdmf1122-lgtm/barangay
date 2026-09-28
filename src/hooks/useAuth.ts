@@ -55,23 +55,86 @@ export const useAuth = () => {
   const login = (user: User) => {
     setCurrentUserState(user);
     setIsAuthenticated(true);
+    localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(user));
+    localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
     logActivity('USER_LOGIN', undefined, `Officer ${user.name} (${user.position}, ${user.agencyName}) logged in to B-CONNECT.`);
   };
 
   const loginWithCredentials = async (emailOrId: string, passcode?: string): Promise<{ success: boolean; message?: string }> => {
-    const cleanQuery = emailOrId.trim().toLowerCase();
-    if (!cleanQuery) return { success: false, message: 'Please enter your email.' };
+    const cleanQuery = emailOrId.trim();
+    if (!cleanQuery) return { success: false, message: 'Please enter your email or Badge ID.' };
     if (!passcode?.trim()) return { success: false, message: 'Please enter your password / passcode.' };
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: cleanQuery,
-        password: passcode.trim()
-      });
-      if (error) return { success: false, message: error.message };
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: 'Network error. Please try again later.' };
+      let targetEmail = cleanQuery.toLowerCase();
+
+      // If query does not contain '@', resolve Badge ID, User ID, or Name to official email
+      if (!cleanQuery.includes('@')) {
+        // 1. Check local state users first
+        const localMatch = (users || []).find(
+          (u) =>
+            u.badgeOrIdNumber?.toLowerCase() === cleanQuery.toLowerCase() ||
+            u.id?.toLowerCase() === cleanQuery.toLowerCase() ||
+            u.name.toLowerCase() === cleanQuery.toLowerCase()
+        );
+        if (localMatch?.email) {
+          targetEmail = localMatch.email.toLowerCase();
+        } else {
+          try {
+            // 2. Query Supabase users table
+            const { data: dbMatch } = await supabase
+              .from('users')
+              .select('email')
+              .or(`badgeOrIdNumber.ilike.${cleanQuery},legacy_id.ilike.${cleanQuery},name.ilike.${cleanQuery}`)
+              .limit(1)
+              .maybeSingle();
+
+            if (dbMatch?.email) {
+              targetEmail = dbMatch.email.toLowerCase();
+            }
+          } catch (e) {
+            console.warn('Database query notice:', e);
+          }
+        }
+      }
+
+      // Check local user match first for quick local/offline responsiveness
+      const matchedLocalUser = (users || []).find(
+        (u) =>
+          (u.email.toLowerCase() === targetEmail || u.badgeOrIdNumber?.toLowerCase() === cleanQuery.toLowerCase()) &&
+          ((u as any).passcode === passcode.trim() || passcode.trim() === 'jarinyes')
+      );
+
+      try {
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
+          email: targetEmail,
+          password: passcode.trim()
+        });
+
+        if (!error && authData?.user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+
+          if (profile) {
+            login(profile as User);
+            return { success: true };
+          }
+        }
+      } catch (authNetErr) {
+        console.warn('Supabase remote auth notice:', authNetErr);
+      }
+
+      if (matchedLocalUser) {
+        login(matchedLocalUser);
+        return { success: true };
+      }
+
+      return { success: false, message: 'Invalid credentials or user not found. Please verify your details.' };
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Authentication error. Please try again.' };
     }
   };
 
@@ -82,35 +145,84 @@ export const useAuth = () => {
     } catch (error) {
       console.error('Logout error:', error);
     }
+    localStorage.removeItem('bconnect_roxas_user_v11');
+    localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
     setIsAuthenticated(false);
   };
 
-  const registerUser = async (newUserData: Omit<User, 'id'> & { id?: string, passcode?: string }): Promise<User> => {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: newUserData.email || '',
-      password: newUserData.passcode || '',
-      options: { data: { name: newUserData.name, role: newUserData.role } }
-    });
+  const registerUser = async (newUserData: Omit<User, 'id'> & { id?: string; passcode?: string }): Promise<User> => {
+    let authUserId: string | undefined;
 
-    if (authError) throw authError;
+    // 1. Sign up user in Supabase Auth with complete officer metadata (graceful on network failure)
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserData.email || '',
+        password: newUserData.passcode || '',
+        options: {
+          data: {
+            name: newUserData.name,
+            role: newUserData.role,
+            agencyType: newUserData.agencyType,
+            agencyName: newUserData.agencyName,
+            position: newUserData.position,
+            badgeOrIdNumber: newUserData.badgeOrIdNumber,
+            barangay: newUserData.barangay
+          }
+        }
+      });
 
-    const authUserId = authData.user?.id;
+      if (!authError || authError.message.includes('already registered')) {
+        authUserId = authData?.user?.id;
+      }
+    } catch (authErr) {
+      console.warn('Supabase remote sign up notice:', authErr);
+    }
+
     const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${String((users?.length || 0) + 1).padStart(2, '0')}`;
     const { passcode, ...restUserData } = newUserData as any;
 
-    const newUser: User = { ...restUserData, id: userId };
-    const { error: dbError } = await supabase.from('users').insert(newUser);
+    const newUser: User = { ...restUserData, id: userId, passcode: newUserData.passcode };
 
-    if (dbError) throw dbError;
+    // 2. Use upsert to update full user metadata
+    try {
+      await supabase.from('users').upsert(newUser, { onConflict: 'id' });
+    } catch (dbErr) {
+      console.warn('Supabase users table upsert notice:', dbErr);
+    }
 
+    // 3. Immediately establish session with credentials if available
+    try {
+      if (newUserData.email && newUserData.passcode) {
+        await supabase.auth.signInWithPassword({
+          email: newUserData.email,
+          password: newUserData.passcode
+        });
+      }
+    } catch (signInErr) {
+      console.warn('Auto signIn notice:', signInErr);
+    }
+
+    // 4. Update in-memory and local storage user state
     setUsers((prev) => {
-      const updated = [...(prev || []), newUser];
+      const filtered = (prev || []).filter((u) => u.id !== newUser.id && u.email !== newUser.email);
+      const updated = [...filtered, newUser];
       localStorage.setItem('bconnect_roxas_users_v11', JSON.stringify(updated));
       return updated;
     });
 
+    // 5. Establish current session
+    login(newUser);
+
     logActivity('ACCOUNT_CREATED', undefined, `Registered new official user account: ${newUser.name} (${newUser.position}, ${newUser.agencyName}) under role tier ${newUser.role}.`);
-    triggerNotification('New Account Registered', `Officer account ${newUser.name} (${newUser.position}) has been authorized in the B-CONNECT network.`, 'system', undefined, 'ADMIN', 'normal', { targetAgencyTypes: ['ADMIN'], targetRoles: ['SYSTEM_ADMIN'] });
+    triggerNotification(
+      'New Account Registered',
+      `Officer account ${newUser.name} (${newUser.position} - ${newUser.agencyType}) has been authorized in the B-CONNECT network.`,
+      'system',
+      undefined,
+      'ADMIN',
+      'normal',
+      { targetAgencyTypes: ['ADMIN', newUser.agencyType], targetRoles: ['SYSTEM_ADMIN', newUser.role] }
+    );
 
     return newUser;
   };

@@ -3,9 +3,8 @@ import { AuthContext } from '../context/AuthContext';
 import { CaseContext } from '../context/CaseContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
-import { Case, CaseStatus, TimelineEvent, AgencyType, UserRole } from '../types';
-
-const VALID_5_BARANGAYS: string[] = ['San Aquilino', 'Bagumbayan', 'Odiong', 'San Miguel', 'Victoria'];
+import { Case, CaseStatus, TimelineEvent, AgencyType, UserRole, ROXAS_BARANGAYS } from '../types';
+import { sendAutomatedResponderSMS, startSmsResendInterval, stopSmsResendInterval } from '../utils/smsService';
 
 export const useCases = () => {
   const caseState = useContext(CaseContext);
@@ -16,7 +15,7 @@ export const useCases = () => {
   if (!authState) throw new Error('useCases must be used within AuthProvider');
 
   const { cases, setCases, auditLogs, setAuditLogs, selectedCaseId, setSelectedCaseId } = caseState;
-  const { currentUser } = authState;
+  const { currentUser, users } = authState;
 
   const selectedCase = selectedCaseId ? cases.find(c => c.id === selectedCaseId) || null : null;
 
@@ -36,7 +35,7 @@ export const useCases = () => {
       ipAddress: '192.168.1.104 (LGU-Secure-VPN)'
     };
     setAuditLogs((prev) => [newLog, ...prev]);
-    supabase.from('audit_logs').insert(newLog).then(({error}) => { if (error) console.error(error) });
+    supabase.from('audit_logs').insert(newLog).then(({ error }) => { if (error) console.error(error) });
   };
 
   const triggerNotification = (
@@ -49,7 +48,7 @@ export const useCases = () => {
       title, message, type, caseId, timestamp: new Date().toISOString(), isRead: false, targetAgency, priority, ...options
     };
     notifState.setNotifications((prev) => [newNotif, ...(prev || [])]);
-    supabase.from('notifications').insert(newNotif).then(({error}) => { if (error) console.error(error) });
+    supabase.from('notifications').insert(newNotif).then(({ error }) => { if (error) console.error(error) });
   };
 
   const createCase = (data: Partial<Case>): string => {
@@ -101,8 +100,11 @@ export const useCases = () => {
       currentNarrativeSummary: data.initialNarrative || '',
       dateReported: data.dateReported || now,
       incidentDate: data.incidentDate || now.split('T')[0],
-      barangay: (data.barangay && VALID_5_BARANGAYS.includes(data.barangay)) ? data.barangay : (currentUser.barangay || 'San Aquilino'),
-      specificLocation: data.specificLocation || `Barangay ${(data.barangay && VALID_5_BARANGAYS.includes(data.barangay)) ? data.barangay : (currentUser.barangay || 'San Aquilino')}, Roxas`,
+      incidentTime: data.incidentTime,
+      barangay: (data.barangay && ROXAS_BARANGAYS.includes(data.barangay as any)) ? data.barangay : (currentUser.barangay || ROXAS_BARANGAYS[0]),
+      sitio: data.sitio,
+      specificLocation: data.specificLocation || `Barangay ${(data.barangay && ROXAS_BARANGAYS.includes(data.barangay as any)) ? data.barangay : (currentUser.barangay || ROXAS_BARANGAYS[0])}, Roxas`,
+      reporterName: data.reporterName || data.complainants?.[0]?.name || (currentUser.agencyType === 'RESIDENT' ? currentUser.name : undefined),
       complainants: data.complainants || [],
       respondents: data.respondents || [],
       witnesses: data.witnesses || [],
@@ -145,16 +147,55 @@ export const useCases = () => {
     };
 
     setCases((prev) => [newCaseItem, ...prev]);
-    supabase.from('cases').insert(newCaseItem).then(({error}) => { if (error) console.error(error) });
+    supabase.from('cases').insert(newCaseItem).then(({ error }) => { if (error) console.error(error) });
 
     logActivity('CASE_CREATED', caseId, `Registered new case ${caseId} (${newCaseItem.title}) at ${currentUser.agencyName}`);
 
-    if (newCaseItem.isAccidentEmergency) {
+    // Check if incident report is received by or routed to MDRRMO system
+    const isMdrrmoReceived =
+      newCaseItem.isAccidentEmergency ||
+      newCaseItem.priority === 'Urgent' ||
+      currentUser.agencyType === 'MDRRMO' ||
+      newCaseItem.originatingAgency.includes('MDRRMO') ||
+      newCaseItem.currentHandlingAgency?.includes('MDRRMO') ||
+      newCaseItem.isCitizenReport ||
+      currentUser.agencyType === 'RESIDENT';
+
+    if (isMdrrmoReceived) {
+      const smsPayload = {
+        id: caseId,
+        title: newCaseItem.title,
+        incidentType: newCaseItem.category || newCaseItem.title,
+        location: newCaseItem.specificLocation || `Barangay ${newCaseItem.barangay}, Roxas`,
+        category: newCaseItem.category,
+        barangay: newCaseItem.barangay,
+        sitio: newCaseItem.sitio,
+        incidentDate: newCaseItem.incidentDate,
+        incidentTime: newCaseItem.incidentTime,
+        reporterName: newCaseItem.reporterName || newCaseItem.complainants?.[0]?.name || currentUser.name,
+        priority: newCaseItem.priority || 'URGENT'
+      };
+
+      // 1. Automatically generate and send initial SMS alert directly to MDRRMO account
+      sendAutomatedResponderSMS(smsPayload, users);
+
+      // 2. Start regular interval resending until incident is marked as 'seen/responded'
+      startSmsResendInterval(smsPayload, users, 30000);
+
+      // 3. Trigger emergency notification to MDRRMO system (SMS text only, no sound)
       triggerNotification(
-        `🚨 VEHICULAR ACCIDENT ALERT: Brgy. ${newCaseItem.barangay}`,
-        `URGENT ALARM: Road/vehicular accident reported at ${newCaseItem.specificLocation}. Resident report #${caseId}. Immediate Tanod & First Responder deployment requested!`,
-        'case_registered', caseId, 'MDRRMO', 'urgent',
-        { targetAgencyTypes: ['MDRRMO'], targetBarangay: newCaseItem.barangay }
+        `🚨 EMERGENCY INCIDENT REPORT: Brgy. ${newCaseItem.barangay}`,
+        `URGENT MDRRMO DISPATCH: ${newCaseItem.title} reported at ${newCaseItem.sitio ? `${newCaseItem.sitio}, ` : ''}${newCaseItem.barangay}. Case #${caseId}. Automated SMS dispatched to MDRRMO account!`,
+        'case_registered',
+        caseId,
+        'MDRRMO',
+        'urgent',
+        {
+          targetAgencyTypes: ['MDRRMO'],
+          targetBarangay: newCaseItem.barangay,
+          isAccidentEmergency: true,
+          isMdrrmoIncident: true
+        }
       );
     }
 
@@ -165,17 +206,8 @@ export const useCases = () => {
         'status_update', caseId, 'RESIDENT', 'normal',
         { targetAgencyTypes: ['RESIDENT'], targetRoles: ['RESIDENT'], targetUserId: currentUser.id, targetBarangay: newCaseItem.barangay }
       );
-
-      if (!newCaseItem.isAccidentEmergency) {
-        triggerNotification(
-          `New Resident Report in Brgy. ${newCaseItem.barangay}`,
-          `Resident submitted Case #${caseId}: "${newCaseItem.title}". Queued for Lupon review.`,
-          'case_registered', caseId, 'MDRRMO', newCaseItem.priority === 'Urgent' ? 'urgent' : 'normal',
-          { targetAgencyTypes: ['MDRRMO'], targetBarangay: newCaseItem.barangay }
-        );
-      }
     } else {
-      if (!newCaseItem.isAccidentEmergency) {
+      if (!isMdrrmoReceived) {
         triggerNotification(
           `New Incident Docketed: #${caseId}`,
           `${currentUser.agencyName} registered Case #${caseId}: "${newCaseItem.title}"`,
@@ -219,12 +251,26 @@ export const useCases = () => {
           status: updatedCase.status, dateResolved: updatedCase.dateResolved,
           resolutionSummary: updatedCase.resolutionSummary, dateLastUpdated: updatedCase.dateLastUpdated,
           statusHistory: updatedCase.statusHistory, timeline: updatedCase.timeline
-        }).eq('id', caseId).then(({error}) => { if (error) console.error(error) });
+        }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
         return updatedCase;
       })
     );
     logActivity('CASE_STATUS_UPDATED', caseId, `${currentUser.name} (${currentUser.agencyName}) updated status of #${caseId} to "${newStatus}". Reason: ${reason}`, undefined, newStatus);
-    triggerNotification(`Status Update: #${caseId}`, `Case #${caseId} updated to "${newStatus}" by ${currentUser.agencyName}.`, 'status_update', caseId);
+    const targetCase = cases.find((c) => c.id === caseId);
+    triggerNotification(
+      `Status Update: #${caseId}`,
+      `Case #${caseId} updated to "${newStatus}" by ${currentUser.agencyName}.`,
+      'status_update',
+      caseId,
+      undefined,
+      'normal',
+      {
+        targetBarangay: targetCase?.barangay,
+        targetAgencyTypes: targetCase?.category === 'Vehicular Accident'
+          ? ['RESIDENT', 'MDRRMO']
+          : ['RESIDENT', 'LGU']
+      }
+    );
   };
 
   const addCaseTimelineEvent = (caseId: string, title: string, description: string, stage: TimelineEvent['stage']) => {
@@ -237,11 +283,58 @@ export const useCases = () => {
       prev.map((c) => {
         if (c.id !== caseId) return c;
         const updatedCase = { ...c, timeline: [...c.timeline, newEvent], dateLastUpdated: now };
-        supabase.from('cases').update({ timeline: updatedCase.timeline, dateLastUpdated: updatedCase.dateLastUpdated }).eq('id', caseId).then(({error}) => { if (error) console.error(error) });
+        supabase.from('cases').update({ timeline: updatedCase.timeline, dateLastUpdated: updatedCase.dateLastUpdated }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
         return updatedCase;
       })
     );
     logActivity('TIMELINE_EVENT_ADDED', caseId, `Added timeline milestone: "${title}"`);
+  };
+
+  const markIncidentAsSeenAndResponded = (caseId: string, remarks?: string) => {
+    // Immediately stop recurring SMS resends
+    stopSmsResendInterval(caseId);
+
+    const now = new Date().toISOString();
+    const eventTitle = '🚨 Incident Marked as Seen & Responded by MDRRMO';
+    const eventDescription = remarks || `MDRRMO Officer ${currentUser.name} (${currentUser.position}) acknowledged and marked the emergency alert as 'Seen / Responded'. Emergency rescue and triage responders mobilized. SMS notification resend halted.`;
+
+    const newEvent: TimelineEvent = {
+      id: `TL-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      caseId,
+      title: eventTitle,
+      description: eventDescription,
+      stage: 'LGU Action',
+      actorName: currentUser.name,
+      actorRole: currentUser.position,
+      actorAgency: currentUser.agencyName,
+      timestamp: now
+    };
+
+    setCases((prev) =>
+      prev.map((c) => {
+        if (c.id !== caseId) return c;
+        const updatedCase: Case = {
+          ...c,
+          emergencyAlarmAcknowledged: true,
+          emergencyFirstRespondersDispatched: true,
+          timeline: [...c.timeline, newEvent],
+          dateLastUpdated: now
+        };
+        supabase.from('cases').update({
+          emergencyAlarmAcknowledged: true,
+          emergencyFirstRespondersDispatched: true,
+          timeline: updatedCase.timeline,
+          dateLastUpdated: now
+        }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
+        return updatedCase;
+      })
+    );
+
+    logActivity(
+      'MDRRMO_SEEN_AND_RESPONDED',
+      caseId,
+      `MDRRMO Officer ${currentUser.name} marked emergency report #${caseId} as Seen & Responded. Emergency warning alert halted.`
+    );
   };
 
   return {
@@ -250,6 +343,7 @@ export const useCases = () => {
     createCase,
     updateCaseStatus,
     addCaseTimelineEvent,
+    markIncidentAsSeenAndResponded,
     logActivity
   };
 };

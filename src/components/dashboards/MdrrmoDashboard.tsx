@@ -1,14 +1,14 @@
 import React from 'react';
-import { 
-  ShieldAlert, 
-  FileCheck, 
-  Clock, 
-  ArrowUpRight, 
-  PlusCircle, 
-  AlertTriangle, 
-  CheckCircle, 
-  FileText, 
-  Siren, 
+import {
+  ShieldAlert,
+  FileCheck,
+  Clock,
+  ArrowUpRight,
+  PlusCircle,
+  AlertTriangle,
+  CheckCircle,
+  FileText,
+  Siren,
   Ambulance,
   Activity,
   MapPin
@@ -19,9 +19,10 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { formatDateShort } from '../../utils/reportGenerators';
+import { sendAutomatedResponderSMS, startSmsResendInterval } from '../../utils/smsService';
 
 export const MdrrmoDashboard: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, users } = useAuth();
   const { cases, setSelectedCaseId } = useCases();
   const { triggerNotification } = useNotifications();
   const { setIsNewCaseModalOpen, setActiveTab } = useUI();
@@ -29,7 +30,7 @@ export const MdrrmoDashboard: React.FC = () => {
   const currentBarangay = currentUser.barangay;
 
   // MDRRMO monitors all incidents municipal-wide or targeted to a specific barangay if assigned
-  const mdrrmoCases = currentBarangay 
+  const mdrrmoCases = currentBarangay
     ? cases.filter((c) => c.barangay === currentBarangay || c.originatingAgency.includes(currentBarangay))
     : cases;
 
@@ -41,31 +42,60 @@ export const MdrrmoDashboard: React.FC = () => {
   const urgentCrashes = mdrrmoCases.filter((c) => c.priority === 'Urgent' || c.priority === 'High');
 
   const handleTestAccidentAlarm = () => {
+    const testCaseId = `INC-EMG-${Date.now().toString().slice(-4)}`;
+
+    const payload = {
+      id: testCaseId,
+      title: 'Severe Vehicular Collision at Morente Avenue Crossing',
+      incidentType: 'Motorcycle vs Tricycle Collision',
+      location: `Morente Ave. cor. Strong Republic Nautical Hwy, Brgy. ${currentBarangay || 'San Aquilino'}`,
+      category: 'Motorcycle vs Tricycle Collision',
+      barangay: currentBarangay || 'San Aquilino',
+      sitio: 'Sitio Centro',
+      incidentDate: new Date().toISOString().split('T')[0],
+      incidentTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      reporterName: currentUser.name || 'Resident Citizen',
+      priority: 'URGENT'
+    };
+
+    // Automatically generate and dispatch SMS alert to MDRRMO account & start interval resend
+    sendAutomatedResponderSMS(payload, users);
+    startSmsResendInterval(payload, users, 30000);
+
     triggerNotification(
-      `🚨 TEST ALARM: Vehicular Collision Emergency in Roxas`,
-      `SIMULATED CRASH DISPATCH: Motorcycle vs Tricycle severe collision logged. Resident report filed. MDRRMO Rescue Ambulance and QRT mobilization required!`,
+      `🚨 EMERGENCY ALERT: Vehicular Collision in Roxas`,
+      `SIMULATED CRASH DISPATCH: Motorcycle vs Tricycle severe collision logged. Automated SMS broadcast dispatched to MDRRMO account. Re-sending at regular intervals until Marked as Seen/Responded (SMS text only)!`,
       'pending_alert',
-      undefined,
+      testCaseId,
       'MDRRMO',
       'urgent',
       {
         targetAgencyTypes: ['MDRRMO'],
-        targetBarangay: currentBarangay || 'San Aquilino'
+        targetBarangay: currentBarangay || 'San Aquilino',
+        isAccidentEmergency: true,
+        isMdrrmoEmergency: true
       }
     );
   };
+
+  const isOfficer = currentUser.role === 'MDRRMO_OFFICER';
 
   return (
     <div id="mdrrmo-dashboard-view" className="space-y-6">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-orange-900 via-amber-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-orange-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-800/80 text-orange-200 text-xs font-bold mb-2 border border-orange-700/50">
-            <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
-            <span>MDRRMO Roxas • Emergency Medical & Rescue Operations</span>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-800/80 text-orange-200 text-xs font-bold border border-orange-700/50">
+              <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+              <span>MDRRMO Roxas • Emergency Medical & Rescue Operations</span>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-orange-700/60 text-orange-200 text-[10px] font-mono font-bold border border-orange-600/40">
+              POV: {isOfficer ? 'Responder & Field Triage' : 'Operations Head & Dispatch Chief'}
+            </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-            MDRRMO Disaster Risk & Emergency Incident Operations
+            {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
           </h2>
           <p className="text-xs text-orange-100/90 mt-1 max-w-2xl leading-relaxed">
             Real-time emergency dispatch coordination, road traffic crash triage, rescue ambulance mobilization, and inter-barangay public safety network in Roxas, Oriental Mindoro.
@@ -77,10 +107,10 @@ export const MdrrmoDashboard: React.FC = () => {
             id="btn-mdrrmo-test-alarm"
             onClick={handleTestAccidentAlarm}
             className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-2 cursor-pointer ring-2 ring-rose-400/50 active:scale-95"
-            title="Simulate incoming accident report to test audio alarm and emergency popup"
+            title="Simulate incoming accident report to test automated SMS broadcast and dispatch popup"
           >
             <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>🚨 Test Accident Alarm</span>
+            <span>🚨 Test SMS Alert</span>
           </button>
           <button
             id="btn-mdrrmo-new-case"
@@ -191,7 +221,7 @@ export const MdrrmoDashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {mdrrmoCases.slice(0, 8).map((c) => (
-                <tr 
+                <tr
                   key={c.id}
                   onClick={() => setSelectedCaseId(c.id)}
                   className="hover:bg-orange-50/40 transition cursor-pointer"

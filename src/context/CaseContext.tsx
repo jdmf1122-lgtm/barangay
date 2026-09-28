@@ -1,12 +1,10 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Case, AuditLog } from '../types';
+import { Case, AuditLog, ROXAS_BARANGAYS } from '../types';
 import { supabase } from '../utils/supabaseClient';
-
-const VALID_5_BARANGAYS: string[] = ['San Aquilino', 'Bagumbayan', 'Odiong', 'San Miguel', 'Victoria'];
 
 export const sanitizeCaseBarangay = (rawCase: any): Case => {
   let b = rawCase.barangay;
-  if (!VALID_5_BARANGAYS.includes(b)) {
+  if (!ROXAS_BARANGAYS.includes(b as any)) {
     b = 'San Aquilino';
   }
   
@@ -15,7 +13,7 @@ export const sanitizeCaseBarangay = (rawCase: any): Case => {
     barangay: b,
     personsInvolved: Array.isArray(rawCase.personsInvolved) ? rawCase.personsInvolved.map((p: any) => ({
       ...p,
-      barangay: VALID_5_BARANGAYS.includes(p.barangay) ? p.barangay : b
+      barangay: ROXAS_BARANGAYS.includes(p.barangay as any) ? p.barangay : b
     })) : [],
     statusHistory: Array.isArray(rawCase.statusHistory) ? rawCase.statusHistory : []
   };

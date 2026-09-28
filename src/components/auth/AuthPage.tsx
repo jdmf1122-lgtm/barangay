@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Shield, 
   ShieldAlert,
   Building2, 
   Landmark, 
@@ -12,7 +11,9 @@ import {
   AlertCircle, 
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { AgencyType, UserRole, ROXAS_BARANGAYS, User as UserType } from '../../types';
@@ -65,6 +66,8 @@ export const AuthPage: React.FC = () => {
   const [regName, setRegName] = useState('');
   const [regAgencyType, setRegAgencyType] = useState<AgencyType>('MDRRMO');
   const [regBarangay, setRegBarangay] = useState<string>(ROXAS_BARANGAYS[0]);
+  const [isBarangayDropdownOpen, setIsBarangayDropdownOpen] = useState(false);
+  const barangayDropdownRef = useRef<HTMLDivElement>(null);
   const [regPosition, setRegPosition] = useState('MDRRMO Operations Head / Admin');
   const [regRole, setRegRole] = useState<UserRole>('MDRRMO_ADMIN');
   const [regBadge, setRegBadge] = useState('MDRRMO-ROX-2026');
@@ -73,6 +76,20 @@ export const AuthPage: React.FC = () => {
   const [regConfirmPasscode, setRegConfirmPasscode] = useState('jarinyes');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (barangayDropdownRef.current && !barangayDropdownRef.current.contains(event.target as Node)) {
+        setIsBarangayDropdownOpen(false);
+      }
+    };
+    if (isBarangayDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isBarangayDropdownOpen]);
 
   const [regError, setRegError] = useState<string | null>(null);
 
@@ -224,7 +241,7 @@ export const AuthPage: React.FC = () => {
 
         <div className="hidden md:flex items-center gap-4 text-xs text-emerald-800/80 font-semibold">
           <span className="flex items-center gap-1.5 font-medium text-emerald-900">
-            <Building2 className="w-3.5 h-3.5 text-emerald-600" /> 6 Component Barangays
+            <Building2 className="w-3.5 h-3.5 text-emerald-600" /> {ROXAS_BARANGAYS.length} Component Barangays
           </span>
           <span className="text-emerald-300">•</span>
           <span className="flex items-center gap-1.5 font-medium text-emerald-900">
@@ -281,7 +298,7 @@ export const AuthPage: React.FC = () => {
                       Sign In to Official Account
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Enter your authorized agency email, User ID, or Badge number and password to log in.
+                      Enter your authorized agency email or User ID and password to log in.
                     </p>
                   </div>
 
@@ -296,7 +313,7 @@ export const AuthPage: React.FC = () => {
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-slate-700">
-                        Official Email, User ID, or Badge Number: <span className="text-rose-500">*</span>
+                        Official Email or User ID: <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -341,16 +358,6 @@ export const AuthPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Government Portal Security Disclaimer */}
-                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2.5">
-                      <Shield className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold text-emerald-950">Official Government Gateway Notice</div>
-                        <div className="text-emerald-800/80 text-[10px] mt-0.5 leading-relaxed">
-                          Authorized access for MDRRMO Emergency Responders, Municipal LGU, DILG personnel, and Resident Citizens. All login events are audited in accordance with RA 10173 (Data Privacy Act) & RA 10175.
-                        </div>
-                      </div>
-                    </div>
 
                     <button
                       id="btn-submit-login"
@@ -416,26 +423,99 @@ export const AuthPage: React.FC = () => {
 
                   {/* Home Barangay dropdown if RESIDENT is chosen */}
                   {regAgencyType === 'RESIDENT' && (
-                    <div className="space-y-1 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-200">
+                    <div className="space-y-1 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-200" ref={barangayDropdownRef}>
                       <label className="block text-xs font-bold text-emerald-900">
                         Tinitirahang Barangay sa Roxas (Home Barangay):
                       </label>
-                      <select
-                        value={regBarangay}
-                        onChange={(e) => {
-                          setRegBarangay(e.target.value);
-                          setRegBadge(`RES-${e.target.value.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
-                        }}
-                        className="w-full p-2 bg-white border border-emerald-300 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        {ROXAS_BARANGAYS.map((b) => (
-                          <option key={b} value={b}>
-                            Barangay {b}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          id="btn-select-barangay"
+                          onClick={() => setIsBarangayDropdownOpen((prev) => !prev)}
+                          className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs text-slate-900 font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm text-left transition"
+                        >
+                          <span className="truncate">Barangay {regBarangay}</span>
+                          <ChevronDown className={`w-4 h-4 text-emerald-600 flex-shrink-0 transition-transform duration-200 ${isBarangayDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isBarangayDropdownOpen && (
+                          <div 
+                            id="barangay-dropdown-menu"
+                            className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-emerald-200 rounded-xl shadow-xl max-h-56 overflow-y-auto divide-y divide-emerald-50 py-1"
+                          >
+                            {ROXAS_BARANGAYS.map((b) => {
+                              const isSelected = regBarangay === b;
+                              return (
+                                <button
+                                  key={b}
+                                  type="button"
+                                  onClick={() => {
+                                    setRegBarangay(b);
+                                    setRegBadge(`RES-${b.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
+                                    setIsBarangayDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2 text-xs text-left flex items-center justify-between transition cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-emerald-50 font-bold text-emerald-950'
+                                      : 'text-slate-700 hover:bg-emerald-50/70 hover:text-emerald-950 font-medium'
+                                  }`}
+                                >
+                                  <span>Barangay {b}</span>
+                                  {isSelected && (
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 ml-2" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
+
+                  {/* Security Role Tier Selector */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span>Official Security Role Tier <span className="text-rose-500">*</span></span>
+                      <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider font-mono">
+                        System POV: {regRole}
+                      </span>
+                    </label>
+                    <select
+                      id="select-register-role"
+                      value={regRole}
+                      onChange={(e) => {
+                        const newRole = e.target.value as UserRole;
+                        setRegRole(newRole);
+                        if (newRole === 'MDRRMO_OFFICER' && regPosition.includes('Head')) {
+                          setRegPosition('Emergency Medical Responder (EMR)');
+                        } else if (newRole === 'MDRRMO_ADMIN' && regPosition.includes('Responder')) {
+                          setRegPosition('MDRRMO Operations Head / Admin');
+                        } else if (newRole === 'LGU_OFFICER' && regPosition.includes('Administrator')) {
+                          setRegPosition('Public Order & Safety Office (POSO) Head');
+                        } else if (newRole === 'LGU_ADMINISTRATOR' && regPosition.includes('Order')) {
+                          setRegPosition('Municipal Administrator (LGU Admin)');
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs font-semibold text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                    >
+                      {regAgencyType === 'MDRRMO' && (
+                        <>
+                          <option value="MDRRMO_ADMIN">MDRRMO_ADMIN (Operations Head / Dispatch Chief)</option>
+                          <option value="MDRRMO_OFFICER">MDRRMO_OFFICER (Emergency Medical Responder / Crash Investigator / Ambulance Lead)</option>
+                        </>
+                      )}
+                      {regAgencyType === 'LGU' && (
+                        <>
+                          <option value="LGU_ADMINISTRATOR">LGU_ADMINISTRATOR (Mayor / Municipal Administrator / Executive Staff)</option>
+                          <option value="LGU_OFFICER">LGU_OFFICER (Public Order & Safety / Municipal Legal / MENRO / MSWDO)</option>
+                        </>
+                      )}
+                      {regAgencyType === 'RESIDENT' && (
+                        <option value="RESIDENT">RESIDENT (Verified Resident Citizen)</option>
+                      )}
+                    </select>
+                  </div>
 
                   {/* 2. Full Name & Position */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -473,40 +553,25 @@ export const AuthPage: React.FC = () => {
                         key={pos}
                         type="button"
                         onClick={() => setRegPosition(pos)}
-                        className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition font-medium"
+                        className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition font-medium cursor-pointer"
                       >
                         + {pos}
                       </button>
                     ))}
                   </div>
 
-                  {/* 3. Email & Badge */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700">
-                        Official Email Address:
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="officer@roxas.gov.ph (Optional)"
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700">
-                        Badge / Personnel ID:
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., PB-SM-2026 / SEC-8891"
-                        value={regBadge}
-                        onChange={(e) => setRegBadge(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
+                  {/* 3. Official Email */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Official Email Address:
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="officer@roxas.gov.ph (Optional)"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
                   </div>
 
                   {/* 4. Passcode & Confirm Passcode */}

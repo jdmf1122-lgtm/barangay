@@ -159,6 +159,7 @@ export const CreateNotificationModal: React.FC<CreateNotificationModalProps> = (
                   onChange={(e) => setTargetBarangay(e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-hidden bg-slate-50 font-medium text-slate-800"
                 >
+                  <option value="ALL">All Barangays (Municipality-Wide Residents)</option>
                   {ROXAS_BARANGAYS.map((b) => (
                     <option key={b} value={b}>
                       Barangay {b}

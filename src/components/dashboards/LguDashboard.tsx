@@ -10,14 +10,18 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { ROXAS_BARANGAYS } from '../../types';
 
 export const LguDashboard: React.FC = () => {
+  const { currentUser } = useAuth();
   const { cases, setSelectedCaseId } = useCases();
   const { setActiveTab } = useUI();
+
+  const isAdministrator = currentUser.role === 'LGU_ADMINISTRATOR';
 
   const totalCases = cases.length;
   const lguReferredCases = cases.filter((c) => c.isReferredToLgu || c.currentHandlingAgency.includes('Municipal'));
@@ -35,12 +39,17 @@ export const LguDashboard: React.FC = () => {
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
         <div>
-          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-xs font-semibold mb-2">
-            <Landmark className="w-3.5 h-3.5" />
-            <span>Executive & Administrative Oversight • LGU Roxas</span>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-xs font-semibold">
+              <Landmark className="w-3.5 h-3.5" />
+              <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-800/60 text-emerald-200 text-[10px] font-mono font-bold border border-emerald-700/50">
+              POV: {isAdministrator ? 'LGU Administrator' : 'Department Desk Officer'}
+            </span>
           </div>
           <h2 className="text-xl font-bold tracking-tight">
-            Municipal Government Case & Public Service Dashboard
+            {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
           </h2>
           <p className="text-xs text-emerald-100 mt-1 max-w-2xl">
             Coordinating municipal departments (MENRO, Market Operations, Municipal Legal, Engineering, MSWDO) across the 5 Barangays of Roxas, Oriental Mindoro.

@@ -1,10 +1,12 @@
-// Web Audio API emergency synthesizer for accident / vehicular disaster alarms
+// Web Audio API emergency synthesizer for MDRRMO continuous loud ambulance siren
 
 let audioCtx: AudioContext | null = null;
-let alarmOscillator1: OscillatorNode | null = null;
-let alarmOscillator2: OscillatorNode | null = null;
-let alarmGain: GainNode | null = null;
 let alarmInterval: any = null;
+let masterAlarmGain: GainNode | null = null;
+let currentOsc1: OscillatorNode | null = null;
+let currentOsc2: OscillatorNode | null = null;
+let currentBuzzMod: OscillatorNode | null = null;
+let currentGain: GainNode | null = null;
 let isAlarmPlaying = false;
 
 function getAudioContext(): AudioContext {
@@ -18,60 +20,39 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
-/**
- * Plays an urgent multi-tone emergency accident alarm siren
- */
-export function playAccidentAlarmSound(): void {
-  try {
-    const ctx = getAudioContext();
-    if (isAlarmPlaying) return;
-
-    isAlarmPlaying = true;
-
-    // Create gain node for volume
-    alarmGain = ctx.createGain();
-    alarmGain.gain.setValueAtTime(0.18, ctx.currentTime);
-    alarmGain.connect(ctx.destination);
-
-    // Tone switching logic (880Hz A5 <-> 587Hz D5 alternating emergency pulse)
-    let high = true;
-    const playChimePulse = () => {
-      if (!isAlarmPlaying || !ctx) return;
-      try {
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        
-        osc.type = 'sawtooth';
-        const freq = high ? 880 : 660;
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        
-        oscGain.gain.setValueAtTime(0.2, ctx.currentTime);
-        oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
-
-        osc.connect(oscGain);
-        oscGain.connect(ctx.destination);
-
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.4);
-
-        high = !high;
-      } catch (e) {
-        console.warn('Oscillator error:', e);
-      }
-    };
-
-    // Immediate first pulse
-    playChimePulse();
-    // Repeating emergency pulse every 450ms
-    alarmInterval = setInterval(playChimePulse, 450);
-
-  } catch (err) {
-    console.warn('Web Audio playback error or autoplay policy restricted:', err);
+function getMasterAlarmGain(ctx: AudioContext): GainNode {
+  if (!masterAlarmGain) {
+    masterAlarmGain = ctx.createGain();
+    masterAlarmGain.connect(ctx.destination);
   }
+  return masterAlarmGain;
+}
+
+// Auto-unlock audio context on user interaction if browser autoplay policy suspended it
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  };
+  window.addEventListener('click', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+}
+
+export function isAlarmSoundPlaying(): boolean {
+  return isAlarmPlaying;
 }
 
 /**
- * Stops any playing accident alarm sound
+ * No audible alert or alarm should be triggered — SMS text only per specification.
+ */
+export function playAccidentAlarmSound(): void {
+  // Silent per specification: No audible alert or alarm should be triggered (SMS text only)
+  isAlarmPlaying = false;
+}
+
+/**
+ * Halts and permanently silences the continuous ambulance alarm siren immediately
  */
 export function stopAccidentAlarmSound(): void {
   isAlarmPlaying = false;
@@ -79,24 +60,52 @@ export function stopAccidentAlarmSound(): void {
     clearInterval(alarmInterval);
     alarmInterval = null;
   }
-  if (alarmOscillator1) {
-    try { alarmOscillator1.stop(); } catch {}
-    alarmOscillator1 = null;
+
+  // Instantly cut audio signal at the master alarm gain level
+  if (masterAlarmGain && audioCtx) {
+    try {
+      masterAlarmGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterAlarmGain.gain.setValueAtTime(0, audioCtx.currentTime);
+    } catch { }
   }
-  if (alarmOscillator2) {
-    try { alarmOscillator2.stop(); } catch {}
-    alarmOscillator2 = null;
+
+  if (currentOsc1) {
+    try {
+      currentOsc1.stop();
+      currentOsc1.disconnect();
+    } catch { }
+    currentOsc1 = null;
   }
-  if (alarmGain) {
-    try { alarmGain.disconnect(); } catch {}
-    alarmGain = null;
+  if (currentOsc2) {
+    try {
+      currentOsc2.stop();
+      currentOsc2.disconnect();
+    } catch { }
+    currentOsc2 = null;
+  }
+  if (currentBuzzMod) {
+    try {
+      currentBuzzMod.stop();
+      currentBuzzMod.disconnect();
+    } catch { }
+    currentBuzzMod = null;
+  }
+  if (currentGain) {
+    try {
+      if (audioCtx) {
+        currentGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        currentGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      }
+      currentGain.disconnect();
+    } catch { }
+    currentGain = null;
   }
 }
 
 /**
- * Plays a single confirmation beep
+ * Plays a single confirmation beep for user acknowledgement
  */
-export function playActionBeep(freq = 520, duration = 0.15): void {
+export function playActionBeep(freq = 620, duration = 0.18): void {
   try {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
@@ -105,7 +114,7 @@ export function playActionBeep(freq = 520, duration = 0.15): void {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, ctx.currentTime);
 
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
     osc.connect(gain);

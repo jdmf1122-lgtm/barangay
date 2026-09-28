@@ -80,6 +80,7 @@ export const Sidebar: React.FC = () => {
 
     // 1. MDRRMO ACCOUNT VIEW (Emergency dispatch, rescue ops, municipal crash blotter)
     if (isMdrrmo) {
+      const isMdrrmoAdmin = currentUser.role === 'MDRRMO_ADMIN';
       const brgyName = currentUser.barangay;
       const mdrrmoCases = brgyName 
         ? safeCases.filter(c => c.barangay === brgyName || c.originatingAgency.includes(brgyName))
@@ -88,14 +89,14 @@ export const Sidebar: React.FC = () => {
       return [
         {
           id: 'dashboard',
-          label: 'MDRRMO Operations Hub',
-          subtitle: brgyName ? `Sector: Brgy. ${brgyName}` : 'Municipal Emergency Ops',
+          label: isMdrrmoAdmin ? 'MDRRMO Operations Hub' : 'MDRRMO Responder Hub',
+          subtitle: isMdrrmoAdmin ? 'Emergency Dispatch & Command' : 'Field Response & Triage',
           icon: <LayoutDashboard className="w-4 h-4" />
         },
         {
           id: 'cases',
           label: 'Crash Blotter & Incident Queue',
-          subtitle: 'Emergency Case Intake',
+          subtitle: isMdrrmoAdmin ? 'Dispatch & Triage Queue' : 'Incident Triage & Intake',
           icon: <FileSpreadsheet className="w-4 h-4" />,
           badge: mdrrmoCases.length
         },
@@ -118,12 +119,78 @@ export const Sidebar: React.FC = () => {
       ];
     }
 
-    // 2. LGU ADMIN & SYSTEM ADMIN (Full Municipal Oversight, Admin Control, Audits, Directives)
+    // 2. MUNICIPAL LGU VIEW (Executive Oversight, Multi-Barangay Masterfile, Action Queues)
+    if (isLgu) {
+      const isLguAdmin = currentUser.role === 'LGU_ADMINISTRATOR';
+
+      return [
+        {
+          id: 'dashboard',
+          label: isLguAdmin ? 'LGU Executive Dashboard' : 'LGU Department Dashboard',
+          subtitle: isLguAdmin ? 'Municipal Executive Oversight' : 'Department Action Queue',
+          icon: <LayoutDashboard className="w-4 h-4" />
+        },
+        {
+          id: 'cases',
+          label: 'Municipal Case Masterfile',
+          subtitle: 'All Component Barangays',
+          icon: <FileSpreadsheet className="w-4 h-4" />,
+          badge: safeCases.length
+        },
+        {
+          id: 'gis_map',
+          label: 'Municipal GIS Analytics',
+          subtitle: 'Dispute & Incident Mapping',
+          icon: <Compass className="w-4 h-4" />
+        },
+        {
+          id: 'graph',
+          label: 'Case Relationship Graph',
+          subtitle: 'Network & Cluster Analysis',
+          icon: <Share2 className="w-4 h-4" />,
+          highlight: true
+        },
+        {
+          id: 'transparency',
+          label: 'Transparency & Oversight',
+          subtitle: 'Municipal Performance KPIs',
+          icon: <Eye className="w-4 h-4" />
+        },
+        {
+          type: 'header',
+          label: 'GOVERNANCE & STATISTICAL REPORTS'
+        },
+        {
+          id: 'annual_narrative',
+          label: 'Annual Case Narrative',
+          subtitle: 'Yearly Summaries & Outcomes',
+          icon: <BookOpenCheck className="w-4 h-4" />
+        },
+        {
+          id: 'standard_reports',
+          label: 'Standard Governance Reports',
+          subtitle: 'Comprehensive LGU Reports',
+          icon: <Layers className="w-4 h-4" />
+        },
+        {
+          type: 'header',
+          label: 'SYSTEM & INTEGRITY'
+        },
+        {
+          id: 'audit_trail',
+          label: 'Audit Trail & Immutable Logs',
+          subtitle: 'Security & Access Trail',
+          icon: <History className="w-4 h-4" />
+        }
+      ];
+    }
+
+    // 3. MASTER SYSTEM ADMIN (Master Node Control, Accounts, Audits)
     return [
       {
         id: 'dashboard',
-        label: isLgu ? 'LGU Executive Dashboard' : 'Master System Dashboard',
-        subtitle: isLgu ? 'Municipal Admin Operations' : 'Master Node Control',
+        label: 'Master System Dashboard',
+        subtitle: 'Master Node Control',
         icon: <LayoutDashboard className="w-4 h-4" />
       },
       {

@@ -8,7 +8,6 @@ import {
   Landmark, 
   CheckCircle2, 
   Mail, 
-  BadgeCheck, 
   AlertCircle,
   Save,
   KeyRound,
@@ -205,63 +204,16 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
             </div>
           )}
 
-          {/* 1. Agency Selection */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Agency / Department <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { type: 'MDRRMO' as AgencyType, label: 'MDRRMO (Emergency Ops)', icon: ShieldAlert, defaultRole: 'MDRRMO_OFFICER' as UserRole },
-                { type: 'RESIDENT' as AgencyType, label: 'Resident Citizen', icon: UserCheck, defaultRole: 'RESIDENT' as UserRole },
-                { type: 'LGU' as AgencyType, label: 'Municipal LGU (Admin)', icon: Landmark, defaultRole: 'LGU_ADMINISTRATOR' as UserRole },
-                { type: 'ADMIN' as AgencyType, label: 'System Admin', icon: UserCheck, defaultRole: 'SYSTEM_ADMIN' as UserRole },
-              ].map((ag) => {
-                const isSelected = agencyType === ag.type;
-                const Icon = ag.icon;
-                return (
-                  <button
-                    key={ag.type}
-                    type="button"
-                    onClick={() => {
-                      setAgencyType(ag.type);
-                      setRole(ag.defaultRole);
-                      const suggestions = POSITION_SUGGESTIONS[ag.type];
-                      if (suggestions && suggestions.length > 0) {
-                        setPosition(suggestions[0]);
-                      }
-                    }}
-                    className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-1 ring-emerald-500'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-emerald-700' : 'text-slate-500'}`} />
-                    <span className="truncate">{ag.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Barangay selector if RESIDENT is chosen */}
+          {/* Home Barangay Display for RESIDENT */}
           {agencyType === 'RESIDENT' && (
-            <div className="space-y-1 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-200">
-              <label className="block text-xs font-bold text-emerald-900">
+            <div className="space-y-1 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              <label className="block text-xs font-bold text-slate-700">
                 Home Barangay sa Roxas:
               </label>
-              <select
-                value={barangay}
-                onChange={(e) => setBarangay(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                {ROXAS_BARANGAYS.map((b) => (
-                  <option key={b} value={b}>
-                    Barangay {b}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full px-3 py-2 bg-slate-100/90 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold cursor-not-allowed select-none">
+                Barangay {barangay}
+              </div>
             </div>
           )}
 
@@ -319,37 +271,20 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
             </div>
           )}
 
-          {/* 3. Email & Badge / ID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-slate-500" />
-                <span>Official Email</span>
-              </label>
-              <input
-                id="input-edit-account-email"
-                type="email"
-                placeholder="officer@roxas.gov.ph"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 flex items-center gap-1">
-                <BadgeCheck className="w-3.5 h-3.5 text-slate-500" />
-                <span>Badge / Government ID #</span>
-              </label>
-              <input
-                id="input-edit-account-badge"
-                type="text"
-                placeholder="e.g., DILG-MIMAROPA-412"
-                value={badgeOrIdNumber}
-                onChange={(e) => setBadgeOrIdNumber(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
+          {/* 3. Official Email */}
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700 flex items-center gap-1">
+              <Mail className="w-3.5 h-3.5 text-slate-500" />
+              <span>Official Email</span>
+            </label>
+            <input
+              id="input-edit-account-email"
+              type="email"
+              placeholder="officer@roxas.gov.ph"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
 
           {/* 4. Password & Confirm Password */}
