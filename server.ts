@@ -215,7 +215,7 @@ app.post('/api/auth/register', async (req, res) => {
 const SUPABASE_CASE_COLUMNS = new Set([
   'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
   'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
-  'incidentTime', 'barangay', 'specificLocation', 'complainants', 'respondents',
+  'barangay', 'specificLocation', 'complainants', 'respondents',
   'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
   'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
   'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
@@ -240,7 +240,7 @@ app.post('/api/cases', async (req, res) => {
   // Filter only valid database columns so PostgREST schema cache never rejects
   const dbPayload: Record<string, any> = {};
   for (const key of Object.keys(caseData)) {
-    if (SUPABASE_CASE_COLUMNS.has(key)) {
+    if (SUPABASE_CASE_COLUMNS.has(key) && caseData[key] !== undefined) {
       dbPayload[key] = caseData[key];
     }
   }

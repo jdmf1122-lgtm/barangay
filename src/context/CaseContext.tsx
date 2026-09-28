@@ -9,9 +9,20 @@ export const sanitizeCaseBarangay = (rawCase: any): Case => {
     b = 'San Aquilino';
   }
 
+  let derivedTime = rawCase.incidentTime;
+  if (!derivedTime && rawCase.dateReported) {
+    try {
+      const d = new Date(rawCase.dateReported);
+      if (!isNaN(d.getTime())) {
+        derivedTime = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (e) {}
+  }
+
   return {
     ...rawCase,
     barangay: b,
+    incidentTime: derivedTime,
     personsInvolved: Array.isArray(rawCase.personsInvolved) ? rawCase.personsInvolved.map((p: any) => ({
       ...p,
       barangay: ROXAS_BARANGAYS.includes(p.barangay as any) ? p.barangay : b
