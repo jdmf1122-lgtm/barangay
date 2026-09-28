@@ -81,10 +81,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fetchUsers = async () => {
       try {
         const { data: dbUsers } = await supabase.from('users').select('*');
-        if (dbUsers && Array.isArray(dbUsers) && dbUsers.length > 0) {
-          setUsers(dbUsers as User[]);
-          localStorage.setItem('bconnect_roxas_users_v11', JSON.stringify(dbUsers));
+        const userMap = new Map<string, User>();
+        // 1. Add SEED_USERS so official government accounts are always present
+        SEED_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), u));
+
+        // 2. Add cached users (which may preserve local passcodes)
+        const cachedUsersStr = localStorage.getItem('bconnect_roxas_users_v11');
+        if (cachedUsersStr) {
+          try {
+            const cached = JSON.parse(cachedUsersStr);
+            if (Array.isArray(cached)) {
+              cached.forEach((u: any) => {
+                if (u?.email) {
+                  const existing = userMap.get(u.email.toLowerCase());
+                  userMap.set(u.email.toLowerCase(), { ...existing, ...u });
+                }
+              });
+            }
+          } catch (e) {}
         }
+
+        // 3. Add remote dbUsers from Supabase
+        if (dbUsers && Array.isArray(dbUsers) && dbUsers.length > 0) {
+          dbUsers.forEach((u: any) => {
+            if (u?.email) {
+              const existing = userMap.get(u.email.toLowerCase());
+              userMap.set(u.email.toLowerCase(), { ...existing, ...u });
+            }
+          });
+        }
+
+        const merged = Array.from(userMap.values());
+        setUsers(merged);
+        localStorage.setItem('bconnect_roxas_users_v11', JSON.stringify(merged));
       } catch (e) {
         console.warn('Fetch users notice:', e);
       }
@@ -125,9 +154,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
         }
       } else if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        localStorage.removeItem('bconnect_roxas_user_v11');
-        localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
+        // Prevent spurious auto-logout on refresh unless explicit logout occurred
+        const savedAuth = localStorage.getItem('bconnect_roxas_auth_status_v11');
+        if (savedAuth === 'false') {
+          setIsAuthenticated(false);
+          localStorage.removeItem('bconnect_roxas_user_v11');
+        }
       }
     });
 

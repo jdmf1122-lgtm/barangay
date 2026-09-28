@@ -356,6 +356,11 @@ export const AuthPage: React.FC = () => {
                           {showLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                       </div>
+                      <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 font-medium">
+                        <span>💡 Master Passcode override:</span>
+                        <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-900 rounded font-mono font-bold text-[10px]">jarinyes</code>
+                        <span className="text-slate-400">• tinatanggap sa lahat ng accounts</span>
+                      </p>
                     </div>
 
 
@@ -367,6 +372,37 @@ export const AuthPage: React.FC = () => {
                       <LogIn className="w-4 h-4" />
                       <span>Sign In to B-CONNECT</span>
                     </button>
+
+                    {/* Quick Access Account Selector */}
+                    <div className="pt-3 border-t border-emerald-100 space-y-2 mt-4">
+                      <div className="flex items-center justify-between text-[11px] text-emerald-950 font-bold">
+                        <span>Mabilisang Pag-login (Quick Access Accounts):</span>
+                        <span className="text-[10px] text-emerald-600 font-normal">Click to fill</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {[
+                          { label: '🛡️ MDRRMO Admin', email: 'mdrrmo@gmail.com' },
+                          { label: '🚑 MDRRMO Responder', email: 'alyaspogi@gmail.com' },
+                          { label: '🏘️ Resident (Odiong)', email: 'poogi@gmail.com' },
+                          { label: '🏘️ Resident (San Aquilino)', email: 'maria.santos@gmail.com' },
+                          { label: '🏛️ Municipal LGU Admin', email: 'admin.lgu@roxas.gov.ph' }
+                        ].map((acc) => (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            onClick={() => {
+                              setLoginIdentifier(acc.email);
+                              setLoginPasscode('jarinyes');
+                              setLoginError(null);
+                            }}
+                            className="p-2 text-left bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition flex flex-col cursor-pointer active:scale-98"
+                          >
+                            <span className="text-xs font-bold text-emerald-950 truncate">{acc.label}</span>
+                            <span className="text-[10px] text-slate-500 font-mono truncate">{acc.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </form>
                 </div>
               ) : (
