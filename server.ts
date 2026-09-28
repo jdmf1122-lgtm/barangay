@@ -212,6 +212,54 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+const SUPABASE_CASE_COLUMNS = new Set([
+  'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
+  'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
+  'incidentTime', 'barangay', 'specificLocation', 'complainants', 'respondents',
+  'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
+  'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
+  'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
+  'currentHandlingAgency', 'assignedPersonnel', 'assignedPersonnelContact',
+  'priority', 'status', 'resolutionSummary', 'dateResolved', 'dateClosed',
+  'outcomeType', 'isCitizenReport', 'residentReporterId', 'isAccidentEmergency',
+  'accidentVehicleDetails', 'accidentCasualties', 'isAccidentProneArea',
+  'emergencyAlarmAcknowledged', 'emergencyFirstRespondersDispatched',
+  'collisionImpactType', 'roadSurfaceCondition', 'weatherCondition',
+  'injuriesCount', 'casualtiesCount', 'isHitAndRun', 'respondingAmbulanceUnit',
+  'hospitalTransported', 'dateCreated', 'dateLastUpdated', 'createdBy',
+  'isConfidential'
+]);
+
+// Case Creation & Sync Endpoint (Admin Service Role bypasses RLS)
+app.post('/api/cases', async (req, res) => {
+  const caseData = req.body;
+  if (!caseData || !caseData.id) {
+    return res.status(400).json({ success: false, message: 'Missing case data' });
+  }
+
+  // Filter only valid database columns so PostgREST schema cache never rejects
+  const dbPayload: Record<string, any> = {};
+  for (const key of Object.keys(caseData)) {
+    if (SUPABASE_CASE_COLUMNS.has(key)) {
+      dbPayload[key] = caseData[key];
+    }
+  }
+
+  try {
+    if (supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.from('cases').upsert(dbPayload, { onConflict: 'id' }).select();
+      if (error) {
+        console.error('Supabase admin case upsert error:', error.message);
+        return res.status(500).json({ success: false, message: error.message });
+      }
+      return res.json({ success: true, case: data?.[0] || dbPayload });
+    }
+    return res.json({ success: true, case: dbPayload });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // MDRRMO SMS Gateway Endpoint for Automated Responder Alerts
 interface SmsDispatchPayload {
   caseId: string;

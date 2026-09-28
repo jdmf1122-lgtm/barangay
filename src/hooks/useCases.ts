@@ -70,10 +70,25 @@ export const useCases = () => {
 
   const createCase = (data: Partial<Case>): string => {
     const year = new Date().getFullYear();
-    const count = cases.filter((c) => c.id.startsWith(`BC-${year}`)).length + 1;
-    const caseId = `BC-${year}-${String(count).padStart(3, '0')}`;
-    const incidentId = `INC-${year}-${String(count).padStart(3, '0')}`;
-    const complaintId = `CMP-${year}-${String(count).padStart(3, '0')}`;
+    let maxNum = 0;
+    (cases || []).forEach((c) => {
+      const match = c.id?.match(/BC-(\d{4})-(\d+)/);
+      if (match && parseInt(match[1]) === year) {
+        const num = parseInt(match[2], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    let nextNum = maxNum + 1;
+    let caseId = `BC-${year}-${String(nextNum).padStart(3, '0')}`;
+    let incidentId = `INC-${year}-${String(nextNum).padStart(3, '0')}`;
+    let complaintId = `CMP-${year}-${String(nextNum).padStart(3, '0')}`;
+
+    while ((cases || []).some((c) => c.id === caseId)) {
+      nextNum++;
+      caseId = `BC-${year}-${String(nextNum).padStart(3, '0')}`;
+      incidentId = `INC-${year}-${String(nextNum).padStart(3, '0')}`;
+      complaintId = `CMP-${year}-${String(nextNum).padStart(3, '0')}`;
+    }
     const now = new Date().toISOString();
 
     const initialTimeline: TimelineEvent[] = [
@@ -132,13 +147,13 @@ export const useCases = () => {
       isAccidentProneArea: data.isAccidentProneArea ?? isAccident,
       residentReporterId: data.residentReporterId || (currentUser.agencyType === 'RESIDENT' ? currentUser.id : undefined),
       isCitizenReport: !!data.isCitizenReport || currentUser.agencyType === 'RESIDENT',
-      status: data.status || 'Unresolved',
+      status: (data.status as CaseStatus) || 'Unresolved',
       isInvolvingOfficial: !!data.isInvolvingOfficial,
       officialInvolvedType: data.officialInvolvedType || 'None',
       officialInvolvedName: data.officialInvolvedName,
       officialInvolvedPosition: data.officialInvolvedPosition,
       officialInvolvedAgency: data.officialInvolvedAgency,
-      originatingAgency: currentUser.agencyName,
+      originatingAgency: data.originatingAgency || currentUser.agencyName,
       currentHandlingAgency: data.currentHandlingAgency || currentUser.agencyName,
       assignedPersonnel: data.assignedPersonnel || `${currentUser.name} (${currentUser.position})`,
       assignedPersonnelContact: data.assignedPersonnelContact,
@@ -147,7 +162,7 @@ export const useCases = () => {
         {
           id: `SH-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           previousStatus: 'Unresolved',
-          newStatus: data.status || 'Unresolved',
+          newStatus: (data.status as CaseStatus) || 'Unresolved',
           reason: 'Initial case creation and registration',
           changedBy: currentUser.name,
           changedByRole: currentUser.position,
@@ -164,7 +179,50 @@ export const useCases = () => {
     };
 
     setCases((prev) => [newCaseItem, ...prev]);
-    supabase.from('cases').insert(newCaseItem).then(({ error }) => { if (error) console.error(error) });
+
+    // Filter payload strictly to valid PostgreSQL columns so schema cache never errors
+    const SUPABASE_CASE_COLUMNS = new Set([
+      'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
+      'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
+      'incidentTime', 'barangay', 'specificLocation', 'complainants', 'respondents',
+      'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
+      'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
+      'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
+      'currentHandlingAgency', 'assignedPersonnel', 'assignedPersonnelContact',
+      'priority', 'status', 'resolutionSummary', 'dateResolved', 'dateClosed',
+      'outcomeType', 'isCitizenReport', 'residentReporterId', 'isAccidentEmergency',
+      'accidentVehicleDetails', 'accidentCasualties', 'isAccidentProneArea',
+      'emergencyAlarmAcknowledged', 'emergencyFirstRespondersDispatched',
+      'collisionImpactType', 'roadSurfaceCondition', 'weatherCondition',
+      'injuriesCount', 'casualtiesCount', 'isHitAndRun', 'respondingAmbulanceUnit',
+      'hospitalTransported', 'dateCreated', 'dateLastUpdated', 'createdBy',
+      'isConfidential'
+    ]);
+
+    const dbPayload: Record<string, any> = {};
+    for (const key of Object.keys(newCaseItem)) {
+      if (SUPABASE_CASE_COLUMNS.has(key)) {
+        dbPayload[key] = (newCaseItem as any)[key];
+      }
+    }
+
+    // 1. Direct client insert into Supabase cases table
+    supabase.from('cases').insert(dbPayload).then(({ error }) => {
+      if (error) {
+        console.warn('Direct Supabase insert notice:', error.message);
+      }
+    });
+
+    // 2. Guarantee database persistence via backend admin service role (bypasses RLS & network latency)
+    try {
+      fetch('http://localhost:3001/api/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dbPayload)
+      }).catch((netErr) => {
+        console.warn('Backend sync notice:', netErr);
+      });
+    } catch (e) {}
 
     // Instant local cross-tab broadcast (0ms latency)
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {

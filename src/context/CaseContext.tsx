@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Case, AuditLog, ROXAS_BARANGAYS } from '../types';
 import { supabase } from '../utils/supabaseClient';
+import { SEED_CASES, SEED_AUDIT_LOGS } from '../data/seedData';
 
 export const sanitizeCaseBarangay = (rawCase: any): Case => {
   let b = rawCase.barangay;
@@ -31,8 +32,8 @@ export interface CaseState {
 export const CaseContext = createContext<CaseState | undefined>(undefined);
 
 export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: boolean }> = ({ children, isAuthenticated }) => {
-  const [cases, setCases] = useState<Case[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [cases, setCases] = useState<Case[]>(SEED_CASES);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(SEED_AUDIT_LOGS);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   useEffect(() => {
