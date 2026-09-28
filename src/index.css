@@ -13,12 +13,47 @@
     background-color: #f5fbf7;
   }
 
-  /* Ensure SVG text is crisp and vector-sharp */
+  /* Safe area support for iOS / Android mobile devices */
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth momentum scrolling on mobile */
+  .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Crisp SVG and vector rendering */
   svg text {
     text-rendering: geometricPrecision;
     shape-rendering: geometricPrecision;
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Custom subtle scrollbars for tables and drawers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4);
 }
 
 /* Sharp emerald focus outlines and clear contrasts */

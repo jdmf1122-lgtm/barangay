@@ -20,7 +20,8 @@ import {
   AlertCircle,
   UserPlus,
   LogOut,
-  Compass
+  Compass,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -31,7 +32,7 @@ export const Sidebar: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const { cases } = useCases();
   const { unreadNotifCount } = useNotifications();
-  const { activeTab, setActiveTab, setIsCreateAccountModalOpen } = useUI();
+  const { activeTab, setActiveTab, setIsCreateAccountModalOpen, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
 
   const safeCases = cases || [];
   const officialComplaintsCount = safeCases.filter((c) => c.isInvolvingOfficial).length;
@@ -256,21 +257,39 @@ export const Sidebar: React.FC = () => {
 
   const navItems = getNavItems();
 
-  return (
-    <aside id="bconnect-sidebar" className="w-64 bg-white text-slate-700 flex flex-col border-r border-emerald-100 flex-shrink-0 select-none">
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
+
+  const renderSidebarContent = (isMobile: boolean) => (
+    <>
       {/* Brand Header */}
-      <div className="p-4 sm:p-5 border-b border-emerald-100 flex items-center gap-3 bg-emerald-50/40">
-        <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center font-black text-white text-base shadow-xs">
-          B
+      <div className="p-4 sm:p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/40">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center font-black text-white text-base shadow-xs">
+            B
+          </div>
+          <div>
+            <h1 className="text-emerald-950 font-extrabold tracking-tight text-base leading-tight">
+              B-CONNECT
+            </h1>
+            <span className="text-[9px] text-emerald-700 uppercase tracking-widest font-bold block">
+              ROXAS, ORI. MINDORO
+            </span>
+          </div>
         </div>
-        <div>
-          <h1 className="text-emerald-950 font-extrabold tracking-tight text-base leading-tight">
-            B-CONNECT
-          </h1>
-          <span className="text-[9px] text-emerald-700 uppercase tracking-widest font-bold block">
-            ROXAS, ORI. MINDORO
-          </span>
-        </div>
+
+        {isMobile && (
+          <button
+            id="btn-close-mobile-sidebar"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="p-1.5 rounded-lg text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70 transition cursor-pointer"
+            title="Close navigation"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Active Operating Jurisdiction info pill */}
@@ -308,8 +327,8 @@ export const Sidebar: React.FC = () => {
           return (
             <button
               key={item.id}
-              id={`nav-link-${item.id}`}
-              onClick={() => setActiveTab(item.id!)}
+              id={`nav-link-${item.id}${isMobile ? '-mobile' : ''}`}
+              onClick={() => handleNavClick(item.id!)}
               className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between group cursor-pointer ${
                 isActive
                   ? 'bg-emerald-600 text-white font-bold shadow-xs'
@@ -375,7 +394,7 @@ export const Sidebar: React.FC = () => {
             <p className="text-[10px] text-emerald-800/80 font-medium truncate">{currentUser.position}</p>
           </div>
           <button
-            id="btn-sidebar-logout"
+            id={`btn-sidebar-logout${isMobile ? '-mobile' : ''}`}
             onClick={logout}
             title="Log Out (Sign Out)"
             className="p-1 rounded hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition cursor-pointer"
@@ -386,15 +405,18 @@ export const Sidebar: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-1.5 pt-1">
           <button
-            id="btn-sidebar-create-account"
-            onClick={() => setIsCreateAccountModalOpen(true)}
+            id={`btn-sidebar-create-account${isMobile ? '-mobile' : ''}`}
+            onClick={() => {
+              setIsCreateAccountModalOpen(true);
+              if (isMobile) setIsMobileMenuOpen(false);
+            }}
             className="w-full py-1 px-2 bg-white hover:bg-emerald-50 text-emerald-800 hover:text-emerald-950 rounded-lg border border-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
           >
             <UserPlus className="w-3 h-3 text-emerald-600" />
             <span>+ Account</span>
           </button>
           <button
-            id="btn-sidebar-logout-full"
+            id={`btn-sidebar-logout-full${isMobile ? '-mobile' : ''}`}
             onClick={logout}
             className="w-full py-1 px-2 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 rounded-lg border border-rose-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
           >
@@ -403,6 +425,34 @@ export const Sidebar: React.FC = () => {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar (Laptop & Desktop screens >= 1024px) */}
+      <aside id="bconnect-sidebar" className="hidden lg:flex w-64 bg-white text-slate-700 flex-col border-r border-emerald-100 flex-shrink-0 select-none">
+        {renderSidebarContent(false)}
+      </aside>
+
+      {/* Mobile & Tablet Backdrop Overlay (< 1024px) */}
+      {isMobileMenuOpen && (
+        <div
+          id="mobile-sidebar-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+        />
+      )}
+
+      {/* Mobile & Tablet Slide-Over Drawer (< 1024px) */}
+      <aside
+        id="bconnect-sidebar-mobile"
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r border-emerald-200 select-none transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {renderSidebarContent(true)}
+      </aside>
+    </>
   );
 };

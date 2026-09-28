@@ -1168,46 +1168,47 @@ export const GeographicBarangayMap: React.FC = () => {
       {/* Main Map Stage + Side Place Details Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Real Leaflet Map Container */}
-        <div className={`lg:col-span-8 bg-slate-900 rounded-xl border border-slate-300 overflow-hidden shadow-md relative flex flex-col ${isMapFullscreen ? 'fixed inset-4 z-50 lg:col-span-12' : 'min-h-[580px]'}`}>
+        <div className={`lg:col-span-8 bg-slate-900 rounded-2xl border border-slate-300 overflow-hidden shadow-md relative flex flex-col ${isMapFullscreen ? 'fixed inset-2 sm:inset-4 z-50 lg:col-span-12' : 'min-h-[380px] sm:min-h-[480px] lg:min-h-[580px]'}`}>
           
           {/* Top-Left Floating Google Maps Style Search Card / Compass */}
-          <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 p-2 shadow-lg flex items-center gap-2 max-w-sm">
-            <div className="p-1.5 bg-emerald-600 text-white rounded-lg">
-              <Navigation className="w-4 h-4" />
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-[1000] bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 p-1.5 sm:p-2 shadow-lg flex items-center gap-1.5 sm:gap-2 max-w-[160px] sm:max-w-sm">
+            <div className="p-1 sm:p-1.5 bg-emerald-600 text-white rounded-lg flex-shrink-0">
+              <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div className="text-xs">
-              <div className="font-bold text-slate-900 truncate">
-                {selectedBarangayFilter === 'ALL' ? 'Roxas 6-Barangay Jurisdiction' : `Brgy. ${selectedBarangayFilter}, Roxas`}
+            <div className="text-xs min-w-0">
+              <div className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">
+                {selectedBarangayFilter === 'ALL' ? 'Roxas 6 Barangays' : `Brgy. ${selectedBarangayFilter}`}
               </div>
-              <div className="text-[10px] text-slate-500">Oriental Mindoro, Philippines</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-500 hidden sm:block truncate">Oriental Mindoro, Philippines</div>
             </div>
           </div>
 
           {/* Top-Right Google Maps Tile Style Selector (Map / Satellite / Terrain) */}
-          <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 p-1.5 shadow-lg flex items-center gap-1.5">
+          <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-[1000] bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 p-1 sm:p-1.5 shadow-lg flex items-center gap-1">
             {MAP_TILE_CONFIGS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTileType(t.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer ${
                   activeTileType === t.id
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
                 title={t.label}
               >
-                <span>{t.id === 'satellite' ? '🛰️ Satellite' : t.id === 'terrain' ? '⛰️ Terrain' : '🗺️ Street'}</span>
+                <span>{t.id === 'satellite' ? '🛰️' : t.id === 'terrain' ? '⛰️' : '🗺️'}</span>
+                <span className="hidden md:inline">{t.id === 'satellite' ? 'Satellite' : t.id === 'terrain' ? 'Terrain' : 'Street'}</span>
               </button>
             ))}
 
-            <div className="h-4 w-px bg-slate-200 mx-1" />
+            <div className="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1" />
 
             <button
               onClick={() => setIsMapFullscreen(!isMapFullscreen)}
               className="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition cursor-pointer"
               title="Toggle Fullscreen"
             >
-              {isMapFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isMapFullscreen ? <Minimize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             </button>
           </div>
 

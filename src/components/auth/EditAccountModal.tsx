@@ -155,25 +155,25 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
         id="modal-edit-account"
-        className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]"
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-900 to-emerald-950 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-800/80 border border-emerald-700/80 flex items-center justify-center text-emerald-200 shadow-inner">
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-emerald-900 to-emerald-950 text-white flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-800/80 border border-emerald-700/80 flex items-center justify-center text-emerald-200 shadow-inner flex-shrink-0">
               <UserCheck className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-                <span>Rename / Edit Account Profile</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-800 text-emerald-200 font-mono font-bold">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="truncate">Edit Account Profile</span>
+                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-emerald-800 text-emerald-200 font-mono font-bold flex-shrink-0">
                   {targetUser.id}
                 </span>
               </h3>
-              <p className="text-xs text-emerald-200/80 mt-0.5">
+              <p className="text-[10px] sm:text-xs text-emerald-200/80 mt-0.5 truncate">
                 Update account display name, designation, and agency
               </p>
             </div>
@@ -182,7 +182,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
             type="button"
             id="btn-close-edit-account-modal"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/50 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/60 transition cursor-pointer flex-shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>

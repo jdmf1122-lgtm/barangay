@@ -208,36 +208,36 @@ export const NewCaseModal: React.FC = () => {
     >
       <div 
         id="new-case-modal-card"
-        className="bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[94vh]"
+        className="bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]"
       >
         {/* Header */}
-        <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30">
-              <Car className="w-5 h-5" />
+        <div className="bg-slate-900 text-white px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30 flex-shrink-0">
+              <Car className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h2 className="font-bold text-sm sm:text-base text-white tracking-tight flex items-center gap-2">
-                <span>Record New Vehicular Accident / Crash Report</span>
-                <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30 font-semibold">
-                  Accident & Traffic Safety Desk
+            <div className="min-w-0">
+              <h2 className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="truncate">Record Vehicular Accident</span>
+                <span className="hidden sm:inline-block text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30 font-semibold flex-shrink-0">
+                  Crash Desk
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
-                Official Incident Docketing & Multi-Agency Crash Response • Municipality of Roxas, Oriental Mindoro
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
+                Official Incident Docketing • Roxas, Oriental Mindoro
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsNewCaseModalOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer flex-shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 text-xs space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-5 text-xs space-y-4 sm:space-y-5">
           
           {/* Section 1: Accident Core & Classification */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">

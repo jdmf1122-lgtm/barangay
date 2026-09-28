@@ -37,7 +37,7 @@ export const LguDashboard: React.FC = () => {
   return (
     <div id="lgu-dashboard-view" className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-xs font-semibold">
@@ -48,27 +48,27 @@ export const LguDashboard: React.FC = () => {
               POV: {isAdministrator ? 'LGU Administrator' : 'Department Desk Officer'}
             </span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
             {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
           </h2>
-          <p className="text-xs text-emerald-100 mt-1 max-w-2xl">
+          <p className="text-xs text-emerald-100 mt-1 max-w-2xl leading-relaxed">
             Coordinating municipal departments (MENRO, Market Operations, Municipal Legal, Engineering, MSWDO) across the 5 Barangays of Roxas, Oriental Mindoro.
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex w-full md:w-auto">
           <button
             onClick={() => setActiveTab('standard_reports')}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
-            Municipal Performance Report
+            <span>Municipal Report</span>
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Municipality Total</p>
           <h3 className="text-3xl font-bold mt-1 text-slate-900">{totalCases}</h3>

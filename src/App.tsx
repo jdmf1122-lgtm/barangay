@@ -22,6 +22,7 @@ import { AuditTrailView } from './components/audit/AuditTrailView';
 import { SystemAdminView } from './components/admin/SystemAdminView';
 import { ResidentPortalView } from './components/resident/ResidentPortalView';
 import { EmergencyAccidentAlarmModal } from './components/common/EmergencyAccidentAlarmModal';
+import { MobileBottomNav } from './components/common/MobileBottomNav';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
@@ -97,38 +98,41 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#f5fbf7] flex flex-col font-sans text-slate-900 overflow-hidden antialiased selection:bg-emerald-600 selection:text-white" style={{ backgroundColor: '#f5fbf7' }}>
+    <div className="h-[100dvh] min-h-[100dvh] w-full bg-[#f5fbf7] flex flex-col font-sans text-slate-900 overflow-hidden antialiased selection:bg-emerald-600 selection:text-white" style={{ backgroundColor: '#f5fbf7' }}>
       {/* Top Header */}
       <Header />
 
       {/* Main Workspace Area (Sidebar + Content) */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Navigation Sidebar */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Navigation Sidebar (Desktop persistent + Mobile slide-over drawer) */}
         <Sidebar />
 
         {/* Dynamic Page Container */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 space-y-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 space-y-4 sm:space-y-6 pb-24 lg:pb-7">
+            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {renderContent()}
             </div>
           </main>
 
-          {/* Light Green Balance System Footer */}
-          <footer className="h-10 bg-white/90 border-t border-emerald-100 px-6 sm:px-8 flex items-center justify-between text-[10px] text-emerald-800/70 font-medium select-none flex-shrink-0 backdrop-blur-xs">
-            <div className="flex items-center gap-4">
-              <span>Last System Audit: 4 mins ago</span>
-              <span className="text-emerald-200">|</span>
+          {/* Light Green Balance System Footer (Hidden on small phone screens, shown on tablet/laptop) */}
+          <footer className="hidden sm:flex h-9 lg:h-10 bg-white/90 border-t border-emerald-100 px-4 sm:px-6 lg:px-8 items-center justify-between text-[10px] text-emerald-800/70 font-medium select-none flex-shrink-0 backdrop-blur-xs">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="hidden md:inline">Last System Audit: 4 mins ago</span>
+              <span className="hidden md:inline text-emerald-200">|</span>
               <span className="font-mono text-emerald-900 font-semibold">Version 4.2.0-STABLE</span>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-emerald-900 font-medium">Roxas Municipal Information Office</span>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="text-emerald-900 font-medium truncate">Roxas Municipal Info Office</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0" />
               <span className="font-semibold text-emerald-700">System Fully Encrypted</span>
             </div>
           </footer>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Visible on mobile/tablet screens < 1024px) */}
+      <MobileBottomNav />
 
       {/* Global Modals */}
       <CaseDetailModal />

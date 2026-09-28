@@ -16,7 +16,8 @@ import {
   Send,
   Radio,
   Clock,
-  Sparkles
+  Sparkles,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -30,7 +31,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   const { currentUser, logout } = useAuth();
   const { setSelectedCaseId } = useCases();
   const { unreadNotifCount, userNotifications, markNotificationAsRead, markAllNotificationsAsRead } = useNotifications();
-  const { setIsNewCaseModalOpen, openEditAccountModal, setActiveTab, searchQuery, setSearchQuery, activeTab } = useUI();
+  const { setIsNewCaseModalOpen, openEditAccountModal, setActiveTab, searchQuery, setSearchQuery, activeTab, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -114,20 +115,31 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   };
 
   return (
-    <header id="bconnect-main-header" className="h-16 bg-white border-b border-emerald-100 flex items-center justify-between px-6 sm:px-8 sticky top-0 z-40 shadow-2xs">
-      {/* Left view title & status badge */}
-      <div className="flex items-center gap-4">
-        <h2 className="font-extrabold text-emerald-950 text-sm sm:text-base tracking-tight truncate max-w-xs sm:max-w-md">
+    <header id="bconnect-main-header" className="h-16 bg-white border-b border-emerald-100 flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-2xs">
+      {/* Left: Mobile hamburger menu & view title */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button
+          id="btn-toggle-mobile-sidebar"
+          type="button"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="lg:hidden p-2 -ml-1 text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70 rounded-xl transition cursor-pointer flex-shrink-0"
+          aria-label="Open navigation menu"
+          title="Toggle Navigation Menu"
+        >
+          <Menu className="w-5 h-5 text-emerald-700" />
+        </button>
+
+        <h2 className="font-extrabold text-emerald-950 text-xs sm:text-sm md:text-base tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
           {getTabLabel(activeTab)}
         </h2>
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 font-bold uppercase tracking-wider">
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 font-bold uppercase tracking-wider flex-shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           System Online
         </span>
       </div>
 
       {/* Middle & Right Controls */}
-      <div className="flex items-center gap-3 sm:gap-5">
+      <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-5 flex-shrink-0">
         {/* Search Input */}
         <div className="relative hidden md:block">
           <Search className="w-3.5 h-3.5 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -137,7 +149,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             placeholder="Search Case ID or Person..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-emerald-50/50 border border-emerald-200 rounded-xl pl-8 pr-4 py-1.5 text-xs text-slate-800 placeholder-emerald-700/50 w-48 lg:w-60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            className="bg-emerald-50/50 border border-emerald-200 rounded-xl pl-8 pr-4 py-1.5 text-xs text-slate-800 placeholder-emerald-700/50 w-44 lg:w-60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
           />
         </div>
 
@@ -151,14 +163,11 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
               setIsNewCaseModalOpen(true);
             }
           }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
         >
-          <PlusCircle className="w-4 h-4" />
-          <span className="hidden lg:inline">
-            {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Submit Incident Report' : 'Record New Incident'}
-          </span>
-          <span className="lg:hidden">
-            {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Report' : 'New Incident'}
+          <PlusCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="hidden sm:inline">
+            {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Submit Report' : 'New Incident'}
           </span>
         </button>
 
@@ -181,7 +190,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           {isNotifOpen && (
             <div 
               id="notifications-popover" 
-              className="absolute right-0 mt-2 w-84 sm:w-96 bg-white text-slate-900 rounded-2xl shadow-2xl border border-emerald-200 z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-white text-slate-900 rounded-2xl shadow-2xl border border-emerald-200 z-50 overflow-hidden"
             >
               {/* Header Box Tailored to Role */}
               <div className="p-3.5 bg-gradient-to-r from-emerald-900 to-teal-950 text-white border-b border-emerald-800">
@@ -397,7 +406,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           {isRoleDropdownOpen && (
             <div
               id="role-switcher-dropdown"
-              className="absolute right-0 mt-2 w-80 bg-white text-slate-900 rounded-2xl shadow-xl border border-emerald-200 z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-80 bg-white text-slate-900 rounded-2xl shadow-xl border border-emerald-200 z-50 overflow-hidden"
             >
               <div className="p-3.5 bg-emerald-950 text-white flex items-center justify-between">
                 <div>

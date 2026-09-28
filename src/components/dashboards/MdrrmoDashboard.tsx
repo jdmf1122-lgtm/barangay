@@ -83,7 +83,7 @@ export const MdrrmoDashboard: React.FC = () => {
   return (
     <div id="mdrrmo-dashboard-view" className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-orange-900 via-amber-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-orange-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-orange-900 via-amber-950 to-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-md border border-orange-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-800/80 text-orange-200 text-xs font-bold border border-orange-700/50">
@@ -94,7 +94,7 @@ export const MdrrmoDashboard: React.FC = () => {
               POV: {isOfficer ? 'Responder & Field Triage' : 'Operations Head & Dispatch Chief'}
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+          <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white">
             {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
           </h2>
           <p className="text-xs text-orange-100/90 mt-1 max-w-2xl leading-relaxed">
@@ -102,37 +102,37 @@ export const MdrrmoDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 shrink-0">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto">
           <button
             id="btn-mdrrmo-test-alarm"
             onClick={handleTestAccidentAlarm}
-            className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-2 cursor-pointer ring-2 ring-rose-400/50 active:scale-95"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow transition flex items-center justify-center gap-2 cursor-pointer ring-2 ring-rose-400/50 active:scale-95"
             title="Simulate incoming accident report to test automated SMS broadcast and dispatch popup"
           >
             <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>🚨 Test SMS Alert</span>
+            <span>🚨 Test SMS</span>
           </button>
           <button
             id="btn-mdrrmo-new-case"
             onClick={() => setIsNewCaseModalOpen(true)}
-            className="px-4 py-2.5 bg-white text-orange-950 hover:bg-orange-50 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-orange-950 hover:bg-orange-50 rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
           >
             <PlusCircle className="w-4 h-4 text-orange-600" />
-            <span>Log Emergency / Incident</span>
+            <span>Log Incident</span>
           </button>
           <button
             id="btn-mdrrmo-view-annual"
             onClick={() => setActiveTab('annual_narrative')}
-            className="px-3.5 py-2.5 bg-orange-950/60 hover:bg-orange-900 text-orange-100 border border-orange-700/60 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto px-3 sm:px-3.5 py-2 sm:py-2.5 bg-orange-950/60 hover:bg-orange-900 text-orange-100 border border-orange-700/60 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
-            <span>Incident Logs</span>
+            <span>Logs</span>
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
           <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Total Logged</p>
           <h3 className="text-3xl font-black mt-1 text-slate-900">{totalIncidents}</h3>

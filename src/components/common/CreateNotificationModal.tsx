@@ -78,29 +78,29 @@ export const CreateNotificationModal: React.FC<CreateNotificationModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
       <div 
         id="modal-create-notification"
-        className="bg-white rounded-3xl shadow-2xl border border-emerald-100 max-w-lg w-full overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl border border-emerald-100 max-w-lg w-full overflow-hidden max-h-[92dvh] flex flex-col"
       >
         {/* Header */}
-        <div className="p-5 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 border border-emerald-400/30 rounded-xl text-emerald-300">
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 bg-emerald-500/20 border border-emerald-400/30 rounded-xl text-emerald-300 flex-shrink-0">
               <Radio className="w-5 h-5 animate-pulse" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white leading-tight">
-                Create & Dispatch Role Notification
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-white leading-tight truncate">
+                Dispatch Role Notification
               </h2>
-              <p className="text-xs text-emerald-200/80">
-                Logged in as: <span className="font-semibold text-white">{currentUser.name}</span> ({currentUser.agencyType})
+              <p className="text-[10px] sm:text-xs text-emerald-200/80 truncate">
+                Logged in: <span className="font-semibold text-white">{currentUser.name}</span> ({currentUser.agencyType})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer"
+            className="p-1.5 text-emerald-200 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer flex-shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -108,7 +108,7 @@ export const CreateNotificationModal: React.FC<CreateNotificationModalProps> = (
 
         {/* Content Body */}
         {isSuccess ? (
-          <div className="p-8 text-center space-y-3">
+          <div className="p-6 sm:p-8 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto animate-bounce">
               <CheckCircle2 className="w-7 h-7" />
             </div>
@@ -118,13 +118,13 @@ export const CreateNotificationModal: React.FC<CreateNotificationModalProps> = (
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
             {/* Target Role / Agency */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-tight mb-1.5">
                 Target Role Audience
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: 'RESIDENT', label: 'Residents Only', desc: 'Citizens of Roxas' },
                   { id: 'MDRRMO', label: 'MDRRMO Rescue', desc: 'Emergency Operations' },

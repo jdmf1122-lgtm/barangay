@@ -175,43 +175,43 @@ export const CreateAccountModal: React.FC = () => {
   return (
     <div 
       id="create-account-modal-overlay" 
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto"
     >
       <div 
         id="create-account-modal" 
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]"
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92dvh]"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-5 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-600/30 border border-blue-400/30 text-blue-400">
-              <UserPlus className="w-5 h-5" />
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-3.5 sm:p-5 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-blue-600/30 border border-blue-400/30 text-blue-400 flex-shrink-0">
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base tracking-tight text-white">
-                  Create Officer / Personnel Account
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 truncate">
+                <h3 className="font-bold text-sm sm:text-base tracking-tight text-white truncate">
+                  Create Personnel Account
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-400/30">
-                  B-CONNECT Access
+                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-400/30 flex-shrink-0">
+                  Access
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Register authorized agency personnel for Roxas, Oriental Mindoro inter-agency network
+              <p className="text-[10px] sm:text-xs text-slate-300 mt-0.5 truncate">
+                Authorized agency personnel • Roxas, Oriental Mindoro
               </p>
             </div>
           </div>
           <button
             id="btn-close-create-account"
             onClick={() => setIsCreateAccountModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex-shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />

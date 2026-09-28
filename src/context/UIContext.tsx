@@ -6,6 +6,8 @@ const LOCAL_STORAGE_USER_KEY = 'bconnect_roxas_user_v11';
 export interface UIState {
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isNewCaseModalOpen: boolean;
   setIsNewCaseModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isCreateAccountModalOpen: boolean;
@@ -32,6 +34,7 @@ export const UIContext = createContext<UIState | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode; currentUser?: User | null }> = ({ children, currentUser }) => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState<boolean>(false);
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState<boolean>(false);
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState<boolean>(false);
@@ -62,6 +65,7 @@ export const UIProvider: React.FC<{ children: ReactNode; currentUser?: User | nu
   return (
     <UIContext.Provider value={{
       activeTab, setActiveTab,
+      isMobileMenuOpen, setIsMobileMenuOpen,
       isNewCaseModalOpen, setIsNewCaseModalOpen,
       isCreateAccountModalOpen, setIsCreateAccountModalOpen,
       isEditAccountModalOpen, setIsEditAccountModalOpen,

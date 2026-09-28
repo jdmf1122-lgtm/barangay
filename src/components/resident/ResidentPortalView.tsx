@@ -250,19 +250,19 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
 
       {/* ----------------- TOP WELCOME & RESIDENT HERO ----------------- */}
-      <div className="bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl relative overflow-hidden">
         {/* Ambient background decoration */}
         <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute left-1/3 bottom-0 -mb-12 w-60 h-60 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
               <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
               Welcome, {currentUser.name}!
             </h1>
             <p className="text-xs sm:text-sm text-emerald-100/80 max-w-2xl leading-relaxed">
@@ -271,14 +271,14 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
           </div>
 
           {/* Quick Action Navigation Buttons */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-row items-center gap-2 sm:gap-3 w-full md:w-auto">
             <button
               id="btn-nav-file-report"
               onClick={() => {
                 setPortalTab('submit');
                 setSubmittedSuccessCaseId(null);
               }}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-sm ${portalTab === 'submit'
+              className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm ${portalTab === 'submit'
                   ? 'bg-white text-emerald-950 ring-2 ring-white/40'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                 }`}
@@ -293,7 +293,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 setPortalTab('my_reports');
                 setSubmittedSuccessCaseId(null);
               }}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer border ${portalTab === 'my_reports'
+              className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer border ${portalTab === 'my_reports'
                   ? 'bg-white text-emerald-950 border-white'
                   : 'bg-emerald-900/60 hover:bg-emerald-900 border-emerald-700/60 text-emerald-100'
                 }`}

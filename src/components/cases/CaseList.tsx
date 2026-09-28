@@ -245,9 +245,78 @@ export const CaseList: React.FC = () => {
         </div>
       </div>
 
-      {/* Case Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Case Data List: Dual Responsive Mode (Mobile Card Feed for Phones, Table for Tablets/Laptops) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        
+        {/* Mobile View: High-density touch-friendly cards (Phones < 640px) */}
+        <div className="sm:hidden divide-y divide-slate-100">
+          {filteredCases.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs px-4">
+              No cases match the selected filters or search query.
+            </div>
+          ) : (
+            filteredCases.map((c) => (
+              <div
+                key={`mobile-${c.id}`}
+                onClick={() => setSelectedCaseId(c.id)}
+                className="p-4 space-y-2.5 hover:bg-emerald-50/30 active:bg-emerald-50/60 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                      {c.id}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {formatDateShort(c.dateReported)}
+                    </span>
+                  </div>
+                  <StatusBadge status={c.status} size="sm" />
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-xs text-slate-900 leading-snug line-clamp-2">
+                    {c.title}
+                  </h4>
+                  <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <span>📍 Brgy. {c.barangay}</span>
+                    {c.specificLocation && (
+                      <span className="truncate max-w-[160px] text-slate-400">• {c.specificLocation}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80">
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                      {c.category}
+                    </span>
+                    <PriorityBadge priority={c.priority} />
+                    {c.isInvolvingOfficial && (
+                      <span className="text-[9px] font-bold bg-rose-100 text-rose-700 px-1 py-0.5 rounded">
+                        Official
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCaseId(c.id);
+                    }}
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View Docket →</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Tablet & Desktop View: Central Data Table (Screens >= 640px) */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-xs divide-y divide-slate-200">
             <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
               <tr>
