@@ -1,27 +1,31 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  FileSpreadsheet, 
-  Plus, 
-  Compass, 
+import {
+  LayoutDashboard,
+  FileSpreadsheet,
+  Plus,
+  Compass,
   Menu,
   Clock,
-  UserCheck
+  UserCheck,
+  BookOpenCheck
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
 
 export const MobileBottomNav: React.FC = () => {
   const { currentUser } = useAuth();
-  const { 
-    activeTab, 
-    setActiveTab, 
-    setIsNewCaseModalOpen, 
-    isMobileMenuOpen, 
-    setIsMobileMenuOpen 
+  const {
+    activeTab,
+    setActiveTab,
+    setIsNewCaseModalOpen,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen
   } = useUI();
 
-  const isResident = currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT';
+  if (!currentUser) return null;
+
+  const isResident = currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT';
+  const isLgu = currentUser?.agencyType === 'LGU';
 
   const handleCenterAction = () => {
     if (isResident) {
@@ -46,11 +50,10 @@ export const MobileBottomNav: React.FC = () => {
           setActiveTab('dashboard');
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          activeTab === 'dashboard' || activeTab === 'resident_portal'
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${activeTab === 'dashboard' || activeTab === 'resident_portal'
             ? 'text-emerald-700 font-bold'
             : 'text-slate-500 hover:text-emerald-800'
-        }`}
+          }`}
       >
         <div className={`p-1 rounded-xl transition ${activeTab === 'dashboard' || activeTab === 'resident_portal' ? 'bg-emerald-50' : ''}`}>
           <LayoutDashboard className="w-5 h-5" />
@@ -65,20 +68,19 @@ export const MobileBottomNav: React.FC = () => {
         id="mobile-nav-cases"
         type="button"
         onClick={() => {
-          setActiveTab(isResident ? 'my_reports' : 'cases');
+          setActiveTab(isResident ? 'my_reports' : (isLgu ? 'annual_narrative' : 'cases'));
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          activeTab === 'cases' || activeTab === 'my_reports'
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${activeTab === 'cases' || activeTab === 'my_reports' || (isLgu && activeTab === 'annual_narrative')
             ? 'text-emerald-700 font-bold'
             : 'text-slate-500 hover:text-emerald-800'
-        }`}
+          }`}
       >
-        <div className={`p-1 rounded-xl transition ${activeTab === 'cases' || activeTab === 'my_reports' ? 'bg-emerald-50' : ''}`}>
-          {isResident ? <Clock className="w-5 h-5" /> : <FileSpreadsheet className="w-5 h-5" />}
+        <div className={`p-1 rounded-xl transition ${activeTab === 'cases' || activeTab === 'my_reports' || (isLgu && activeTab === 'annual_narrative') ? 'bg-emerald-50' : ''}`}>
+          {isResident ? <Clock className="w-5 h-5" /> : (isLgu ? <BookOpenCheck className="w-5 h-5" /> : <FileSpreadsheet className="w-5 h-5" />)}
         </div>
         <span className="text-[10px] mt-0.5 leading-tight">
-          {isResident ? 'My Reports' : 'Blotter'}
+          {isResident ? 'My Reports' : (isLgu ? 'Narrative' : 'Blotter')}
         </span>
       </button>
 
@@ -106,11 +108,10 @@ export const MobileBottomNav: React.FC = () => {
           setActiveTab(isResident ? 'annual_narrative' : 'gis_map');
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          activeTab === 'gis_map' || activeTab === 'annual_narrative'
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${activeTab === 'gis_map' || activeTab === 'annual_narrative'
             ? 'text-emerald-700 font-bold'
             : 'text-slate-500 hover:text-emerald-800'
-        }`}
+          }`}
       >
         <div className={`p-1 rounded-xl transition ${activeTab === 'gis_map' || activeTab === 'annual_narrative' ? 'bg-emerald-50' : ''}`}>
           {isResident ? <UserCheck className="w-5 h-5" /> : <Compass className="w-5 h-5" />}
@@ -125,11 +126,10 @@ export const MobileBottomNav: React.FC = () => {
         id="mobile-nav-drawer-toggle"
         type="button"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          isMobileMenuOpen
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${isMobileMenuOpen
             ? 'text-emerald-700 font-bold'
             : 'text-slate-500 hover:text-emerald-800'
-        }`}
+          }`}
       >
         <div className={`p-1 rounded-xl transition ${isMobileMenuOpen ? 'bg-emerald-50' : ''}`}>
           <Menu className="w-5 h-5" />

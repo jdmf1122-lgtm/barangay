@@ -14,7 +14,6 @@ import { CaseDetailModal } from './components/cases/CaseDetailModal';
 import { NewCaseModal } from './components/cases/NewCaseModal';
 import { CreateAccountModal } from './components/auth/CreateAccountModal';
 import { EditAccountModal } from './components/auth/EditAccountModal';
-import { GraphNetworkView } from './components/graph/GraphNetworkView';
 import { GeographicBarangayMap } from './components/graph/GeographicBarangayMap';
 import { AnnualNarrativeReport } from './components/reports/AnnualNarrativeReport';
 import { StandardReportsView } from './components/reports/StandardReportsView';
@@ -23,47 +22,51 @@ import { SystemAdminView } from './components/admin/SystemAdminView';
 import { ResidentPortalView } from './components/resident/ResidentPortalView';
 import { EmergencyAccidentAlarmModal } from './components/common/EmergencyAccidentAlarmModal';
 import { MobileBottomNav } from './components/common/MobileBottomNav';
+import { useEscalationMonitor } from './hooks/useEscalationMonitor';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
-  const { 
-    activeTab, 
-    isEditAccountModalOpen, 
-    setIsEditAccountModalOpen, 
-    userToEdit 
+  const {
+    activeTab,
+    isEditAccountModalOpen,
+    setIsEditAccountModalOpen,
+    userToEdit
   } = useUI();
 
-  // If user is not authenticated, show Auth (Login & Create Account) Portal
-  if (!isAuthenticated) {
+  // Active MDRRMO to LGU auto-escalation daemon
+  useEscalationMonitor();
+
+  // If user is not authenticated or currentUser is missing, show Auth (Login & Create Account) Portal
+  if (!isAuthenticated || !currentUser) {
     return <AuthPage />;
   }
 
   const renderContent = () => {
     // If logged in as resident citizen, route directly to Resident Portal
-    if (currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') {
+    if (currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT') {
       if (activeTab === 'submit_report') {
-        return <ResidentPortalView initialTab="submit" />;
+        return <ResidentPortalView key="submit" initialTab="submit" />;
       }
       if (activeTab === 'my_reports') {
-        return <ResidentPortalView initialTab="my_reports" />;
+        return <ResidentPortalView key="my_reports" initialTab="my_reports" />;
       }
 
       if (activeTab === 'cases') {
         return <CaseList />;
       }
-      return <ResidentPortalView initialTab="overview" />;
+      return <ResidentPortalView key="overview" initialTab="overview" />;
     }
 
     switch (activeTab) {
       case 'resident_portal':
-        return <ResidentPortalView initialTab="overview" />;
+        return <ResidentPortalView key="overview" initialTab="overview" />;
       case 'submit_report':
-        return <ResidentPortalView initialTab="submit" />;
+        return <ResidentPortalView key="submit" initialTab="submit" />;
       case 'my_reports':
-        return <ResidentPortalView initialTab="my_reports" />;
+        return <ResidentPortalView key="my_reports" initialTab="my_reports" />;
 
       case 'dashboard':
-        switch (currentUser.agencyType) {
+        switch (currentUser?.agencyType) {
           case 'MDRRMO':
             return <MdrrmoDashboard />;
           case 'LGU':
@@ -77,9 +80,7 @@ const AppContent: React.FC = () => {
             return <MdrrmoDashboard />;
         }
       case 'cases':
-        return <CaseList />;
-      case 'graph':
-        return <GraphNetworkView />;
+        return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <CaseList />;
       case 'gis_map':
         return <GeographicBarangayMap />;
       case 'transparency':
@@ -93,7 +94,7 @@ const AppContent: React.FC = () => {
       case 'admin':
         return <SystemAdminView />;
       default:
-        return <CaseList />;
+        return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <CaseList />;
     }
   };
 
@@ -138,9 +139,9 @@ const AppContent: React.FC = () => {
       <CaseDetailModal />
       <NewCaseModal />
       <CreateAccountModal />
-      <EditAccountModal 
-        isOpen={isEditAccountModalOpen} 
-        onClose={() => setIsEditAccountModalOpen(false)} 
+      <EditAccountModal
+        isOpen={isEditAccountModalOpen}
+        onClose={() => setIsEditAccountModalOpen(false)}
         userToEdit={userToEdit}
       />
       <EmergencyAccidentAlarmModal />
@@ -148,10 +149,14 @@ const AppContent: React.FC = () => {
   );
 };
 
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
 export default function App() {
   return (
-    <AppProviders>
-      <AppContent />
-    </AppProviders>
+    <ErrorBoundary>
+      <AppProviders>
+        <AppContent />
+      </AppProviders>
+    </ErrorBoundary>
   );
 }

@@ -62,7 +62,7 @@ export const useAuth = () => {
 
   const loginWithCredentials = async (emailOrId: string, passcode?: string): Promise<{ success: boolean; message?: string }> => {
     const cleanQuery = emailOrId.trim();
-    if (!cleanQuery) return { success: false, message: 'Pakilagay ang iyong Email, Badge ID, o Pangalan.' };
+    if (!cleanQuery) return { success: false, message: 'Please enter your Email, Badge ID, or Name.' };
     const cleanPasscode = (passcode || '').trim();
 
     try {
@@ -186,13 +186,13 @@ export const useAuth = () => {
 
         return {
           success: false,
-          message: 'Maling password / passcode para sa account na ito. Maaari ring gamitin ang master passcode: jarinyes'
+          message: 'Incorrect password / passcode for this account. You may also use the master passcode: jarinyes'
         };
       }
 
       return {
         success: false,
-        message: 'Hindi mahanap ang user account sa system. Pakisuri ang iyong Email o mag-register sa Tab 2.'
+        message: 'User account not found in the system. Please check your email or register in Tab 2.'
       };
     } catch (error: any) {
       return { success: false, message: error.message || 'Authentication error. Please try again.' };

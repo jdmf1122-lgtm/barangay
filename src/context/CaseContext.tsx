@@ -61,8 +61,11 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
           setCases((prev) => {
             const map = new Map<string, Case>();
             sanitized.forEach((c) => map.set(c.id, c));
+            // Only preserve seed cases from prev if not present on server
             prev.forEach((c) => {
-              if (!map.has(c.id)) map.set(c.id, c);
+              if (!map.has(c.id) && SEED_CASES.some((s) => s.id === c.id)) {
+                map.set(c.id, c);
+              }
             });
             return Array.from(map.values()).sort((a, b) => 
               new Date(b.dateCreated || b.dateReported).getTime() - new Date(a.dateCreated || a.dateReported).getTime()
@@ -94,6 +97,8 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
           } else if (event.data?.type === 'UPDATE_CASE' && event.data.payload) {
             const updated = sanitizeCaseBarangay(event.data.payload);
             setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          } else if (event.data?.type === 'DELETE_CASE' && event.data.payload?.id) {
+            setCases((prev) => prev.filter((c) => c.id !== event.data.payload.id));
           }
         };
       } catch (e) {
@@ -134,6 +139,9 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
         } else if (payload?.type === 'UPDATE_CASE' && payload.data) {
           const updated = sanitizeCaseBarangay(payload.data);
           setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        } else if (payload?.type === 'DELETE_CASE' && (payload.data?.id || payload.data)) {
+          const delId = payload.data?.id || payload.data;
+          setCases((prev) => prev.filter((c) => c.id !== delId));
         }
       })
       .subscribe();

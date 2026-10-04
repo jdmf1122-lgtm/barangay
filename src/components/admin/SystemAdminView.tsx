@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Settings, 
   Building2, 
@@ -14,17 +14,78 @@ import {
   UserPlus,
   UserCheck,
   Trash2,
-  Edit3
+  Edit3,
+  Clock,
+  PhoneCall,
+  AlertTriangle,
+  Siren,
+  CheckCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useUI } from '../../hooks/useUI';
 import { AGENCIES_LIST, ROXAS_BARANGAYS } from '../../types';
+import { 
+  getEscalationConfig, 
+  saveEscalationConfig, 
+  EscalationConfig 
+} from '../../utils/escalationService';
 
 export const SystemAdminView: React.FC = () => {
   const { users, currentUser, setCurrentUser, resetToDefaults, deleteUser, clearAllUsers } = useAuth();
-  const { cases, auditLogs } = useCases();
+  const { cases, auditLogs, escalateIncidentToLgu, createCase } = useCases();
   const { setIsCreateAccountModalOpen, openEditAccountModal } = useUI();
+
+  const [escalationConfig, setEscalationConfigState] = useState<EscalationConfig>(() => getEscalationConfig());
+  const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const handleSaveEscalationConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveEscalationConfig(escalationConfig);
+    setIsSavedNotice(true);
+    setTimeout(() => setIsSavedNotice(false), 3000);
+  };
+
+  const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
+
+  const handleSimulateEscalation = async () => {
+    setIsSimulating(true);
+    setSimulationNotice(null);
+    try {
+      const testCaseId = `INC-ESC-${Date.now().toString().slice(-4)}`;
+      const testCaseData: Partial<Case> = {
+        id: testCaseId,
+        caseNumber: testCaseId,
+        title: 'Severe Multi-Vehicle Collision at Strong Republic Nautical Hwy',
+        category: 'Motorcycle vs Tricycle Collision' as any,
+        barangay: 'San Aquilino',
+        specificLocation: 'Morente Ave. cor. Nautical Highway, Brgy. San Aquilino',
+        description: 'Severe collision between motorcycle and tricycle with injuries reported. Unattended and unacknowledged within response threshold.',
+        priority: 'Urgent',
+        isAccidentEmergency: true,
+        isCitizenReport: true,
+        status: 'Pending',
+        emergencyAlarmAcknowledged: false,
+        reporterName: 'Resident Citizen (via Portal)',
+        reporterContact: '0917-555-9123',
+        dateReported: new Date(Date.now() - (escalationConfig.thresholdMinutes * 60 * 1000 + 300000)).toISOString(),
+        dateCreated: new Date(Date.now() - (escalationConfig.thresholdMinutes * 60 * 1000 + 300000)).toISOString()
+      };
+
+      await escalateIncidentToLgu(
+        testCaseId, 
+        `${(escalationConfig.thresholdMinutes / 60).toFixed(1)} hours (Simulation Trigger)`,
+        `Automated Simulation: Response deadline of ${escalationConfig.thresholdMinutes} minutes reached without MDRRMO acknowledgment. Escalated to LGU with automated SMS dispatch.`,
+        testCaseData
+      );
+
+      setSimulationNotice(`🚨 Escalation Triggered! Incident #${testCaseId} has been escalated to LGU. SMS dispatched to ${escalationConfig.designatedLguName} (${escalationConfig.designatedLguPhone}). Check the LGU Executive Dashboard.`);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   const handleExportFullJson = () => {
     const fullBackup = {
@@ -89,6 +150,172 @@ export const SystemAdminView: React.FC = () => {
             Reset Seed Data
           </button>
         </div>
+      </div>
+
+      {/* MDRRMO to LGU Automatic Escalation Policy & Threshold Configuration */}
+      <div id="escalation-policy-config-card" className="bg-white rounded-xl border-2 border-emerald-500/80 shadow-md p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-800 border border-emerald-200">
+              <Clock className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
+                  Automatic Incident Escalation Policy (MDRRMO ➔ LGU)
+                </h3>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                  Active Statutory Daemon
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+                Monitors all emergency reports submitted to MDRRMO. If MDRRMO does not acknowledge, respond to, or update the report within the configured deadline, the system automatically escalates the case to the LGU Executive Office and dispatches an automated SMS alert to designated LGU officials.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={isSimulating}
+            onClick={handleSimulateEscalation}
+            className="self-start sm:self-auto px-3.5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+            title="Simulate MDRRMO response deadline timeout and trigger immediate auto-escalation to LGU"
+          >
+            <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
+            <span>{isSimulating ? 'Simulating...' : 'Simulate Timeout & Escalate'}</span>
+          </button>
+        </div>
+
+        {simulationNotice && (
+          <div className="bg-emerald-50 border-2 border-emerald-400 text-emerald-950 p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{simulationNotice}</span>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setSimulationNotice(null)}
+              className="text-emerald-700 hover:text-emerald-900 font-bold text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveEscalationConfig} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Configurable Response Threshold */}
+            <div>
+              <label className="text-xs font-bold text-slate-800 block mb-1">
+                MDRRMO Response Deadline Threshold *
+              </label>
+              <select
+                value={escalationConfig.thresholdMinutes}
+                onChange={(e) => setEscalationConfigState(prev => ({ ...prev, thresholdMinutes: Number(e.target.value) }))}
+                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value={1}>⚡ 1 Minute (Live Testing & Quick Demo Mode)</option>
+                <option value={5}>⏱️ 5 Minutes (Fast Verification Mode)</option>
+                <option value={60}>⏱️ 1 Hour (60 minutes)</option>
+                <option value={120}>⏱️ 2 Hours (120 minutes) — Standard Default</option>
+                <option value={150}>⏱️ 2.5 Hours (150 minutes)</option>
+                <option value={180}>⏱️ 3 Hours (180 minutes) — Maximum Window</option>
+              </select>
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                {escalationConfig.thresholdMinutes <= 5 
+                  ? '⚡ Test mode selected: ideal for demonstrating escalation immediately.'
+                  : 'Statutory 2–3 hour window for MDRRMO emergency triage response.'}
+              </span>
+            </div>
+
+            {/* 2. Designated LGU Official Name */}
+            <div>
+              <label className="text-xs font-bold text-slate-800 block mb-1">
+                Designated LGU Official Recipient *
+              </label>
+              <input
+                type="text"
+                required
+                value={escalationConfig.designatedLguName}
+                onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguName: e.target.value }))}
+                placeholder="e.g. Atty. Clarissa Reyes"
+                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">Official authorized to receive escalation notifications.</span>
+            </div>
+
+            {/* 3. Designated LGU Official Role */}
+            <div>
+              <label className="text-xs font-bold text-slate-800 block mb-1">
+                Official Designation / Title *
+              </label>
+              <input
+                type="text"
+                required
+                value={escalationConfig.designatedLguRole}
+                onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguRole: e.target.value }))}
+                placeholder="e.g. Municipal Administrator"
+                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">Municipal governance position.</span>
+            </div>
+
+            {/* 4. Designated Official SMS Phone */}
+            <div>
+              <label className="text-xs font-bold text-slate-800 block mb-1 flex items-center gap-1">
+                <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Designated SMS Alert Number *</span>
+              </label>
+              <input
+                type="tel"
+                required
+                value={escalationConfig.designatedLguPhone}
+                onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguPhone: e.target.value }))}
+                placeholder="e.g. 0920-988-4411"
+                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">Receives automated carrier SMS on deadline breach.</span>
+            </div>
+          </div>
+
+          {/* SMS Broadcast Format Preview Box */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+            <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              Standard Carrier SMS Payload Preview:
+            </span>
+            <p className="font-mono text-[11px] text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200/80 leading-relaxed select-all">
+              URGENT ALERT: Incident #[ID] reported at [LOCATION] has not received a response or acknowledgment from the MDRRMO for more than {(escalationConfig.thresholdMinutes / 60).toFixed(1)} hours. LGU intervention is required. Please review the incident and take the appropriate action immediately. [Details: Type: [EMERGENCY] | Date/Time: [TIMESTAMP] | Current Status: Escalated to LGU | Recommended Action: LGU intervention/review required]
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={escalationConfig.enabled}
+                  onChange={(e) => setEscalationConfigState(prev => ({ ...prev, enabled: e.target.checked }))}
+                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                />
+                <span>Enable Automated MDRRMO-to-LGU Escalation & SMS Broadcasts</span>
+              </label>
+              {isSavedNotice && (
+                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 animate-in fade-in">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  Policy Saved!
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Save Escalation Policy</span>
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* 4 Connected Agencies Grid */}
@@ -204,9 +431,9 @@ export const SystemAdminView: React.FC = () => {
                       <td className="py-2.5 px-3 font-mono font-bold text-blue-700">{u.id}</td>
                       <td className="py-2.5 px-3 font-semibold text-slate-900 flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
-                          {u.name.charAt(0)}
+                          {(u.name || 'U').charAt(0)}
                         </div>
-                        <span>{u.name}</span>
+                        <span>{u.name || 'Unnamed User'}</span>
                       </td>
                       <td className="py-2.5 px-3 text-slate-700">{u.position}</td>
                       <td className="py-2.5 px-3 text-slate-600">

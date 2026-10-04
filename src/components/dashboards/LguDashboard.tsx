@@ -21,17 +21,25 @@ export const LguDashboard: React.FC = () => {
   const { cases, setSelectedCaseId } = useCases();
   const { setActiveTab } = useUI();
 
-  const isAdministrator = currentUser.role === 'LGU_ADMINISTRATOR';
+  const isAdministrator = currentUser?.role === 'LGU_ADMINISTRATOR';
 
-  const totalCases = cases.length;
-  const lguReferredCases = cases.filter((c) => c.isReferredToLgu || c.currentHandlingAgency.includes('Municipal'));
-  const resolvedCases = cases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
-  const pendingCases = cases.filter((c) => c.isPending || c.status === 'Pending').length;
+  const safeCases = cases || [];
+  const totalCases = safeCases.length;
+  const lguReferredCases = safeCases.filter((c) => c.isReferredToLgu || (c.currentHandlingAgency && c.currentHandlingAgency.includes('Municipal')));
+  const resolvedCases = safeCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
+  const pendingCases = safeCases.filter((c) => c.isPending || c.status === 'Pending').length;
+
+  // MDRRMO to LGU Escalated Incidents (MDRRMO non-response timeout reached)
+  const escalatedToLguCases = safeCases.filter(
+    (c) => c && c.isEscalatedToLgu && c.status !== 'Resolved' && c.status !== 'Closed'
+  );
 
   // Barangay case distribution
   const barangayCounts: Record<string, number> = {};
-  cases.forEach((c) => {
-    barangayCounts[c.barangay] = (barangayCounts[c.barangay] || 0) + 1;
+  safeCases.forEach((c) => {
+    if (c?.barangay) {
+      barangayCounts[c.barangay] = (barangayCounts[c.barangay] || 0) + 1;
+    }
   });
 
   return (
@@ -67,6 +75,114 @@ export const LguDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Prominent Escalated Incidents Alert Card (MDRRMO Non-Response Timeout) */}
+      {escalatedToLguCases.length > 0 && (
+        <div id="lgu-escalated-incidents-section" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500/80 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-3.5 w-3.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600"></span>
+              </span>
+              <div>
+                <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide flex items-center gap-2">
+                  <span>🚨 Incidents Escalated to LGU ({escalatedToLguCases.length})</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white">
+                    Action Required
+                  </span>
+                </h3>
+                <p className="text-xs text-rose-800/90 font-medium">
+                  MDRRMO response deadline was exceeded without acknowledgment. Automated SMS alert dispatched to designated LGU Officials. LGU review and intervention is required.
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold px-2.5 py-1 bg-white border border-rose-300 text-rose-800 rounded-lg shadow-2xs self-start sm:self-auto">
+              Automated Statutory Escalation
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {escalatedToLguCases.map((c) => (
+              <div 
+                key={c.id} 
+                className="bg-white border-2 border-rose-200 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:border-rose-400 transition"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-black px-2 py-0.5 bg-rose-100 text-rose-900 rounded border border-rose-200">
+                      #{c.id}
+                    </span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
+                      Escalated to LGU
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-1">{c.title}</h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span className="truncate">Location: {c.specificLocation || `Brgy. ${c.barangay}`}</span>
+                    </p>
+                  </div>
+
+                  <div className="bg-rose-50/70 p-2.5 rounded-lg border border-rose-200/60 text-[11px] space-y-1">
+                    <div className="flex justify-between text-slate-700">
+                      <span>Emergency Type:</span>
+                      <strong className="text-slate-900">{c.category || 'Accident Incident'}</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-700">
+                      <span>Reported Date & Time:</span>
+                      <strong className="text-slate-900">{c.incidentDate || c.dateReported?.split('T')[0]} {c.incidentTime || ''}</strong>
+                    </div>
+                    <div className="flex justify-between text-rose-800 font-bold">
+                      <span>Elapsed without MDRRMO:</span>
+                      <span className="text-rose-700 font-mono underline decoration-rose-300">
+                        {c.escalationElapsedStr || 'Over 2 hours'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-slate-700">
+                      <span>Current Status:</span>
+                      <span className="font-bold text-amber-800">{c.status || 'Escalated to LGU'}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-700">
+                      <span>Recommended Action:</span>
+                      <strong className="text-rose-700">LGU intervention/review required</strong>
+                    </div>
+                  </div>
+
+                  {c.escalationSmsRecipient && (
+                    <div className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 flex items-center gap-1.5">
+                      <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span>SMS delivered to: <strong>{c.escalationSmsRecipient}</strong> ({c.escalationSmsRecipientPhone})</span>
+                    </div>
+                  )}
+
+                  {c.lguActionTaken && (
+                    <div className="text-[10px] text-sky-800 bg-sky-50 px-2 py-1 rounded border border-sky-200">
+                      <span>Current LGU Directive: <strong>{c.lguActionTaken}</strong></span>
+                      {c.lguInterventionNotes && <p className="text-slate-600 italic mt-0.5 line-clamp-1">"{c.lguInterventionNotes}"</p>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-slate-500">
+                    Escalated: {c.escalatedAt ? new Date(c.escalatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                  </span>
+                  <button
+                    onClick={() => setSelectedCaseId(c.id)}
+                    className="px-3.5 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <span>Intervene & Take Action</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
@@ -75,6 +191,22 @@ export const LguDashboard: React.FC = () => {
           <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-bold">
             <span>Across 5 Barangays</span>
             <div className="h-px flex-1 bg-slate-100"></div>
+          </div>
+        </div>
+
+        <div className={`p-4 rounded-xl border shadow-xs transition ${
+          escalatedToLguCases.length > 0 
+            ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/40' 
+            : 'bg-white border-slate-200'
+        }`}>
+          <p className="text-xs text-rose-700 uppercase font-black tracking-tight flex items-center justify-between">
+            <span>Escalated to LGU</span>
+            {escalatedToLguCases.length > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
+          </p>
+          <h3 className="text-3xl font-black mt-1 text-rose-700">{escalatedToLguCases.length}</h3>
+          <div className="flex items-center gap-2 mt-2 text-[10px] text-rose-700 font-bold">
+            <span>{escalatedToLguCases.length > 0 ? 'MDRRMO Timeout Exceeded' : 'Zero Escalations'}</span>
+            <div className="h-px flex-1 bg-rose-200"></div>
           </div>
         </div>
 
@@ -92,15 +224,6 @@ export const LguDashboard: React.FC = () => {
           <h3 className="text-3xl font-bold mt-1 text-blue-600">{lguReferredCases.length}</h3>
           <div className="flex items-center gap-2 mt-2 text-[10px] text-blue-600 font-bold">
             <span>MENRO / Legal / Market</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Pending Cases</p>
-          <h3 className="text-3xl font-bold mt-1 text-amber-500">{pendingCases}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-amber-600 font-bold">
-            <span>Awaiting Action</span>
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
         </div>

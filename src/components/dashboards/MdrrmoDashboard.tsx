@@ -13,7 +13,9 @@ import {
   Activity,
   MapPin,
   Radio,
-  Check
+  Check,
+  Timer,
+  AlertOctagon
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -22,6 +24,7 @@ import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { formatDateShort } from '../../utils/reportGenerators';
 import { sendAutomatedResponderSMS, startSmsResendInterval } from '../../utils/smsService';
+import { getEscalationConfig, formatElapsedTime } from '../../utils/escalationService';
 import { ROXAS_BARANGAYS } from '../../types';
 
 export const MdrrmoDashboard: React.FC = () => {
@@ -30,28 +33,38 @@ export const MdrrmoDashboard: React.FC = () => {
   const { triggerNotification } = useNotifications();
   const { setIsNewCaseModalOpen, setActiveTab } = useUI();
 
-  const currentBarangay = currentUser.barangay;
+  const currentBarangay = currentUser?.barangay;
   const [barangayFilter, setBarangayFilter] = useState<string>('ALL');
+  const [timeTick, setTimeTick] = useState(Date.now());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setTimeTick(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const escalationConfig = getEscalationConfig();
+
+  const safeCases = cases || [];
 
   // MDRRMO monitors all incidents municipal-wide across all 20 component barangays
   const mdrrmoCases = barangayFilter === 'ALL'
-    ? cases
-    : cases.filter((c) => c.barangay === barangayFilter);
+    ? safeCases
+    : safeCases.filter((c) => c && c.barangay === barangayFilter);
 
   // Active unacknowledged resident reports & emergency alerts
-  const incomingResidentAlerts = cases.filter(
-    (c) => (c.isCitizenReport || c.isAccidentEmergency) &&
+  const incomingResidentAlerts = safeCases.filter(
+    (c) => c && (c.isCitizenReport || c.isAccidentEmergency) &&
       !c.emergencyAlarmAcknowledged &&
       c.status !== 'Resolved' &&
       c.status !== 'Closed'
   );
 
   const totalIncidents = mdrrmoCases.length;
-  const resolvedCount = mdrrmoCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
-  const pendingCount = mdrrmoCases.filter((c) => c.isPending || c.status === 'Pending').length;
-  const accidentCases = mdrrmoCases.filter((c) => c.isAccidentEmergency || c.category === 'Traffic / Vehicular Incident' || c.vehicleDetails?.length);
-  const ambulanceDispatches = mdrrmoCases.filter((c) => c.respondingAmbulanceUnit && c.respondingAmbulanceUnit !== 'None');
-  const urgentCrashes = mdrrmoCases.filter((c) => c.priority === 'Urgent' || c.priority === 'High');
+  const resolvedCount = mdrrmoCases.filter((c) => c && (c.status === 'Resolved' || c.status === 'Closed')).length;
+  const pendingCount = mdrrmoCases.filter((c) => c && (c.isPending || c.status === 'Pending')).length;
+  const accidentCases = mdrrmoCases.filter((c) => c && (c.isAccidentEmergency || c.category === 'Traffic / Vehicular Incident' || (c.vehicleDetails && c.vehicleDetails.length > 0)));
+  const ambulanceDispatches = mdrrmoCases.filter((c) => c && (c.respondingAmbulanceUnit && c.respondingAmbulanceUnit !== 'None'));
+  const urgentCrashes = mdrrmoCases.filter((c) => c && (c.priority === 'Urgent' || c.priority === 'High'));
 
   const handleTestAccidentAlarm = () => {
     const testCaseId = `INC-EMG-${Date.now().toString().slice(-4)}`;
@@ -90,7 +103,7 @@ export const MdrrmoDashboard: React.FC = () => {
     );
   };
 
-  const isOfficer = currentUser.role === 'MDRRMO_OFFICER';
+  const isOfficer = currentUser?.role === 'MDRRMO_OFFICER';
 
   return (
     <div id="mdrrmo-dashboard-view" className="space-y-6">
@@ -162,48 +175,82 @@ export const MdrrmoDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {incomingResidentAlerts.slice(0, 4).map((c) => (
-              <div key={c.id} className="bg-white border border-rose-200 rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded">
-                      #{c.id}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {formatDateShort(c.dateReported)}
-                    </span>
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{c.title}</h4>
-                  <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-1">
-                    <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
-                    <span className="truncate">Brgy. {c.barangay} • {c.specificLocation}</span>
-                  </p>
-                  {c.reporterName && (
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      Reported by resident: <strong className="text-slate-700">{c.reporterName}</strong>
-                    </p>
-                  )}
-                </div>
+            {incomingResidentAlerts.slice(0, 4).map((c) => {
+              const elapsed = formatElapsedTime(c.dateReported || c.dateCreated);
+              const remainingMins = Math.max(0, escalationConfig.thresholdMinutes - elapsed.minutes);
+              const isOverdue = elapsed.minutes >= escalationConfig.thresholdMinutes;
 
-                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
-                  <button
-                    onClick={() => setSelectedCaseId(c.id)}
-                    className="flex-1 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <span>View Report</span>
-                    <ArrowUpRight className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => markIncidentAsSeenAndResponded(c.id)}
-                    className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Check className="w-3 h-3" />
-                    <span>Acknowledge</span>
-                  </button>
+              return (
+                <div key={c.id} className="bg-white border-2 border-rose-200 rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded">
+                        #{c.id}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        {formatDateShort(c.dateReported)}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{c.title}</h4>
+                    <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                      <span className="truncate">Brgy. {c.barangay} • {c.specificLocation}</span>
+                    </p>
+                    {c.reporterName && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        Reported by resident: <strong className="text-slate-700">{c.reporterName}</strong>
+                      </p>
+                    )}
+
+                    {/* Response Timer & Escalation Monitor */}
+                    <div className={`mt-2.5 p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1.5 ${
+                      c.isEscalatedToLgu
+                        ? 'bg-rose-100/90 border-rose-300 text-rose-950 font-bold'
+                        : isOverdue
+                        ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold animate-pulse'
+                        : remainingMins <= 30
+                        ? 'bg-amber-50 border-amber-300 text-amber-900 font-medium'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Timer className={`w-3.5 h-3.5 shrink-0 ${c.isEscalatedToLgu || isOverdue ? 'text-rose-600' : 'text-amber-600'}`} />
+                        <span className="truncate">
+                          {c.isEscalatedToLgu ? (
+                            <span>🚨 Escalated to LGU ({elapsed.displayStr} elapsed)</span>
+                          ) : isOverdue ? (
+                            <span>⚠️ Deadline reached ({elapsed.displayStr} elapsed) • Escalating to LGU</span>
+                          ) : (
+                            <span>Timer: <strong>{elapsed.displayStr}</strong> • Escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins/60)}h ${remainingMins%60}m` : `${remainingMins}m`}</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white font-mono font-bold shrink-0 border border-slate-200">
+                        Limit: {escalationConfig.thresholdMinutes >= 60 ? `${escalationConfig.thresholdMinutes / 60}h` : `${escalationConfig.thresholdMinutes}m`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+                    <button
+                      onClick={() => setSelectedCaseId(c.id)}
+                      className="flex-1 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <span>View Report</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => markIncidentAsSeenAndResponded(c.id)}
+                      className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                      title="Acknowledge incident to halt LGU escalation timer and stop sirens"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span>Acknowledge (Halt Timer)</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -316,7 +363,16 @@ export const MdrrmoDashboard: React.FC = () => {
                   onClick={() => setSelectedCaseId(c.id)}
                   className="hover:bg-orange-50/40 transition cursor-pointer"
                 >
-                  <td className="py-3 px-4 font-mono font-bold text-orange-950">{c.caseNumber || c.id}</td>
+                  <td className="py-3 px-4 font-mono font-bold text-orange-950">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>{c.caseNumber || c.id}</span>
+                      {c.isEscalatedToLgu && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white animate-pulse" title="Automatically escalated to LGU due to MDRRMO non-response timeout">
+                          LGU Escalated
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 px-4">
                     <div className="font-bold text-slate-900">{c.title}</div>
                     <div className="text-[10px] text-slate-500 line-clamp-1">{c.description}</div>

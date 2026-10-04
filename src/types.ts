@@ -205,6 +205,20 @@ export interface Case {
   dateLastUpdated: string;
   createdBy: string;
   isConfidential?: boolean;
+
+  // MDRRMO to LGU Automatic Escalation Tracking
+  isEscalatedToLgu?: boolean;
+  escalatedAt?: string;
+  escalationReason?: string;
+  escalationSmsDelivered?: boolean;
+  escalationSmsBody?: string;
+  escalationSmsRecipient?: string;
+  escalationSmsRecipientPhone?: string;
+  escalationElapsedStr?: string;
+  lguActionTaken?: 'Under Review' | 'MDRRMO Mobilized' | 'Municipal Team Dispatched' | 'Resolved by LGU' | 'Dismissed';
+  lguInterventionNotes?: string;
+  lguActionDate?: string;
+  lguActionPersonnel?: string;
 }
 
 export interface AuditLog {

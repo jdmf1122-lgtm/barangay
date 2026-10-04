@@ -38,6 +38,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   const [isCreateNotifModalOpen, setIsCreateNotifModalOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<'ALL' | 'UNREAD'>('ALL');
 
+  if (!currentUser) return null;
+
   const roleMeta = getRoleNotificationMeta(currentUser.agencyType, currentUser.barangay);
 
   const displayedNotifs = (userNotifications || []).filter((n) => {
@@ -99,14 +101,11 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             ? 'LGU Executive Administration Dashboard' 
             : 'LGU Departmental Action & Grievance Desk';
         }
-        return 'Multi-Agency Operational Dashboard';
       case 'cases': 
         if (currentUser.agencyType === 'MDRRMO') return 'Crash Blotter & Emergency Incident Queue';
-        if (currentUser.agencyType === 'LGU') return 'Municipal Incident & Case Masterfile';
         return 'Incident & Complaint Ledger';
-      case 'graph': return 'Inter-Agency Case Relationship Graph';
       case 'transparency': return 'Inter-Agency Transparency & Oversight';
-      case 'annual_narrative': return 'Annual Case Narrative & Governance Report';
+      case 'annual_narrative': return 'Case Narrative & Governance Report';
       case 'standard_reports': return 'Standard Operational & KP Reports';
       case 'audit_trail': return 'System Audit Trail & Integrity Logs';
       case 'admin': return 'System Administration & Master Config';
@@ -294,8 +293,10 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           setSelectedCaseId(n.caseId);
                           if (currentUser.agencyType === 'RESIDENT') {
                             setActiveTab('my_reports');
-                          } else {
+                          } else if (currentUser.agencyType === 'MDRRMO') {
                             setActiveTab('cases');
+                          } else {
+                            setActiveTab('dashboard');
                           }
                         }
                         setIsNotifOpen(false);

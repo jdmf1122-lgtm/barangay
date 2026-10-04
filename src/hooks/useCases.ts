@@ -5,6 +5,12 @@ import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
 import { Case, CaseStatus, TimelineEvent, AgencyType, UserRole, ROXAS_BARANGAYS } from '../types';
 import { sendAutomatedResponderSMS, startSmsResendInterval, stopSmsResendInterval } from '../utils/smsService';
+import { 
+  getEscalationConfig, 
+  sendLguEscalationSms, 
+  formatElapsedTime, 
+  isCaseEligibleForEscalation 
+} from '../utils/escalationService';
 
 export const useCases = () => {
   const caseState = useContext(CaseContext);
@@ -385,6 +391,50 @@ export const useCases = () => {
     );
   };
 
+  const deleteCase = async (caseId: string): Promise<boolean> => {
+    try {
+      // 1. Delete from Supabase
+      const { error } = await supabase.from('cases').delete().eq('id', caseId);
+      if (error) {
+        console.error('Error deleting case from Supabase:', error);
+      }
+
+      // 2. Update local state
+      setCases((prev) => prev.filter((c) => c.id !== caseId));
+      if (selectedCaseId === caseId) {
+        setSelectedCaseId(null);
+      }
+
+      // 3. Stop any active SMS resends
+      stopSmsResendInterval(caseId);
+
+      // 4. Log activity
+      logActivity('CASE_DELETED', caseId, `User ${currentUser.name} deleted report #${caseId}.`);
+
+      // 5. Broadcast deletion to other tabs
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const bc = new BroadcastChannel('bconnect_cases_sync');
+          bc.postMessage({ type: 'DELETE_CASE', payload: { id: caseId } });
+          bc.close();
+        } catch (e) {}
+      }
+
+      try {
+        supabase.channel('cases_realtime_sync').send({
+          type: 'broadcast',
+          event: 'case_event',
+          payload: { type: 'DELETE_CASE', data: { id: caseId } }
+        });
+      } catch (e) {}
+
+      return true;
+    } catch (err) {
+      console.error('Failed to delete case:', err);
+      return false;
+    }
+  };
+
   const addCaseTimelineEvent = (caseId: string, title: string, description: string, stage: TimelineEvent['stage']) => {
     const now = new Date().toISOString();
     const newEvent: TimelineEvent = {
@@ -465,13 +515,245 @@ export const useCases = () => {
     );
   };
 
+  const escalateIncidentToLgu = async (
+    caseId: string, 
+    elapsedStrOverride?: string, 
+    customReason?: string,
+    fallbackCase?: Partial<Case>
+  ) => {
+    let targetCase = (cases || []).find((c) => c.id === caseId);
+    if (!targetCase && fallbackCase) {
+      targetCase = {
+        id: caseId,
+        caseNumber: caseId,
+        title: 'Emergency Incident',
+        category: 'Accident Incident',
+        status: 'Pending',
+        priority: 'Urgent',
+        dateReported: new Date().toISOString(),
+        dateCreated: new Date().toISOString(),
+        barangay: 'San Aquilino',
+        specificLocation: 'Morente Ave. cor. Nautical Highway',
+        ...fallbackCase
+      } as Case;
+    }
+    if (!targetCase) return;
+
+    // Halt any pending MDRRMO sirens/SMS resends
+    stopSmsResendInterval(caseId);
+
+    const config = getEscalationConfig();
+    const dateStr = targetCase.dateReported || targetCase.dateCreated || new Date().toISOString();
+    const elapsed = formatElapsedTime(dateStr);
+    const elapsedDisplay = elapsedStrOverride || elapsed.displayStr;
+
+    // Send LGU Escalation SMS
+    const smsResult = await sendLguEscalationSms(targetCase, elapsedDisplay, config);
+
+    const now = new Date().toISOString();
+    const eventTitle = '🚨 Emergency Case Escalated to LGU';
+    const eventDescription = customReason || 
+      `Statutory Escalation Triggered: MDRRMO did not respond or acknowledge the emergency within the required response threshold (${elapsedDisplay}). Automated emergency escalation SMS successfully delivered to ${config.designatedLguName} (${config.designatedLguPhone}). Recommended Action: LGU intervention/review required.`;
+
+    const newEvent: TimelineEvent = {
+      id: `TL-ESC-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      caseId,
+      title: eventTitle,
+      description: eventDescription,
+      stage: 'LGU Action',
+      actorName: 'B-CONNECT Auto-Escalation Engine',
+      actorRole: 'System Daemon',
+      actorAgency: 'LGU Municipal Executive Office',
+      timestamp: now
+    };
+
+    let updatedCaseRef: Case | null = null;
+
+    setCases((prev) => {
+      const exists = prev.some((c) => c.id === caseId);
+      const baseCase = exists ? prev.find((c) => c.id === caseId)! : targetCase;
+      const updatedCase: Case = {
+        ...baseCase,
+        isEscalatedToLgu: true,
+        escalatedAt: now,
+        escalationReason: eventDescription,
+        escalationSmsDelivered: smsResult.success,
+        escalationSmsBody: smsResult.smsBody,
+        escalationSmsRecipient: config.designatedLguName,
+        escalationSmsRecipientPhone: config.designatedLguPhone,
+        escalationElapsedStr: elapsedDisplay,
+        currentHandlingAgency: 'LGU Executive Office',
+        status: 'Escalated to LGU' as any,
+        timeline: [...(baseCase.timeline || []), newEvent],
+        dateLastUpdated: now
+      };
+      updatedCaseRef = updatedCase;
+
+      if (!exists) {
+        return [updatedCase, ...prev];
+      }
+      return prev.map((c) => (c.id === caseId ? updatedCase : c));
+    });
+
+    // Persist to Supabase cases table
+    supabase.from('cases').update({
+      isEscalatedToLgu: true,
+      escalatedAt: now,
+      escalationReason: eventDescription,
+      escalationSmsDelivered: smsResult.success,
+      escalationSmsBody: smsResult.smsBody,
+      escalationSmsRecipient: config.designatedLguName,
+      escalationSmsRecipientPhone: config.designatedLguPhone,
+      escalationElapsedStr: elapsedDisplay,
+      currentHandlingAgency: 'LGU Executive Office',
+      status: 'Escalated to LGU',
+      timeline: updatedCaseRef ? (updatedCaseRef as Case).timeline : [newEvent],
+      dateLastUpdated: now
+    }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
+
+    // Cross-tab broadcast
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('bconnect_cases_sync');
+        bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCaseRef });
+        bc.close();
+      } catch (e) {}
+    }
+    try {
+      supabase.channel('cases_realtime_sync').send({
+        type: 'broadcast',
+        event: 'case_event',
+        payload: { type: 'UPDATE_CASE', data: updatedCaseRef }
+      });
+    } catch (e) {}
+
+    // 4. Show the escalation in the system's activity/audit logs
+    logActivity(
+      'EMERGENCY_ESCALATION_TO_LGU',
+      caseId,
+      `URGENT ESCALATION: Emergency Case #${caseId} (${targetCase.title}) automatically escalated to LGU after ${elapsedDisplay} without MDRRMO acknowledgment. Automated SMS delivered to ${config.designatedLguName} (${config.designatedLguPhone}). LGU intervention required.`,
+      targetCase.status,
+      'Escalated to LGU'
+    );
+
+    // 5. Notify the LGU through the dashboard as well
+    triggerNotification(
+      `🚨 URGENT: Case #${caseId} Escalated to LGU`,
+      `Emergency report at ${targetCase.specificLocation || targetCase.barangay} received no response from MDRRMO for ${elapsedDisplay}. Automated SMS dispatched to ${config.designatedLguName}. LGU intervention is required immediately.`,
+      'pending_alert',
+      caseId,
+      'LGU',
+      'urgent',
+      {
+        targetAgencyTypes: ['LGU'],
+        targetRoles: ['LGU_ADMINISTRATOR', 'LGU_OFFICER'],
+        isAccidentEmergency: true
+      }
+    );
+  };
+
+  const recordLguInterventionAction = (
+    caseId: string,
+    actionType: 'Under Review' | 'MDRRMO Mobilized' | 'Municipal Team Dispatched' | 'Resolved by LGU' | 'Dismissed',
+    directiveNotes: string
+  ) => {
+    const targetCase = (cases || []).find((c) => c.id === caseId);
+    if (!targetCase) return;
+
+    const now = new Date().toISOString();
+    const actionLabel = 
+      actionType === 'MDRRMO Mobilized' ? '🚨 Executive Directive: Direct MDRRMO Immediate Mobilization' :
+      actionType === 'Municipal Team Dispatched' ? '🚒 Municipal Team Deployed & Dispatched' :
+      actionType === 'Resolved by LGU' ? '✅ Resolved by Municipal LGU Authority' :
+      actionType === 'Dismissed' ? '⚠️ Case Inquired & Dismissed' :
+      '📋 Under Formal LGU Executive Review';
+
+    const newEvent: TimelineEvent = {
+      id: `TL-LGU-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      caseId,
+      title: actionLabel,
+      description: directiveNotes || `LGU Official ${currentUser.name} (${currentUser.position}) executed action: "${actionType}".`,
+      stage: 'LGU Action',
+      actorName: currentUser.name,
+      actorRole: currentUser.position,
+      actorAgency: currentUser.agencyName,
+      timestamp: now
+    };
+
+    const newStatus = actionType === 'Resolved by LGU' ? 'Resolved' : targetCase.status;
+
+    setCases((prev) =>
+      prev.map((c) => {
+        if (c.id !== caseId) return c;
+        const updatedCase: Case = {
+          ...c,
+          status: newStatus as any,
+          lguActionTaken: actionType,
+          lguInterventionNotes: directiveNotes,
+          lguActionDate: now,
+          lguActionPersonnel: `${currentUser.name} (${currentUser.position})`,
+          timeline: [...(c.timeline || []), newEvent],
+          dateLastUpdated: now
+        };
+
+        supabase.from('cases').update({
+          status: newStatus,
+          lguActionTaken: actionType,
+          lguInterventionNotes: directiveNotes,
+          lguActionDate: now,
+          lguActionPersonnel: updatedCase.lguActionPersonnel,
+          timeline: updatedCase.timeline,
+          dateLastUpdated: now
+        }).eq('id', caseId).then(({ error }) => { if (error) console.error(error) });
+
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          try {
+            const bc = new BroadcastChannel('bconnect_cases_sync');
+            bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
+            bc.close();
+          } catch (e) {}
+        }
+        try {
+          supabase.channel('cases_realtime_sync').send({
+            type: 'broadcast',
+            event: 'case_event',
+            payload: { type: 'UPDATE_CASE', data: updatedCase }
+          });
+        } catch (e) {}
+
+        return updatedCase;
+      })
+    );
+
+    logActivity(
+      'LGU_EXECUTIVE_INTERVENTION',
+      caseId,
+      `LGU Official ${currentUser.name} issued directive "${actionType}" for Case #${caseId}. Notes: ${directiveNotes}`
+    );
+
+    // Notify MDRRMO of LGU directive
+    triggerNotification(
+      `🏛️ LGU Executive Directive: Case #${caseId}`,
+      `LGU Official ${currentUser.name} ordered: "${actionType}". Directive Notes: ${directiveNotes}`,
+      'system',
+      caseId,
+      'MDRRMO',
+      'high',
+      { targetAgencyTypes: ['MDRRMO'] }
+    );
+  };
+
   return {
     ...caseState,
     selectedCase,
     createCase,
+    deleteCase,
     updateCaseStatus,
     addCaseTimelineEvent,
     markIncidentAsSeenAndResponded,
+    escalateIncidentToLgu,
+    recordLguInterventionAction,
     logActivity
   };
 };
+

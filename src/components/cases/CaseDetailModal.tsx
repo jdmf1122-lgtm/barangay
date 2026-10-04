@@ -8,7 +8,6 @@ import {
   Upload, 
   CheckCircle, 
   AlertTriangle, 
-  User, 
   Building2, 
   Shield, 
   Calendar, 
@@ -18,7 +17,8 @@ import {
   AlertCircle,
   Landmark,
   Layers,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -28,7 +28,7 @@ import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 
 export const CaseDetailModal: React.FC = () => {
   const { currentUser } = useAuth();
-  const { selectedCase, setSelectedCaseId, updateCaseStatus, addCaseTimelineEvent } = useCases();
+  const { selectedCase, setSelectedCaseId, updateCaseStatus, addCaseTimelineEvent, recordLguInterventionAction, deleteCase } = useCases();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
   
@@ -37,6 +37,19 @@ export const CaseDetailModal: React.FC = () => {
   const [selectedNewStatus, setSelectedNewStatus] = useState<CaseStatus>('Unresolved');
   const [statusChangeReason, setStatusChangeReason] = useState('');
   const [statusChangeRemarks, setStatusChangeRemarks] = useState('');
+
+  // LGU Escalation Intervention state
+  const [lguActionType, setLguActionType] = useState<'Under Review' | 'MDRRMO Mobilized' | 'Municipal Team Dispatched' | 'Resolved by LGU' | 'Dismissed'>('MDRRMO Mobilized');
+  const [lguDirectiveNotes, setLguDirectiveNotes] = useState('');
+  const [isLguActionSubmitted, setIsLguActionSubmitted] = useState(false);
+
+  const handleLguInterventionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCase) return;
+    recordLguInterventionAction(selectedCase.id, lguActionType, lguDirectiveNotes);
+    setIsLguActionSubmitted(true);
+    setTimeout(() => setIsLguActionSubmitted(false), 3000);
+  };
 
   if (!selectedCase) return null;
 
@@ -215,7 +228,7 @@ export const CaseDetailModal: React.FC = () => {
         {/* Navigation Tabs within Case Dossier */}
         <div className="px-5 border-b border-slate-200 bg-white flex space-x-4 text-xs font-semibold overflow-x-auto">
           {[
-            { id: 'overview', label: 'Case Overview & Parties', count: undefined },
+            { id: 'overview', label: 'Case Overview', count: undefined },
             { id: 'timeline', label: 'Chronological Timeline', count: selectedCase.timeline?.length || 0 }
           ].map((t) => (
             <button
@@ -242,6 +255,131 @@ export const CaseDetailModal: React.FC = () => {
           {/* TAB 1: OVERVIEW & PARTIES */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* MDRRMO-to-LGU Automatic Escalation Callout & LGU Intervention Desk */}
+              {selectedCase.isEscalatedToLgu && (
+                <div id="case-escalated-lgu-callout" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 text-rose-900 font-extrabold text-sm">
+                      <span className="flex h-3 w-3 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+                      </span>
+                      <span>🚨 ESCALATED TO LGU: MDRRMO Non-Response Timeout Exceeded</span>
+                    </div>
+                    <span className="px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded-full uppercase">
+                      Urgent Action Required
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-rose-800 leading-relaxed font-medium">
+                    This emergency report was automatically escalated to the <strong>LGU Executive Office</strong> because the MDRRMO did not acknowledge, respond to, or update the incident within the statutory response threshold (<strong>{selectedCase.escalationElapsedStr || 'Over 2 hours'}</strong>).
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-white p-3.5 rounded-lg border border-rose-200 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 block">Date & Time Escalated:</span>
+                      <strong className="text-slate-800">{formatDate(selectedCase.escalatedAt)}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Time Elapsed without MDRRMO:</span>
+                      <strong className="text-rose-700 font-mono font-bold">{selectedCase.escalationElapsedStr || '2+ Hours'}</strong>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-500 block">Designated LGU SMS Dispatch Status:</span>
+                      <span className="font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>SMS Notification Delivered to {selectedCase.escalationSmsRecipient || 'LGU Officials'} ({selectedCase.escalationSmsRecipientPhone || 'Designated Phone'})</span>
+                      </span>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-500 block">Recommended Action:</span>
+                      <span className="font-bold text-rose-800">LGU intervention/review required</span>
+                    </div>
+                  </div>
+
+                  {/* If LGU directive has already been recorded */}
+                  {selectedCase.lguActionTaken && (
+                    <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-3 text-xs text-emerald-950 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        <span>Recorded LGU Directive: {selectedCase.lguActionTaken}</span>
+                      </div>
+                      {selectedCase.lguInterventionNotes && (
+                        <p className="text-[11px] text-emerald-900 leading-relaxed italic bg-white/70 p-2 rounded border border-emerald-200">
+                          "{selectedCase.lguInterventionNotes}"
+                        </p>
+                      )}
+                      <div className="text-[10px] text-emerald-700 pt-1 border-t border-emerald-200 flex justify-between">
+                        <span>Issued by: <strong>{selectedCase.lguActionPersonnel || 'LGU Authorized Personnel'}</strong></span>
+                        <span>Date: {formatDate(selectedCase.lguActionDate)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LGU Executive Intervention Action Desk (Authorized for LGU Personnel) */}
+                  {(currentUser?.agencyType === 'LGU' || currentUser?.role === 'LGU_ADMINISTRATOR' || currentUser?.role === 'LGU_OFFICER') && (
+                    <form onSubmit={handleLguInterventionSubmit} className="bg-white p-4 rounded-xl border-2 border-emerald-500 space-y-3 shadow-xs">
+                      <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                        <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                          <Landmark className="w-4 h-4 text-emerald-700" />
+                          <span>LGU Executive Intervention & Decision Desk</span>
+                        </h4>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          Authorized Action
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        The system has notified the LGU of this unresolved emergency. As authorized LGU personnel, determine and issue the appropriate official response below:
+                      </p>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-800 block mb-1">Select LGU Action to Take *</label>
+                        <select
+                          value={lguActionType}
+                          onChange={(e) => setLguActionType(e.target.value as any)}
+                          className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-lg border border-slate-300 font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        >
+                          <option value="MDRRMO Mobilized">🚨 Direct MDRRMO Immediate Mobilization & Rescue</option>
+                          <option value="Municipal Team Dispatched">🚒 Dispatch Municipal Response / Traffic / Health Team</option>
+                          <option value="Under Review">📋 Mark Under Formal LGU Executive Review & Investigation</option>
+                          <option value="Resolved by LGU">✅ Resolve & Conclude under Municipal LGU Directives</option>
+                          <option value="Dismissed">⚠️ Inquire & Conclude (No Further Municipal Action Required)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-800 block mb-1">Official LGU Directive / Intervention Notes *</label>
+                        <textarea
+                          required
+                          rows={2}
+                          value={lguDirectiveNotes}
+                          onChange={(e) => setLguDirectiveNotes(e.target.value)}
+                          placeholder="State the formal directive, orders given to MDRRMO/Municipal responders, or terms of LGU intervention..."
+                          className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        {isLguActionSubmitted ? (
+                          <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 animate-in fade-in">
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
+                            Official Directive recorded & audit logged!
+                          </span>
+                        ) : <span className="text-[10px] text-slate-400">Action will be logged in system audit trail</span>}
+
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Submit Official LGU Action</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
               {/* Official Involvement Neutrality Callout */}
               {selectedCase.isInvolvingOfficial && (
                 <div className="bg-rose-50 border border-rose-200 rounded-lg p-3.5 space-y-1">
@@ -255,23 +393,6 @@ export const CaseDetailModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Narrative Summary */}
-              <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-2">
-                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                  Case Narrative & Facts of the Report
-                </h3>
-                <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-100">
-                  {selectedCase.initialNarrative}
-                </p>
-                {selectedCase.currentNarrativeSummary && selectedCase.currentNarrativeSummary !== selectedCase.initialNarrative && (
-                  <div className="mt-2">
-                    <span className="font-bold text-slate-700 block mb-1">Current Progress Summary:</span>
-                    <p className="text-xs text-slate-600 bg-blue-50/50 p-2.5 rounded border border-blue-100">
-                      {selectedCase.currentNarrativeSummary}
-                    </p>
-                  </div>
-                )}
-              </div>
 
               {/* Evidence & Attached Photos */}
               {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (
@@ -303,99 +424,6 @@ export const CaseDetailModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Involved Parties Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Complainants */}
-                <div className="bg-white rounded-lg border border-slate-200 p-3.5">
-                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 mb-2 text-blue-700">
-                    <User className="w-4 h-4" />
-                    Complainant(s)
-                  </h4>
-                  <div className="space-y-2">
-                    {(!selectedCase.complainants || selectedCase.complainants.length === 0) ? (
-                      <span className="text-slate-400">No complainant recorded</span>
-                    ) : (
-                      selectedCase.complainants.map((p) => (
-                        <div key={p.id} className="p-2 bg-slate-50 rounded border border-slate-100 text-[11px]">
-                          <div className="font-bold text-slate-800">{p.name}</div>
-                          <div className="text-slate-500">{p.contact || 'No contact provided'}</div>
-                          <div className="text-slate-500">{p.address ? `${p.address}, Brgy. ${p.barangay}` : `Brgy. ${p.barangay}`}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Respondents */}
-                <div className="bg-white rounded-lg border border-slate-200 p-3.5">
-                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 mb-2 text-rose-700">
-                    <User className="w-4 h-4" />
-                    Respondent(s) / Inquired Parties
-                  </h4>
-                  <div className="space-y-2">
-                    {(!selectedCase.respondents || selectedCase.respondents.length === 0) ? (
-                      <span className="text-slate-400">No respondent recorded</span>
-                    ) : (
-                      selectedCase.respondents.map((p) => (
-                        <div key={p.id} className="p-2 bg-slate-50 rounded border border-slate-100 text-[11px]">
-                          <div className="font-bold text-slate-800 flex items-center justify-between">
-                            <span>{p.name}</span>
-                            {p.isOfficial && <span className="text-[9px] bg-rose-100 text-rose-800 px-1 rounded font-bold">Official</span>}
-                          </div>
-                          {p.officialPosition && (
-                            <div className="text-rose-700 font-medium">{p.officialPosition} ({p.officialAgency})</div>
-                          )}
-                          <div className="text-slate-500">{p.contact || 'No contact provided'}</div>
-                          <div className="text-slate-500">Brgy. {p.barangay || selectedCase.barangay}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Witnesses */}
-                <div className="bg-white rounded-lg border border-slate-200 p-3.5">
-                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 mb-2 text-slate-700">
-                    <User className="w-4 h-4" />
-                    Witnesses & Responders
-                  </h4>
-                  <div className="space-y-2">
-                    {(!selectedCase.witnesses || selectedCase.witnesses.length === 0) ? (
-                      <span className="text-slate-400">No witnesses logged</span>
-                    ) : (
-                      selectedCase.witnesses.map((p) => (
-                        <div key={p.id} className="p-2 bg-slate-50 rounded border border-slate-100 text-[11px]">
-                          <div className="font-bold text-slate-800">{p.name}</div>
-                          <div className="text-slate-500">{p.contact || 'No contact'}</div>
-                          <div className="text-slate-500">{p.role || 'Witness'}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Administrative Jurisdiction Metadata */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs">
-                <div>
-                  <span className="text-slate-500 text-[10px] block uppercase font-semibold">Originating Agency</span>
-                  <span className="font-bold text-slate-800">{selectedCase.originatingAgency}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 text-[10px] block uppercase font-semibold">Handling Agency</span>
-                  <span className="font-bold text-blue-800">{selectedCase.currentHandlingAgency}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 text-[10px] block uppercase font-semibold">Assigned Personnel</span>
-                  <span className="font-bold text-slate-800">{selectedCase.assignedPersonnel || 'Unassigned'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 text-[10px] block uppercase font-semibold">Barangay Retention</span>
-                  <span className="font-bold text-slate-800">
-                    {selectedCase.isRemainedAtBarangay ? 'Stayed at Barangay Level' : 'Referred to Outside Agency'}
-                  </span>
-                </div>
-              </div>
             </div>
           )}
 
@@ -447,12 +475,28 @@ export const CaseDetailModal: React.FC = () => {
         {/* Footer */}
         <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
           <span>Last Updated: {formatDate(selectedCase.dateLastUpdated)}</span>
-          <button
-            onClick={() => setSelectedCaseId(null)}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded font-semibold transition cursor-pointer"
-          >
-            Close Dossier
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to permanently delete case ${selectedCase.id} ("${selectedCase.title}")? This action cannot be undone.`)) {
+                  deleteCase(selectedCase.id);
+                  setSelectedCaseId(null);
+                }
+              }}
+              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5"
+              title="Delete this case permanently"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Case</span>
+            </button>
+            <button
+              onClick={() => setSelectedCaseId(null)}
+              className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded font-semibold transition cursor-pointer"
+            >
+              Close Dossier
+            </button>
+          </div>
         </div>
       </div>
 

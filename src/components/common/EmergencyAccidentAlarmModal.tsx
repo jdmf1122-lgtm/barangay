@@ -97,7 +97,7 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     // 1. Scan for any active incident in cases that has not yet been marked as seen/responded
     const unacknowledgedCase = cases.find((c) => {
       const isTargetedBarangay = !userBarangay || c.barangay === userBarangay || !c.barangay;
-      const isEmergencyOrCitizen = c.isCitizenReport || c.isAccidentEmergency || c.priority === 'Urgent' || c.originatingAgency.includes('Resident');
+      const isEmergencyOrCitizen = c.isCitizenReport || c.isAccidentEmergency || c.priority === 'Urgent' || (c.originatingAgency && c.originatingAgency.includes('Resident'));
       const isNotResolved = c.status !== 'Resolved' && c.status !== 'Closed';
       const isNotAcknowledged = !c.emergencyAlarmAcknowledged && !acknowledgedIds.includes(c.id);
       return isTargetedBarangay && isEmergencyOrCitizen && isNotResolved && isNotAcknowledged;
@@ -110,20 +110,22 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
       if (n.caseId && acknowledgedIds.includes(n.caseId)) return false;
 
       const isTargetedBarangay = !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
+      const titleLower = (n.title || '').toLowerCase();
+      const msgLower = (n.message || '').toLowerCase();
       const isEmergencyIncident =
         n.isAccidentEmergency ||
         n.isMdrrmoEmergency ||
         n.isMdrrmoIncident ||
-        n.title.toLowerCase().includes('accident') ||
-        n.title.toLowerCase().includes('emergency') ||
-        n.title.toLowerCase().includes('banggaan') ||
-        n.title.toLowerCase().includes('vehicular') ||
-        n.title.toLowerCase().includes('disgrasya') ||
-        n.message.toLowerCase().includes('accident') ||
-        n.message.toLowerCase().includes('emergency') ||
-        n.message.toLowerCase().includes('vehicular') ||
-        n.message.toLowerCase().includes('banggaan') ||
-        n.message.toLowerCase().includes('sms sent');
+        titleLower.includes('accident') ||
+        titleLower.includes('emergency') ||
+        titleLower.includes('banggaan') ||
+        titleLower.includes('vehicular') ||
+        titleLower.includes('disgrasya') ||
+        msgLower.includes('accident') ||
+        msgLower.includes('emergency') ||
+        msgLower.includes('vehicular') ||
+        msgLower.includes('banggaan') ||
+        msgLower.includes('sms sent');
 
       const isUrgent = n.priority === 'urgent' || n.type === 'pending_alert' || n.type === 'case_registered';
       const related = n.caseId ? cases.find((c) => c.id === n.caseId) : null;
