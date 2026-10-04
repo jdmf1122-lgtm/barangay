@@ -62,3 +62,33 @@
   outline-offset: 2px;
 }
 
+/* Mobile Notifications & Profile Modal Full Responsive Safeguard */
+@media (max-width: 767px) {
+  #notifications-popover {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 68px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: 480px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transform: none !important;
+    z-index: 9999 !important;
+  }
+
+  #role-switcher-dropdown {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 68px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: 400px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transform: none !important;
+    z-index: 9999 !important;
+  }
+}
+
+
