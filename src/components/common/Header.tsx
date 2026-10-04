@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, 
   Shield, 
@@ -17,7 +17,8 @@ import {
   Radio,
   Clock,
   Sparkles,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -37,6 +38,28 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [isCreateNotifModalOpen, setIsCreateNotifModalOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<'ALL' | 'UNREAD'>('ALL');
+
+  // Close modals/popovers on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsNotifOpen(false);
+        setIsRoleDropdownOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleNotif = () => {
+    setIsRoleDropdownOpen(false);
+    setIsNotifOpen((prev) => !prev);
+  };
+
+  const toggleRoleDropdown = () => {
+    setIsNotifOpen(false);
+    setIsRoleDropdownOpen((prev) => !prev);
+  };
 
   if (!currentUser) return null;
 
@@ -174,9 +197,16 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
         <div className="relative">
           <button
             id="btn-notifications-bell"
-            onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-full transition cursor-pointer relative border border-emerald-200/60"
+            onClick={toggleNotif}
+            className={`p-2 rounded-full transition cursor-pointer relative border ${
+              isNotifOpen
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200/60'
+            }`}
             title={`${roleMeta.centerTitle} (${currentUser.agencyType})`}
+            aria-expanded={isNotifOpen}
+            aria-haspopup="dialog"
+            aria-label="Toggle notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadNotifCount > 0 && (
@@ -187,196 +217,230 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           </button>
 
           {isNotifOpen && (
-            <div 
-              id="notifications-popover" 
-              className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-white text-slate-900 rounded-2xl shadow-2xl border border-emerald-200 z-50 overflow-hidden"
-            >
-              {/* Header Box Tailored to Role */}
-              <div className="p-3.5 bg-gradient-to-r from-emerald-900 to-teal-950 text-white border-b border-emerald-800">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1 rounded-lg bg-emerald-800/80 text-emerald-300">
-                      <Bell className="w-3.5 h-3.5" />
+            <>
+              {/* Backdrop for closing popover on mobile/desktop outside click */}
+              <div 
+                className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                onClick={() => setIsNotifOpen(false)}
+                aria-hidden="true"
+              />
+
+              <div 
+                id="notifications-popover" 
+                className="fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-lg sm:max-w-none mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-2xl border border-emerald-200 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150"
+              >
+                {/* Header Box Tailored to Role */}
+                <div className="p-3.5 bg-gradient-to-r from-emerald-900 to-teal-950 text-white border-b border-emerald-800 flex-shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-1 rounded-lg bg-emerald-800/80 text-emerald-300 flex-shrink-0">
+                        <Bell className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-xs leading-tight text-white truncate">
+                          {roleMeta.centerTitle}
+                        </h4>
+                        <p className="text-[10px] text-emerald-300 truncate">
+                          {roleMeta.badgeLabel}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-xs leading-tight text-white">
-                        {roleMeta.centerTitle}
-                      </h4>
-                      <p className="text-[10px] text-emerald-300">
-                        {roleMeta.badgeLabel}
-                      </p>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {unreadNotifCount > 0 && (
+                        <span className="px-2 py-0.5 bg-rose-500/90 text-white text-[10px] font-black rounded-full">
+                          {unreadNotifCount} new
+                        </span>
+                      )}
+                      <button
+                        id="btn-close-notifications"
+                        type="button"
+                        onClick={() => setIsNotifOpen(false)}
+                        className="p-1 text-emerald-300 hover:text-white hover:bg-emerald-800/60 rounded-lg transition cursor-pointer"
+                        aria-label="Close notification panel"
+                        title="Close"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
-                  {unreadNotifCount > 0 && (
-                    <span className="px-2 py-0.5 bg-rose-500/90 text-white text-[10px] font-black rounded-full">
-                      {unreadNotifCount} new
-                    </span>
+                  {/* Sub-header text */}
+                  <p className="text-[10px] text-emerald-200/70 mt-1.5 line-clamp-1">
+                    {roleMeta.subHeader}
+                  </p>
+
+                  {/* Quick actions row */}
+                  <div className="mt-2.5 pt-2 border-t border-emerald-800/60 flex items-center justify-between text-[11px] gap-2">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setNotifFilter('ALL')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                          notifFilter === 'ALL'
+                            ? 'bg-white text-emerald-950 font-black'
+                            : 'text-emerald-200 hover:text-white'
+                        }`}
+                      >
+                        All ({userNotifications?.length || 0})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNotifFilter('UNREAD')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                          notifFilter === 'UNREAD'
+                            ? 'bg-white text-emerald-950 font-black'
+                            : 'text-emerald-200 hover:text-white'
+                        }`}
+                      >
+                        Unread ({unreadNotifCount})
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {unreadNotifCount > 0 && (
+                        <button
+                          id="btn-mark-all-read"
+                          type="button"
+                          onClick={markAllNotificationsAsRead}
+                          className="text-[10px] text-emerald-300 hover:text-white font-semibold cursor-pointer underline underline-offset-2"
+                        >
+                          Mark read
+                        </button>
+                      )}
+
+                      {currentUser.agencyType !== 'RESIDENT' && (
+                        <button
+                          id="btn-open-dispatch-notif"
+                          type="button"
+                          onClick={() => {
+                            setIsNotifOpen(false);
+                            setIsCreateNotifModalOpen(true);
+                          }}
+                          className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded flex items-center gap-1 transition cursor-pointer shadow-xs"
+                          title="Send / Dispatch Alert for this Role"
+                        >
+                          <Send className="w-2.5 h-2.5" />
+                          <span>Dispatch</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notification List */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 bg-slate-50/50 min-h-0 overscroll-contain">
+                  {(!displayedNotifs || displayedNotifs.length === 0) ? (
+                    <div className="p-8 text-center space-y-2">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                        <Bell className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium">{roleMeta.emptyMessage}</p>
+                    </div>
+                  ) : (
+                    displayedNotifs.map((n, idx) => (
+                      <div
+                        key={n.id ? `${n.id}-${idx}` : `notif-${idx}`}
+                        onClick={() => {
+                          markNotificationAsRead(n.id);
+                          if (n.caseId) {
+                            setSelectedCaseId(n.caseId);
+                            if (currentUser.agencyType === 'RESIDENT') {
+                              setActiveTab('my_reports');
+                            } else if (currentUser.agencyType === 'MDRRMO') {
+                              setActiveTab('cases');
+                            } else {
+                              setActiveTab('dashboard');
+                            }
+                          }
+                          setIsNotifOpen(false);
+                        }}
+                        className={`p-3 text-xs hover:bg-emerald-50/60 cursor-pointer transition flex items-start gap-2.5 bg-white ${
+                          !n.isRead ? 'border-l-3 border-l-emerald-600 bg-emerald-50/20' : ''
+                        }`}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {n.type === 'pending_alert' ? (
+                            <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                            </div>
+                          ) : n.type === 'recommendation' ? (
+                            <div className="p-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+                              <FileText className="w-3.5 h-3.5" />
+                            </div>
+                          ) : n.type === 'referral' ? (
+                            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                              <Shield className="w-3.5 h-3.5" />
+                            </div>
+                          ) : n.type === 'hearing' ? (
+                            <div className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
+                              <Clock className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-1">
+                            <span className={`text-xs ${!n.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
+                              {n.title}
+                            </span>
+                            {!n.isRead && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1" />
+                            )}
+                          </div>
+                          <p className="text-slate-600 mt-0.5 leading-relaxed text-[11px] line-clamp-2">
+                            {n.message}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                            <span>{formatDate(n.timestamp)}</span>
+                            {n.caseId && (
+                              <span className="px-1.5 py-0.2 rounded bg-slate-100 font-mono text-slate-600 font-bold">
+                                #{n.caseId}
+                              </span>
+                            )}
+                            {n.priority === 'urgent' && (
+                              <span className="px-1 py-0.2 rounded bg-rose-100 text-rose-700 font-bold uppercase text-[9px]">
+                                Urgent
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
 
-                {/* Sub-header text */}
-                <p className="text-[10px] text-emerald-200/70 mt-1.5 line-clamp-1">
-                  {roleMeta.subHeader}
-                </p>
-
-                {/* Quick actions row */}
-                <div className="mt-2.5 pt-2 border-t border-emerald-800/60 flex items-center justify-between text-[11px]">
-                  <div className="flex items-center gap-1">
+                {/* Popover Footer */}
+                <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 px-3 flex-shrink-0">
+                  <span className="text-[10px]">
+                    Role Scope: <strong className="text-slate-800">{currentUser.agencyType}</strong>
+                  </span>
+                  {currentUser.agencyType !== 'RESIDENT' ? (
                     <button
-                      onClick={() => setNotifFilter('ALL')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                        notifFilter === 'ALL'
-                          ? 'bg-white text-emerald-950 font-black'
-                          : 'text-emerald-200 hover:text-white'
-                      }`}
+                      type="button"
+                      onClick={() => {
+                        setIsNotifOpen(false);
+                        setIsCreateNotifModalOpen(true);
+                      }}
+                      className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold cursor-pointer"
                     >
-                      All ({userNotifications?.length || 0})
+                      + Create Alert
                     </button>
+                  ) : (
                     <button
-                      onClick={() => setNotifFilter('UNREAD')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                        notifFilter === 'UNREAD'
-                          ? 'bg-white text-emerald-950 font-black'
-                          : 'text-emerald-200 hover:text-white'
-                      }`}
+                      type="button"
+                      onClick={() => setIsNotifOpen(false)}
+                      className="text-[10px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
                     >
-                      Unread ({unreadNotifCount})
+                      Dismiss
                     </button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {unreadNotifCount > 0 && (
-                      <button
-                        id="btn-mark-all-read"
-                        onClick={markAllNotificationsAsRead}
-                        className="text-[10px] text-emerald-300 hover:text-white font-semibold cursor-pointer underline underline-offset-2"
-                      >
-                        Mark read
-                      </button>
-                    )}
-
-                    {currentUser.agencyType !== 'RESIDENT' && (
-                      <button
-                        id="btn-open-dispatch-notif"
-                        onClick={() => {
-                          setIsNotifOpen(false);
-                          setIsCreateNotifModalOpen(true);
-                        }}
-                        className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded flex items-center gap-1 transition cursor-pointer shadow-xs"
-                        title="Send / Dispatch Alert for this Role"
-                      >
-                        <Send className="w-2.5 h-2.5" />
-                        <span>Dispatch</span>
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
-
-              {/* Notification List */}
-              <div className="max-h-84 overflow-y-auto divide-y divide-slate-100 bg-slate-50/50">
-                {(!displayedNotifs || displayedNotifs.length === 0) ? (
-                  <div className="p-8 text-center space-y-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                      <Bell className="w-4 h-4" />
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium">{roleMeta.emptyMessage}</p>
-                  </div>
-                ) : (
-                  displayedNotifs.map((n, idx) => (
-                    <div
-                      key={n.id ? `${n.id}-${idx}` : `notif-${idx}`}
-                      onClick={() => {
-                        markNotificationAsRead(n.id);
-                        if (n.caseId) {
-                          setSelectedCaseId(n.caseId);
-                          if (currentUser.agencyType === 'RESIDENT') {
-                            setActiveTab('my_reports');
-                          } else if (currentUser.agencyType === 'MDRRMO') {
-                            setActiveTab('cases');
-                          } else {
-                            setActiveTab('dashboard');
-                          }
-                        }
-                        setIsNotifOpen(false);
-                      }}
-                      className={`p-3 text-xs hover:bg-emerald-50/60 cursor-pointer transition flex items-start gap-2.5 bg-white ${
-                        !n.isRead ? 'border-l-3 border-l-emerald-600 bg-emerald-50/20' : ''
-                      }`}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {n.type === 'pending_alert' ? (
-                          <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                          </div>
-                        ) : n.type === 'recommendation' ? (
-                          <div className="p-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
-                            <FileText className="w-3.5 h-3.5" />
-                          </div>
-                        ) : n.type === 'referral' ? (
-                          <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
-                            <Shield className="w-3.5 h-3.5" />
-                          </div>
-                        ) : n.type === 'hearing' ? (
-                          <div className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
-                            <Clock className="w-3.5 h-3.5" />
-                          </div>
-                        ) : (
-                          <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-1">
-                          <span className={`text-xs ${!n.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
-                            {n.title}
-                          </span>
-                          {!n.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1" />
-                          )}
-                        </div>
-                        <p className="text-slate-600 mt-0.5 leading-relaxed text-[11px] line-clamp-2">
-                          {n.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                          <span>{formatDate(n.timestamp)}</span>
-                          {n.caseId && (
-                            <span className="px-1.5 py-0.2 rounded bg-slate-100 font-mono text-slate-600 font-bold">
-                              #{n.caseId}
-                            </span>
-                          )}
-                          {n.priority === 'urgent' && (
-                            <span className="px-1 py-0.2 rounded bg-rose-100 text-rose-700 font-bold uppercase text-[9px]">
-                              Urgent
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Popover Footer */}
-              <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center flex items-center justify-between text-[11px] text-slate-500 px-3">
-                <span className="text-[10px]">
-                  Role Scope: <strong className="text-slate-800">{currentUser.agencyType}</strong>
-                </span>
-                {currentUser.agencyType !== 'RESIDENT' && (
-                  <button
-                    onClick={() => {
-                      setIsNotifOpen(false);
-                      setIsCreateNotifModalOpen(true);
-                    }}
-                    className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold cursor-pointer"
-                  >
-                    + Create Alert
-                  </button>
-                )}
-              </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -384,9 +448,15 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
         <div className="relative">
           <button
             id="btn-role-switcher"
-            onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-            className="flex items-center gap-2.5 px-3 py-1.5 bg-emerald-50/60 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition cursor-pointer text-left"
+            onClick={toggleRoleDropdown}
+            className={`flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition cursor-pointer text-left ${
+              isRoleDropdownOpen
+                ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-400/30'
+                : 'bg-emerald-50/60 hover:bg-emerald-100 border-emerald-200'
+            }`}
             title="View Logged-in Profile"
+            aria-expanded={isRoleDropdownOpen}
+            aria-haspopup="dialog"
           >
             <div className={`p-1 rounded-lg ${getAgencyColor(currentUser.agencyType)}`}>
               {getAgencyIcon(currentUser.agencyType)}
@@ -405,84 +475,107 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           </button>
 
           {isRoleDropdownOpen && (
-            <div
-              id="role-switcher-dropdown"
-              className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-80 bg-white text-slate-900 rounded-2xl shadow-xl border border-emerald-200 z-50 overflow-hidden"
-            >
-              <div className="p-3.5 bg-emerald-950 text-white flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-tight text-emerald-100">Official Account Profile</span>
-                  <p className="text-[10px] text-emerald-300">Authenticated Session</p>
-                </div>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Active
-                </span>
-              </div>
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                onClick={() => setIsRoleDropdownOpen(false)}
+                aria-hidden="true"
+              />
 
-              {/* Logged in User Card */}
-              <div className="p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2.5 rounded-xl text-white shadow-xs ${getAgencyColor(currentUser.agencyType)}`}>
-                    {getAgencyIcon(currentUser.agencyType)}
+              <div
+                id="role-switcher-dropdown"
+                className="fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-80 max-w-sm mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-xl border border-emerald-200 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div className="p-3.5 bg-emerald-950 text-white flex items-center justify-between flex-shrink-0">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-tight text-emerald-100">Official Account Profile</span>
+                    <p className="text-[10px] text-emerald-300">Authenticated Session</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-slate-900 leading-snug">{currentUser.name}</div>
-                    <div className="text-xs text-slate-600 font-medium">{currentUser.position}</div>
-                    <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">{currentUser.agencyName}</div>
-                    {currentUser.barangay && (
-                      <span className="inline-block mt-1 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
-                        📍 Brgy. {currentUser.barangay}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-[11px]">
-                  <div className="flex justify-between items-center text-slate-600">
-                    <span>Agency Role:</span>
-                    <span className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                      {currentUser.agencyType}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Active
                     </span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-600">
-                    <span>Email:</span>
-                    <span className="font-medium text-slate-800 truncate max-w-[170px]">{currentUser.email}</span>
+                    <button
+                      id="btn-close-role-dropdown"
+                      type="button"
+                      onClick={() => setIsRoleDropdownOpen(false)}
+                      className="p-1 text-emerald-300 hover:text-white hover:bg-emerald-900 rounded-lg transition cursor-pointer"
+                      aria-label="Close profile menu"
+                      title="Close"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
-                <div className="p-2 bg-amber-50/80 border border-amber-200 rounded-lg text-[10px] text-amber-800 flex items-start gap-1.5 leading-relaxed">
-                  <Shield className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <span>To access another agency or user account, click <strong>Log Out</strong> and sign in with the respective credentials.</span>
+                {/* Logged in User Card */}
+                <div className="p-4 space-y-3 flex-1 overflow-y-auto min-h-0">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2.5 rounded-xl text-white shadow-xs ${getAgencyColor(currentUser.agencyType)}`}>
+                      {getAgencyIcon(currentUser.agencyType)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-slate-900 leading-snug">{currentUser.name}</div>
+                      <div className="text-xs text-slate-600 font-medium">{currentUser.position}</div>
+                      <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">{currentUser.agencyName}</div>
+                      {currentUser.barangay && (
+                        <span className="inline-block mt-1 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                          📍 Brgy. {currentUser.barangay}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-[11px]">
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span>Agency Role:</span>
+                      <span className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                        {currentUser.agencyType}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span>Email:</span>
+                      <span className="font-medium text-slate-800 truncate max-w-[170px]">{currentUser.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-amber-50/80 border border-amber-200 rounded-lg text-[10px] text-amber-800 flex items-start gap-1.5 leading-relaxed">
+                    <Shield className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <span>To access another agency or user account, click <strong>Log Out</strong> and sign in with the respective credentials.</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="p-2.5 bg-emerald-50/50 border-t border-emerald-100 space-y-1.5 flex-shrink-0">
+                  <button
+                    id="btn-role-dropdown-edit-current"
+                    type="button"
+                    onClick={() => {
+                      setIsRoleDropdownOpen(false);
+                      openEditAccountModal(currentUser);
+                    }}
+                    className="w-full py-2 px-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Edit My Profile</span>
+                  </button>
+                  <button
+                    id="btn-role-dropdown-logout"
+                    type="button"
+                    onClick={() => {
+                      setIsRoleDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Log Out / Switch Account</span>
+                  </button>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="p-2.5 bg-emerald-50/50 border-t border-emerald-100 space-y-1.5">
-                <button
-                  id="btn-role-dropdown-edit-current"
-                  onClick={() => {
-                    setIsRoleDropdownOpen(false);
-                    openEditAccountModal(currentUser);
-                  }}
-                  className="w-full py-2 px-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Edit My Profile</span>
-                </button>
-                <button
-                  id="btn-role-dropdown-logout"
-                  onClick={() => {
-                    setIsRoleDropdownOpen(false);
-                    logout();
-                  }}
-                  className="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Log Out / Switch Account</span>
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </div>
 

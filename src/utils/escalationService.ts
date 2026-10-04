@@ -105,7 +105,7 @@ export function isCaseEligibleForEscalation(
   if (c.emergencyAlarmAcknowledged) return false;
 
   // If already resolved or closed, timer is stopped
-  if (c.status === 'Resolved' || c.status === 'Closed') return false;
+  if (c.status === 'Resolved' || (c.status as string) === 'Closed') return false;
 
   // If already escalated to LGU, do not duplicate
   if (c.isEscalatedToLgu) return false;

@@ -25,7 +25,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useUI } from '../../hooks/useUI';
-import { AGENCIES_LIST, ROXAS_BARANGAYS } from '../../types';
+import { AGENCIES_LIST, ROXAS_BARANGAYS, Case } from '../../types';
 import { 
   getEscalationConfig, 
   saveEscalationConfig, 
@@ -55,9 +55,8 @@ export const SystemAdminView: React.FC = () => {
     setSimulationNotice(null);
     try {
       const testCaseId = `INC-ESC-${Date.now().toString().slice(-4)}`;
-      const testCaseData: Partial<Case> = {
+      const testCaseData: Partial<Case> & Record<string, any> = {
         id: testCaseId,
-        caseNumber: testCaseId,
         title: 'Severe Multi-Vehicle Collision at Strong Republic Nautical Hwy',
         category: 'Motorcycle vs Tricycle Collision' as any,
         barangay: 'San Aquilino',
@@ -66,7 +65,7 @@ export const SystemAdminView: React.FC = () => {
         priority: 'Urgent',
         isAccidentEmergency: true,
         isCitizenReport: true,
-        status: 'Pending',
+        status: 'Unresolved',
         emergencyAlarmAcknowledged: false,
         reporterName: 'Resident Citizen (via Portal)',
         reporterContact: '0917-555-9123',
