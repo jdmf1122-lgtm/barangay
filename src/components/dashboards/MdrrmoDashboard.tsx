@@ -4,7 +4,6 @@ import {
   FileCheck,
   Clock,
   ArrowUpRight,
-  PlusCircle,
   AlertTriangle,
   CheckCircle,
   FileText,
@@ -31,7 +30,7 @@ export const MdrrmoDashboard: React.FC = () => {
   const { currentUser, users } = useAuth();
   const { cases, setSelectedCaseId, markIncidentAsSeenAndResponded } = useCases();
   const { triggerNotification } = useNotifications();
-  const { setIsNewCaseModalOpen, setActiveTab } = useUI();
+  const { setActiveTab } = useUI();
 
   const currentBarangay = currentUser?.barangay;
   const [barangayFilter, setBarangayFilter] = useState<string>('ALL');
@@ -122,9 +121,6 @@ export const MdrrmoDashboard: React.FC = () => {
           <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white">
             {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
           </h2>
-          <p className="text-xs text-orange-100/90 mt-1 max-w-2xl leading-relaxed">
-            Real-time emergency dispatch coordination, road traffic crash triage, rescue ambulance mobilization, and inter-barangay public safety network in Roxas, Oriental Mindoro.
-          </p>
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto">
@@ -136,14 +132,6 @@ export const MdrrmoDashboard: React.FC = () => {
           >
             <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
             <span>🚨 Test SMS</span>
-          </button>
-          <button
-            id="btn-mdrrmo-new-case"
-            onClick={() => setIsNewCaseModalOpen(true)}
-            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-orange-950 hover:bg-orange-50 rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-          >
-            <PlusCircle className="w-4 h-4 text-orange-600" />
-            <span>Log Incident</span>
           </button>
           <button
             id="btn-mdrrmo-view-annual"

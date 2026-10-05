@@ -9,7 +9,6 @@ import {
   Clock,
   AlertTriangle,
   ShieldCheck,
-  MapPin,
   FileText,
   Calendar,
   PlusCircle,
@@ -72,7 +71,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
-  const [reportLocation, setReportLocation] = useState('');
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportTime, setReportTime] = useState('14:00');
   const [isUrgent, setIsUrgent] = useState(false);
@@ -116,8 +114,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       alert('Pakilagay ang Pamagat o Paksa ng Insidente (Please enter the incident title).');
       return;
     }
-    if (!reportSitio.trim() && !reportLocation.trim()) {
-      alert('Pakilagay ang Sitio o Street (Please specify the Sitio or street).');
+    if (!reportSitio.trim()) {
+      alert('Pakilagay ang Sitio ng insidente (Please specify the Sitio).');
       return;
     }
 
@@ -164,10 +162,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       reportTitle.toLowerCase().includes('motorcycle') ||
       reportTitle.toLowerCase().includes('crash');
 
-    const finalSitio = reportSitio.trim() || reportLocation.trim();
-    const finalLocation = reportLocation.trim()
-      ? `${reportSitio.trim() ? `${reportSitio.trim()}, ` : ''}${reportLocation.trim()}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`
-      : `${finalSitio}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
+    const finalSitio = reportSitio.trim();
+    const finalLocation = `${finalSitio ? `${finalSitio}, ` : ''}Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
 
     const newCaseId = createCase({
       title: reportTitle.trim(),
@@ -207,7 +203,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     // Reset Form
     setReportTitle('');
     setReportSitio('');
-    setReportLocation('');
     setIsUrgent(false);
     setSelectedFiles([]);
 
@@ -246,9 +241,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
               Welcome, {currentUser.name}!
             </h1>
-            <p className="text-xs sm:text-sm text-emerald-100/80 max-w-2xl leading-relaxed">
-              Quickly and securely report neighborhood incidents with attached photos and evidence, and monitor real-time case resolution by the Barangay Lupon and Authorities.
-            </p>
           </div>
 
           {/* Quick Action Navigation Buttons */}
@@ -358,9 +350,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <FileText className="w-5 h-5 text-emerald-600" />
                     <span>Incident & Complaint Reporting Form</span>
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Fill out the required incident details and attach photos or evidence to expedite review and action by the Barangay and Lupon Tagapamayapa.
-                  </p>
                 </div>
                 <span className="text-[11px] text-slate-400 hidden sm:block">
                   Fields marked with (<span className="text-rose-500 font-bold">*</span>) are mandatory
@@ -413,7 +402,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
               </div>
 
               {/* 2. Location & Date/Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800">
                     Barangay Jurisdiction <span className="text-rose-500">*</span>
@@ -451,22 +440,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     onChange={(e) => setReportSitio(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Street
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="input-report-location"
-                      type="text"
-                      value={reportLocation}
-                      onChange={(e) => setReportLocation(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -623,9 +596,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Clock className="w-5 h-5 text-emerald-600" />
                   <span>My Submitted Incident Reports & Resolution Status</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Track every milestone and hearing action taken by the Barangay Lupon Tagapamayapa and Authorities.
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -780,9 +750,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Camera className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-black text-slate-900">Report an Incident</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  File neighborhood disturbances, boundary conflicts, sanitation issues, or damages with photo evidence for prompt barangay action.
-                </p>
               </div>
 
               <button
@@ -802,9 +769,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-black text-slate-900">Track Reports & Status</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  View real-time case updates, scheduled Lupon hearing dates, and official settlement notes on your filed reports.
-                </p>
               </div>
 
               <button
@@ -827,9 +791,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <FileText className="w-4 h-4 text-emerald-600" />
                   <span>Recent Incident Reports in Barangay {currentUser.barangay || 'San Aquilino'}</span>
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Official blotter and mediation logs handled by Lupon Tagapamayapa
-                </p>
               </div>
 
               <button

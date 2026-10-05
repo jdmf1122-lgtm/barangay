@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   AlertCircle,
   UserPlus,
-  LogOut,
   Compass,
   X
 } from 'lucide-react';
@@ -28,10 +27,10 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
 
 export const Sidebar: React.FC = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const { cases } = useCases();
   const { unreadNotifCount } = useNotifications();
-  const { activeTab, setActiveTab, setIsCreateAccountModalOpen, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
+  const { activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
 
   const safeCases = cases || [];
   const officialComplaintsCount = safeCases.filter((c) => c.isInvolvingOfficial).length;
@@ -349,48 +348,6 @@ export const Sidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Footer User Profile Card, Create Account & Logout */}
-      <div className="p-3 border-t border-emerald-100 bg-emerald-50/40 space-y-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center font-bold text-emerald-800 text-xs">
-            {(currentUser?.name || 'U').charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-900 truncate">{currentUser?.name || 'User'}</p>
-            <p className="text-[10px] text-emerald-800/80 font-medium truncate">{currentUser?.position || ''}</p>
-          </div>
-          <button
-            id={`btn-sidebar-logout${isMobile ? '-mobile' : ''}`}
-            onClick={logout}
-            title="Log Out (Sign Out)"
-            className="p-1 rounded hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <button
-            id={`btn-sidebar-create-account${isMobile ? '-mobile' : ''}`}
-            onClick={() => {
-              setIsCreateAccountModalOpen(true);
-              if (isMobile) setIsMobileMenuOpen(false);
-            }}
-            className="w-full py-1 px-2 bg-white hover:bg-emerald-50 text-emerald-800 hover:text-emerald-950 rounded-lg border border-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-          >
-            <UserPlus className="w-3 h-3 text-emerald-600" />
-            <span>+ Account</span>
-          </button>
-          <button
-            id={`btn-sidebar-logout-full${isMobile ? '-mobile' : ''}`}
-            onClick={logout}
-            className="w-full py-1 px-2 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 rounded-lg border border-rose-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-          >
-            <LogOut className="w-3 h-3 text-rose-600" />
-            <span>Log Out</span>
-          </button>
-        </div>
-      </div>
     </>
   );
 

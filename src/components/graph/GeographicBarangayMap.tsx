@@ -413,30 +413,32 @@ export const SYSTEM_BARANGAYS_GEO: SystemBarangayGeo[] = [
 ];
 
 // Municipal Government & Law Enforcement Agency Hubs (Exact Coordinates)
-export const MUNICIPAL_AGENCY_HUBS = [
+export type AgencyHubType = 'LGU' | 'DILG';
 
+export interface MunicipalAgencyHub {
+  id: string;
+  name: string;
+  shortName: string;
+  type: AgencyHubType;
+  lat: number;
+  lng: number;
+  address: string;
+}
+
+export const MUNICIPAL_AGENCY_HUBS: MunicipalAgencyHub[] = [
   {
     id: 'HUB-LGU',
     name: 'Municipal Government Center of Roxas',
     shortName: 'Roxas Municipal Hall (LGU)',
-    type: 'LGU' as const,
+    type: 'LGU',
     lat: 12.5888,
     lng: 121.5167,
     address: 'Municipal Complex (near Bulwagan ng Katarungan), Poblacion, Roxas, Oriental Mindoro'
-  },
-  {
-    id: 'HUB-DILG',
-    name: 'DILG Municipal Operations Office (MLGOO)',
-    shortName: 'DILG MLGOO Roxas',
-    type: 'DILG' as const,
-    lat: 12.5882,
-    lng: 121.5176,
-    address: 'Legislative Building, Municipal Compound, Morente Avenue, Roxas, Oriental Mindoro'
   }
 ];
 
 // Available Map Tile Providers (Realistic Street, Satellite Imagery, Terrain)
-type TileLayerType = 'google_street' | 'satellite' | 'terrain' | 'osm';
+type TileLayerType = 'street' | 'satellite' | 'terrain';
 
 interface TileConfig {
   id: TileLayerType;
@@ -449,11 +451,11 @@ interface TileConfig {
 
 const MAP_TILE_CONFIGS: TileConfig[] = [
   {
-    id: 'google_street',
-    label: 'Default Streets',
-    thumbnail: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=100&auto=format&fit=crop&q=60',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    id: 'street',
+    label: 'Standard Streets',
+    thumbnail: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=100&auto=format&fit=crop&q=60',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   },
   {
@@ -471,14 +473,6 @@ const MAP_TILE_CONFIGS: TileConfig[] = [
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
     maxZoom: 17
-  },
-  {
-    id: 'osm',
-    label: 'OSM Standard',
-    thumbnail: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=100&auto=format&fit=crop&q=60',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
   }
 ];
 
@@ -497,7 +491,7 @@ export const GeographicBarangayMap: React.FC = () => {
   const referralLinesGroupRef = useRef<L.LayerGroup | null>(null);
 
   // States
-  const [activeTileType, setActiveTileType] = useState<TileLayerType>('google_street');
+  const [activeTileType, setActiveTileType] = useState<TileLayerType>('street');
   const [gisMode, setGisMode] = useState<GisViewMode>('all');
   const [selectedBarangayFilter, setSelectedBarangayFilter] = useState<string>(
     currentUser.barangay && ROXAS_BARANGAYS.includes(currentUser.barangay as any)
@@ -628,8 +622,8 @@ export const GeographicBarangayMap: React.FC = () => {
         attributionControl: true
       });
 
-      // Default tile layer (CartoDB Voyager)
-      const selectedConfig = MAP_TILE_CONFIGS.find(t => t.id === 'google_street') || MAP_TILE_CONFIGS[0];
+      // Default tile layer (OpenStreetMap Standard)
+      const selectedConfig = MAP_TILE_CONFIGS.find(t => t.id === 'street') || MAP_TILE_CONFIGS[0];
       const tileLayer = L.tileLayer(selectedConfig.url, {
         attribution: selectedConfig.attribution,
         maxZoom: selectedConfig.maxZoom
@@ -727,8 +721,7 @@ export const GeographicBarangayMap: React.FC = () => {
 
     // 2. Inter-Agency Referral Flow Lines (to Municipal Agency Hubs)
     if (showReferralLines && referralLinesGroupRef.current) {
-      const lguHub = MUNICIPAL_AGENCY_HUBS.find(h => h.type === 'LGU')!;
-      const dilgHub = MUNICIPAL_AGENCY_HUBS.find(h => h.type === 'DILG')!;
+      const lguHub = MUNICIPAL_AGENCY_HUBS.find(h => h.type === 'LGU');
 
       SYSTEM_BARANGAYS_GEO.forEach((b) => {
         if (selectedBarangayFilter !== 'ALL' && b.name !== selectedBarangayFilter) return;
@@ -736,21 +729,10 @@ export const GeographicBarangayMap: React.FC = () => {
         if (!stats) return;
 
         const lguCount = stats.cases.filter(c => c.isReferredToLgu).length;
-        const dilgCount = stats.cases.filter(c => c.isMonitoredByDilg).length;
 
-        if (lguCount > 0) {
+        if (lguCount > 0 && lguHub) {
           const line = L.polyline([[b.lat, b.lng], [lguHub.lat, lguHub.lng]], {
             color: '#059669',
-            weight: 2.5,
-            dashArray: '6, 6',
-            opacity: 0.85
-          });
-          referralLinesGroupRef.current?.addLayer(line);
-        }
-
-        if (dilgCount > 0) {
-          const line = L.polyline([[b.lat, b.lng], [dilgHub.lat, dilgHub.lng]], {
-            color: '#9333ea',
             weight: 2.5,
             dashArray: '6, 6',
             opacity: 0.85
@@ -1014,7 +996,7 @@ export const GeographicBarangayMap: React.FC = () => {
                   </span>
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Interactive real-world satellite, terrain, and street mapping for the 6 official system barangays
+                  Interactive real-world satellite, terrain, and street mapping for the 20 official system barangays
                 </p>
               </div>
             </div>
@@ -1177,7 +1159,7 @@ export const GeographicBarangayMap: React.FC = () => {
             </div>
             <div className="text-xs min-w-0">
               <div className="font-bold text-slate-900 truncate text-[11px] sm:text-xs">
-                {selectedBarangayFilter === 'ALL' ? 'Roxas 6 Barangays' : `Brgy. ${selectedBarangayFilter}`}
+                {selectedBarangayFilter === 'ALL' ? 'Roxas 20 Barangays' : `Brgy. ${selectedBarangayFilter}`}
               </div>
               <div className="text-[9px] sm:text-[10px] text-slate-500 hidden sm:block truncate">Oriental Mindoro, Philippines</div>
             </div>
@@ -1256,7 +1238,7 @@ export const GeographicBarangayMap: React.FC = () => {
                 onChange={(e) => setShowHubs(e.target.checked)}
                 className="rounded text-emerald-600 focus:ring-0"
               />
-              <span>Agency Hubs (LGU/DILG)</span>
+              <span>Agency Hubs (LGU)</span>
             </label>
             <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 font-medium">
               <input
@@ -1401,12 +1383,12 @@ export const GeographicBarangayMap: React.FC = () => {
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
                 <h3 className="font-black text-sm text-slate-900">
-                  Municipal System Jurisdiction Summary
+                  Municipal System Summary
                 </h3>
               </div>
 
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                The B-CONNECT System features full spatial mapping for the <strong>6 official barangays</strong> of Roxas, Oriental Mindoro. Click any pin or list item below to zoom in on genuine satellite imagery and street details.
+                The B-CONNECT System features full spatial mapping for the <strong>20 official barangays</strong> of Roxas, Oriental Mindoro. Click any pin or list item below to zoom in on genuine satellite imagery and street details.
               </p>
 
               <div className="space-y-1.5">
