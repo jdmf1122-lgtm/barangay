@@ -24,6 +24,7 @@ import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { formatDateShort } from '../../utils/reportGenerators';
 import { sendAutomatedResponderSMS, startSmsResendInterval } from '../../utils/smsService';
 import { getEscalationConfig, formatElapsedTime } from '../../utils/escalationService';
+import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 import { ROXAS_BARANGAYS } from '../../types';
 
 export const MdrrmoDashboard: React.FC = () => {
@@ -372,7 +373,14 @@ export const MdrrmoDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-bold text-slate-900">{c.title}</div>
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>{c.title}</span>
+                      {isConsolidatedCase(c) && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          ✓ Single Report (Consolidated)
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-slate-500 line-clamp-1">{c.description}</div>
                   </td>
                   <td className="py-3 px-4">

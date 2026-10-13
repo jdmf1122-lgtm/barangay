@@ -11,6 +11,29 @@ import {
   formatElapsedTime, 
   isCaseEligibleForEscalation 
 } from '../utils/escalationService';
+import { 
+  findDuplicateInCases, 
+  mergeDuplicateIntoPrimary, 
+  isConsolidatedCase 
+} from '../utils/duplicateReportDetector';
+
+export const SUPABASE_CASE_COLUMNS = new Set([
+  'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
+  'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
+  'barangay', 'specificLocation', 'complainants', 'respondents',
+  'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
+  'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
+  'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
+  'currentHandlingAgency', 'assignedPersonnel', 'assignedPersonnelContact',
+  'priority', 'status', 'resolutionSummary', 'dateResolved', 'dateClosed',
+  'outcomeType', 'isCitizenReport', 'residentReporterId', 'isAccidentEmergency',
+  'accidentVehicleDetails', 'accidentCasualties', 'isAccidentProneArea',
+  'emergencyAlarmAcknowledged', 'emergencyFirstRespondersDispatched',
+  'collisionImpactType', 'roadSurfaceCondition', 'weatherCondition',
+  'injuriesCount', 'casualtiesCount', 'isHitAndRun', 'respondingAmbulanceUnit',
+  'hospitalTransported', 'dateCreated', 'dateLastUpdated', 'createdBy',
+  'isConfidential'
+]);
 
 export const useCases = () => {
   const caseState = useContext(CaseContext);
@@ -75,6 +98,65 @@ export const useCases = () => {
   };
 
   const createCase = (data: Partial<Case>): string => {
+    // 0. Auto-Deduplication check: Detect if this report is a duplicate of an existing active incident
+    const duplicateMatch = findDuplicateInCases(data, cases || []);
+    if (duplicateMatch) {
+      const { matchedCase, checkResult } = duplicateMatch;
+      const consolidatedCase = mergeDuplicateIntoPrimary(matchedCase, data);
+
+      // Update local state so only the single consolidated record is maintained
+      setCases((prev) => prev.map((c) => (c.id === consolidatedCase.id ? consolidatedCase : c)));
+
+      // Persist consolidated update to Supabase
+      const updatePayload: Record<string, any> = {};
+      for (const key of Object.keys(consolidatedCase)) {
+        if (SUPABASE_CASE_COLUMNS.has(key) && (consolidatedCase as any)[key] !== undefined) {
+          updatePayload[key] = (consolidatedCase as any)[key];
+        }
+      }
+      supabase.from('cases').update(updatePayload).eq('id', consolidatedCase.id).then(({ error }) => {
+        if (error) console.error('Error updating consolidated case in Supabase:', error);
+      });
+
+      // Broadcast update across tabs
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const bc = new BroadcastChannel('bconnect_cases_sync');
+          bc.postMessage({ type: 'UPDATE_CASE', payload: consolidatedCase });
+          bc.close();
+        } catch (e) {}
+      }
+      try {
+        supabase.channel('cases_realtime_sync').send({
+          type: 'broadcast',
+          event: 'case_event',
+          payload: { type: 'UPDATE_CASE', data: consolidatedCase }
+        });
+      } catch (e) {}
+
+      logActivity(
+        'DUPLICATE_REPORT_CONSOLIDATED',
+        consolidatedCase.id,
+        `Auto-Deduplication Engine detected duplicate report ("${data.title || ''}") matching Case #${consolidatedCase.id} (${checkResult.reasons.join(', ')}). Consolidated into primary record; duplicate eliminated.`
+      );
+
+      triggerNotification(
+        'Duplicate Report Auto-Consolidated',
+        `Napansin ng system na may nauna nang katulad na report para sa insidenteng ito. Matagumpay itong pinag-isa sa Case #${consolidatedCase.id} (Brgy. ${consolidatedCase.barangay}) upang isa lamang ang manatili at maiwasan ang duplicate dispatch.`,
+        'system',
+        consolidatedCase.id,
+        currentUser.agencyName,
+        'normal',
+        {
+          isDeduplicated: true,
+          targetBarangay: consolidatedCase.barangay,
+          targetAgencyTypes: ['RESIDENT', 'MDRRMO', 'ADMIN']
+        }
+      );
+
+      return consolidatedCase.id;
+    }
+
     const year = new Date().getFullYear();
     let maxNum = 0;
     (cases || []).forEach((c) => {
@@ -187,24 +269,6 @@ export const useCases = () => {
     setCases((prev) => [newCaseItem, ...prev]);
 
     // Filter payload strictly to valid PostgreSQL columns so schema cache never errors
-    const SUPABASE_CASE_COLUMNS = new Set([
-      'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
-      'initialNarrative', 'currentNarrativeSummary', 'dateReported', 'incidentDate',
-      'barangay', 'specificLocation', 'complainants', 'respondents',
-      'witnesses', 'personsInvolved', 'vehiclesInvolved', 'statusHistory', 'timeline',
-      'imageUrls', 'isInvolvingOfficial', 'officialInvolvedType', 'officialInvolvedName',
-      'officialInvolvedPosition', 'officialInvolvedAgency', 'originatingAgency',
-      'currentHandlingAgency', 'assignedPersonnel', 'assignedPersonnelContact',
-      'priority', 'status', 'resolutionSummary', 'dateResolved', 'dateClosed',
-      'outcomeType', 'isCitizenReport', 'residentReporterId', 'isAccidentEmergency',
-      'accidentVehicleDetails', 'accidentCasualties', 'isAccidentProneArea',
-      'emergencyAlarmAcknowledged', 'emergencyFirstRespondersDispatched',
-      'collisionImpactType', 'roadSurfaceCondition', 'weatherCondition',
-      'injuriesCount', 'casualtiesCount', 'isHitAndRun', 'respondingAmbulanceUnit',
-      'hospitalTransported', 'dateCreated', 'dateLastUpdated', 'createdBy',
-      'isConfidential'
-    ]);
-
     const dbPayload: Record<string, any> = {};
     for (const key of Object.keys(newCaseItem)) {
       if (SUPABASE_CASE_COLUMNS.has(key) && (newCaseItem as any)[key] !== undefined) {
@@ -753,7 +817,8 @@ export const useCases = () => {
     markIncidentAsSeenAndResponded,
     escalateIncidentToLgu,
     recordLguInterventionAction,
-    logActivity
+    logActivity,
+    isConsolidatedCase
   };
 };
 

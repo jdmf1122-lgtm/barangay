@@ -206,6 +206,12 @@ export interface Case {
   createdBy: string;
   isConfidential?: boolean;
 
+  // Auto-Deduplication Tracking
+  isDeduplicated?: boolean;
+  duplicateMergedCount?: number;
+  mergedReportIds?: string[];
+
+
   // MDRRMO to LGU Automatic Escalation Tracking
   isEscalatedToLgu?: boolean;
   escalatedAt?: string;

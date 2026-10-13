@@ -38,6 +38,7 @@ import {
 } from '../../types';
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
+import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 
 
@@ -89,7 +90,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   const myReports = (cases || []).filter(c => {
     const isReporter = c.residentReporterId === currentUser?.id ||
       (c.createdBy && c.createdBy.toLowerCase().includes(currentResidentName)) ||
-      (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === currentResidentName));
+      (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
+      (c.witnesses && c.witnesses.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
+      (c.personsInvolved && c.personsInvolved.some(p => (p.name || '').toLowerCase() === currentResidentName));
     const isSameBarangay = c.barangay === (currentUser?.barangay || 'San Aquilino');
     return isReporter || (currentUser?.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
   });
@@ -309,6 +312,24 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <span className="text-xs text-slate-500 font-bold uppercase">Reference Code:</span>
                     <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
                   </div>
+
+                  {(() => {
+                    const matchedCase = cases.find((c) => c.id === submittedSuccessCaseId);
+                    if (matchedCase && isConsolidatedCase(matchedCase)) {
+                      return (
+                        <div className="mt-3 p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-emerald-950 text-xs flex items-start gap-2 shadow-xs">
+                          <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block font-bold">Awtomatikong Pinag-isang Ulat (Auto-Consolidated)</strong>
+                            <span className="text-[11px] leading-relaxed block mt-0.5">
+                              Napansin ng system na may nauna nang katulad na ulat ukol sa insidenteng ito. Matagumpay na pinag-isa ang iyong report sa nag-iisang aktibong docket na ito upang maiwasan ang duplicate report at dobleng dispatch ng mga responders.
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
 
@@ -656,6 +677,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                           </span>
                           <StatusBadge status={c.status} />
                           <PriorityBadge priority={c.priority} />
+                          {isConsolidatedCase(c) && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ✓ Pinag-isang Ulat (Unified)
+                            </span>
+                          )}
                         </div>
 
                         <span className="text-[11px] text-slate-500 flex items-center gap-1">
