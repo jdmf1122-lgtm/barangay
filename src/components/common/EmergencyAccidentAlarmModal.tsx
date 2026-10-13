@@ -95,19 +95,32 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
 
     // 1. Scan for any active incident in cases that has not yet been marked as seen/responded
+    // Must strictly be an actual report filed by a resident citizen (never seed cases or internal blotters)
     const unacknowledgedCase = cases.find((c) => {
+      if (!c) return false;
+      // Exclude seed / demo cases
+      if (c.id?.startsWith('BC-2026-00')) return false;
+
+      // Must be an actual report submitted by a resident
+      const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
+      if (!isResidentReport) return false;
+
       const isTargetedBarangay = !userBarangay || c.barangay === userBarangay || !c.barangay;
-      const isEmergencyOrCitizen = c.isCitizenReport || c.isAccidentEmergency || c.priority === 'Urgent' || (c.originatingAgency && c.originatingAgency.includes('Resident'));
+      const isEmergency = c.isAccidentEmergency || c.priority === 'Urgent' || (c.category && c.category.toLowerCase().includes('accident'));
       const isNotResolved = c.status !== 'Resolved' && c.status !== 'Closed';
       const isNotAcknowledged = !c.emergencyAlarmAcknowledged && !acknowledgedIds.includes(c.id);
-      return isTargetedBarangay && isEmergencyOrCitizen && isNotResolved && isNotAcknowledged;
+
+      return isTargetedBarangay && isEmergency && isNotResolved && isNotAcknowledged;
     });
 
-    // 2. Scan for unacknowledged emergency notifications
+    // 2. Scan for unacknowledged emergency notifications (ignoring seed notifications)
     const unacknowledgedNotif = notifications.find((n) => {
-      if (n.isRead) return false;
+      if (!n || n.isRead) return false;
+      // Exclude seed notifications
+      if (n.id?.startsWith('NOTIF-RES-') || n.id?.startsWith('NOTIF-BGY-') || n.id?.startsWith('NOTIF-LGU-') || n.id?.startsWith('NOTIF-SYS-')) return false;
       if (acknowledgedIds.includes(n.id)) return false;
       if (n.caseId && acknowledgedIds.includes(n.caseId)) return false;
+      if (n.caseId?.startsWith('BC-2026-00')) return false;
 
       const isTargetedBarangay = !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
       const titleLower = (n.title || '').toLowerCase();

@@ -51,12 +51,22 @@ export const MdrrmoDashboard: React.FC = () => {
     : safeCases.filter((c) => c && c.barangay === barangayFilter);
 
   // Active unacknowledged resident reports & emergency alerts
-  const incomingResidentAlerts = safeCases.filter(
-    (c) => c && (c.isCitizenReport || c.isAccidentEmergency) &&
+  // Must strictly be an actual report submitted by a resident citizen (never seed cases or internal blotters)
+  const incomingResidentAlerts = safeCases.filter((c) => {
+    if (!c) return false;
+    // Exclude seed / demo cases
+    if (c.id?.startsWith('BC-2026-00')) return false;
+
+    // Must be reported by a resident citizen
+    const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
+    if (!isResidentReport) return false;
+
+    return (
       !c.emergencyAlarmAcknowledged &&
       c.status !== 'Resolved' &&
       c.status !== 'Closed'
-  );
+    );
+  });
 
   const totalIncidents = mdrrmoCases.length;
   const resolvedCount = mdrrmoCases.filter((c) => c && (c.status === 'Resolved' || c.status === 'Closed')).length;

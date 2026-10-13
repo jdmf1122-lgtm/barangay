@@ -189,6 +189,8 @@ export const SEED_CASES: Case[] = [
     priority: 'Urgent',
     status: 'Unresolved',
 
+    isCitizenReport: false,
+    emergencyAlarmAcknowledged: true,
     isAccidentEmergency: true,
     accidentVehicleDetails: 'Yamaha Sniper 150 (Plate # 9921-YM) vs Suzuki Raider 150 (Plate # 3144-SZ)',
     accidentCasualties: '2 Critical Injuries (Both riders hospitalized with lower extremity fractures)',
@@ -434,6 +436,8 @@ export const SEED_CASES: Case[] = [
     priority: 'Urgent',
     status: 'Unresolved',
 
+    isCitizenReport: false,
+    emergencyAlarmAcknowledged: true,
     isAccidentEmergency: true,
     accidentVehicleDetails: 'Unidentified Black Underbone Motorcycle (Open Exhaust / No Plate Installed)',
     accidentCasualties: '1 Pedestrian Hospitalized (Fractured wrist, head laceration)',

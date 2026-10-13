@@ -89,7 +89,7 @@ export function formatElapsedTime(reportDateStr: string): { minutes: number; dis
 
 /**
  * Checks whether an emergency case is eligible for automatic LGU escalation:
- * 1. Must be an emergency / citizen accident report handled by or routed to MDRRMO.
+ * 1. Must be an actual citizen/resident emergency report (not seed/demo cases or internal blotters).
  * 2. Not already acknowledged by MDRRMO (emergencyAlarmAcknowledged !== true).
  * 3. Not already resolved or closed.
  * 4. Not already escalated to LGU.
@@ -101,6 +101,9 @@ export function isCaseEligibleForEscalation(
 ): boolean {
   if (!c || !config.enabled) return false;
 
+  // Never auto-escalate seed/demo cases (e.g. BC-2026-001 to BC-2026-008)
+  if (c.id?.startsWith('BC-2026-00')) return false;
+
   // If MDRRMO has already acknowledged, responded, or marked as seen, timer is halted
   if (c.emergencyAlarmAcknowledged) return false;
 
@@ -110,10 +113,17 @@ export function isCaseEligibleForEscalation(
   // If already escalated to LGU, do not duplicate
   if (c.isEscalatedToLgu) return false;
 
-  // Must be an emergency incident report under MDRRMO purview
+  // Must strictly be an actual report filed by a resident citizen
+  const isResidentReport = 
+    Boolean(c.isCitizenReport) || 
+    Boolean(c.residentReporterId) || 
+    Boolean(c.originatingAgency && c.originatingAgency.includes('Resident'));
+
+  if (!isResidentReport) return false;
+
+  // Must be an emergency / accident incident under MDRRMO purview
   const isEmergency = 
     Boolean(c.isAccidentEmergency) ||
-    Boolean(c.isCitizenReport) ||
     String(c.category || '').toLowerCase().includes('accident') ||
     String(c.category || '').toLowerCase().includes('collision') ||
     String(c.category || '').toLowerCase().includes('vehicular') ||
