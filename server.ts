@@ -28,6 +28,23 @@ app.use(cors({
 
 app.use(express.json());
 
+// Root endpoint for browser visits and status
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'B-CONNECT Multi-Agency Backend API',
+    version: '4.2.0',
+    endpoints: {
+      health: '/api/health',
+      authLogin: '/api/auth/login',
+      authRegister: '/api/auth/register',
+      cases: '/api/cases',
+      smsBroadcast: '/api/sms/broadcast-alert',
+      smsLogs: '/api/sms/logs'
+    }
+  });
+});
+
 // Basic health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
