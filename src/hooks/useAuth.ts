@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext, DEFAULT_BLANK_USER } from '../context/AuthContext';
 import { CaseContext } from '../context/CaseContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
@@ -378,7 +378,7 @@ export const useAuth = () => {
     }
     
     setUsers(SEED_USERS);
-    setCurrentUserState(SEED_USERS[0]);
+    setCurrentUserState(SEED_USERS[0] || DEFAULT_BLANK_USER);
     logActivity('SYSTEM_RESET', undefined, 'System state reset to original seed baseline for Roxas, Oriental Mindoro.');
   };
 

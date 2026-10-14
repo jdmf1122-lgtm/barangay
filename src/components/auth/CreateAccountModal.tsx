@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   UserPlus, 
@@ -63,12 +63,20 @@ export const CreateAccountModal: React.FC = () => {
   const [role, setRole] = useState<UserRole>('MDRRMO_ADMIN');
   const [badgeOrIdNumber, setBadgeOrIdNumber] = useState('MDRRMO-ROX-2026');
   const [email, setEmail] = useState('');
-  const [passcode, setPasscode] = useState('jarinyes');
-  const [confirmPasscode, setConfirmPasscode] = useState('jarinyes');
+  const [passcode, setPasscode] = useState('');
+  const [confirmPasscode, setConfirmPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
   const [showConfirmPasscode, setShowConfirmPasscode] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isCreateAccountModalOpen) {
+      setPasscode('');
+      setConfirmPasscode('');
+      setError(null);
+    }
+  }, [isCreateAccountModalOpen]);
 
   if (!isCreateAccountModalOpen) return null;
 
@@ -164,8 +172,8 @@ export const CreateAccountModal: React.FC = () => {
       setName('');
       setEmail('');
       setBadgeOrIdNumber('');
-      setPasscode('jarinyes');
-      setConfirmPasscode('jarinyes');
+      setPasscode('');
+      setConfirmPasscode('');
       setIsCreateAccountModalOpen(false);
     } catch (error: any) {
       setError(error.message || 'Registration failed. Please try again.');
@@ -389,6 +397,7 @@ export const CreateAccountModal: React.FC = () => {
                 <input
                   id="input-create-passcode"
                   type={showPasscode ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   placeholder="Min. 4 characters"
                   value={passcode}
@@ -414,6 +423,7 @@ export const CreateAccountModal: React.FC = () => {
                 <input
                   id="input-create-confirm-passcode"
                   type={showConfirmPasscode ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   placeholder="Re-type password"
                   value={confirmPasscode}

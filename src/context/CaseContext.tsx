@@ -2,11 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Case, AuditLog, ROXAS_BARANGAYS } from '../types';
 import { supabase } from '../utils/supabaseClient';
 import { SEED_CASES, SEED_AUDIT_LOGS } from '../data/seedData';
-import { 
-  findDuplicateInCases, 
-  mergeDuplicateIntoPrimary, 
-  deduplicateCaseList 
-} from '../utils/duplicateReportDetector';
+
 
 export const sanitizeCaseBarangay = (rawCase: any): Case => {
   let b = rawCase.barangay;
@@ -68,51 +64,9 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
 
         if (casesRes.data && Array.isArray(casesRes.data)) {
           const sanitized = casesRes.data.map((c: any) => sanitizeCaseBarangay(c));
-          
-          // Automatic deduplication pass on loaded cases: detects and eliminates duplicate records
-          const { cleanedCases, removedDuplicates } = deduplicateCaseList(sanitized);
-
-          if (removedDuplicates.length > 0) {
-            console.log(`[B-CONNECT Auto-Deduplication] Detected and removed ${removedDuplicates.length} duplicate report(s).`);
-            for (const { duplicate, primary } of removedDuplicates) {
-              // 1. Permanently delete duplicate from Supabase
-              supabase.from('cases').delete().eq('id', duplicate.id).then(({ error }) => {
-                if (error) console.warn('Supabase duplicate removal notice:', error);
-              });
-              // 2. Update merged primary in Supabase
-              supabase.from('cases').update({
-                imageUrls: primary.imageUrls,
-                witnesses: primary.witnesses,
-                personsInvolved: primary.personsInvolved,
-                timeline: primary.timeline,
-                dateLastUpdated: primary.dateLastUpdated
-              }).eq('id', primary.id).then(({ error }) => {
-                if (error) console.warn('Supabase primary update notice:', error);
-              });
-              // 3. Broadcast deletion of duplicate to all other tabs
-              if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-                try {
-                  const bcLocal = new BroadcastChannel('bconnect_cases_sync');
-                  bcLocal.postMessage({ type: 'DELETE_CASE', payload: { id: duplicate.id } });
-                  bcLocal.close();
-                } catch (e) {}
-              }
-            }
-          }
-
-          setCases((prev) => {
-            const map = new Map<string, Case>();
-            cleanedCases.forEach((c) => map.set(c.id, c));
-            // Only preserve seed cases from prev if not present on server
-            prev.forEach((c) => {
-              if (!map.has(c.id) && SEED_CASES.some((s) => s.id === c.id)) {
-                map.set(c.id, c);
-              }
-            });
-            return Array.from(map.values()).sort((a, b) => 
-              new Date(b.dateCreated || b.dateReported).getTime() - new Date(a.dateCreated || a.dateReported).getTime()
-            );
-          });
+          setCases(sanitized.sort((a, b) => 
+            new Date(b.dateCreated || b.dateReported).getTime() - new Date(a.dateCreated || a.dateReported).getTime()
+          ));
         }
         if (logsRes.data && Array.isArray(logsRes.data)) {
           setAuditLogs(logsRes.data as AuditLog[]);
@@ -134,13 +88,6 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
             const incoming = sanitizeCaseBarangay(event.data.payload);
             setCases((prev) => {
               if (prev.some((c) => c.id === incoming.id)) return prev;
-              const dupMatch = findDuplicateInCases(incoming, prev);
-              if (dupMatch) {
-                const { matchedCase } = dupMatch;
-                const consolidated = mergeDuplicateIntoPrimary(matchedCase, incoming);
-                supabase.from('cases').delete().eq('id', incoming.id).then(() => {});
-                return prev.map((c) => (c.id === consolidated.id ? consolidated : c));
-              }
               return [incoming, ...prev];
             });
           } else if (event.data?.type === 'UPDATE_CASE' && event.data.payload) {
@@ -163,13 +110,6 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
           const incoming = sanitizeCaseBarangay(payload.new);
           setCases((prev) => {
             if (prev.some((c) => c.id === incoming.id)) return prev;
-            const dupMatch = findDuplicateInCases(incoming, prev);
-            if (dupMatch) {
-              const { matchedCase } = dupMatch;
-              const consolidated = mergeDuplicateIntoPrimary(matchedCase, incoming);
-              supabase.from('cases').delete().eq('id', incoming.id).then(() => {});
-              return prev.map((c) => (c.id === consolidated.id ? consolidated : c));
-            }
             return [incoming, ...prev];
           });
         }
@@ -190,13 +130,6 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
           const incoming = sanitizeCaseBarangay(payload.data);
           setCases((prev) => {
             if (prev.some((c) => c.id === incoming.id)) return prev;
-            const dupMatch = findDuplicateInCases(incoming, prev);
-            if (dupMatch) {
-              const { matchedCase } = dupMatch;
-              const consolidated = mergeDuplicateIntoPrimary(matchedCase, incoming);
-              supabase.from('cases').delete().eq('id', incoming.id).then(() => {});
-              return prev.map((c) => (c.id === consolidated.id ? consolidated : c));
-            }
             return [incoming, ...prev];
           });
         } else if (payload?.type === 'UPDATE_CASE' && payload.data) {
