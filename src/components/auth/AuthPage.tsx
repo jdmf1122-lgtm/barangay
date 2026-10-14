@@ -72,8 +72,8 @@ export const AuthPage: React.FC = () => {
   const [regRole, setRegRole] = useState<UserRole>('MDRRMO_ADMIN');
   const [regBadge, setRegBadge] = useState('MDRRMO-ROX-2026');
   const [regEmail, setRegEmail] = useState('');
-  const [regPasscode, setRegPasscode] = useState('jarinyes');
-  const [regConfirmPasscode, setRegConfirmPasscode] = useState('jarinyes');
+  const [regPasscode, setRegPasscode] = useState('');
+  const [regConfirmPasscode, setRegConfirmPasscode] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
@@ -584,6 +584,7 @@ export const AuthPage: React.FC = () => {
                         <input
                           id="input-register-passcode"
                           type={showRegPassword ? 'text' : 'password'}
+                          autoComplete="new-password"
                           placeholder="Min. 4 characters"
                           value={regPasscode}
                           onChange={(e) => setRegPasscode(e.target.value)}
@@ -607,6 +608,7 @@ export const AuthPage: React.FC = () => {
                         <input
                           id="input-register-confirm-passcode"
                           type={showRegConfirmPassword ? 'text' : 'password'}
+                          autoComplete="new-password"
                           placeholder="Re-type password"
                           value={regConfirmPasscode}
                           onChange={(e) => setRegConfirmPasscode(e.target.value)}

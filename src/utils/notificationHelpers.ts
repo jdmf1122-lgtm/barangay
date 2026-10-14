@@ -14,7 +14,7 @@ export function isNotificationForUser(
   const userRole = user.role;
   const userBarangay = user.barangay;
   const userId = user.id;
-  const userName = user.name.toLowerCase();
+  const userName = (user.name || '').toLowerCase();
 
   // Find related case if any
   const relatedCase = notif.caseId ? cases.find((c) => c.id === notif.caseId) : undefined;
@@ -36,7 +36,7 @@ export function isNotificationForUser(
   // If targeted to a specific resident name, ONLY that resident may receive it.
   if (notif.targetResidentName) {
     if (userAgencyType !== 'RESIDENT' && userRole !== 'RESIDENT') return false;
-    return notif.targetResidentName.toLowerCase() === userName;
+    return (notif.targetResidentName || '').toLowerCase() === userName;
   }
 
   // 3. Exclusivity check on targetAgencyTypes:
@@ -72,8 +72,8 @@ export function isNotificationForUser(
   // ----------------------------------------------------
   if (userAgencyType === 'RESIDENT' || userRole === 'RESIDENT') {
     // A. Residents MUST NEVER see internal officer accounts or administrative system provisions
-    const titleLower = notif.title.toLowerCase();
-    const msgLower = notif.message.toLowerCase();
+    const titleLower = (notif.title || '').toLowerCase();
+    const msgLower = (notif.message || '').toLowerCase();
 
     if (
       titleLower.includes('account registered') ||
@@ -105,13 +105,13 @@ export function isNotificationForUser(
       }
 
       const isReporter =
-        relatedCase.residentReporterId === userId ||
-        relatedCase.createdBy.toLowerCase().includes(userName) ||
-        (relatedCase.complainants && relatedCase.complainants.some((c) => c.name.toLowerCase() === userName || c.id === userId));
+        (relatedCase.residentReporterId && relatedCase.residentReporterId === userId) ||
+        (relatedCase.createdBy && relatedCase.createdBy.toLowerCase().includes(userName)) ||
+        (relatedCase.complainants && relatedCase.complainants.some((c) => (c.name && c.name.toLowerCase() === userName) || c.id === userId));
 
       const isPersonInvolved =
-        relatedCase.personsInvolved &&
-        relatedCase.personsInvolved.some((p) => p.name.toLowerCase() === userName || p.id === userId);
+        Boolean(relatedCase.personsInvolved &&
+        relatedCase.personsInvolved.some((p) => (p.name && p.name.toLowerCase() === userName) || p.id === userId));
 
       if (isReporter || isPersonInvolved) {
         return true;
@@ -178,15 +178,18 @@ export function isNotificationForUser(
 
     // Related case handled by or involving MDRRMO (or any incident report filed by a resident)
     if (relatedCase) {
+      const catLower = String(relatedCase.category || '').toLowerCase();
+      const origAg = relatedCase.originatingAgency || '';
+      const currAg = relatedCase.currentHandlingAgency || '';
       const isMdrrmoRelevantCase =
-        relatedCase.isCitizenReport ||
-        relatedCase.isAccidentEmergency ||
-        (relatedCase.category as string).toLowerCase().includes('accident') ||
-        (relatedCase.category as string).toLowerCase().includes('vehicular') ||
-        relatedCase.originatingAgency?.includes('MDRRMO') ||
-        relatedCase.originatingAgency?.includes('Resident') ||
-        relatedCase.originatingAgency?.includes('Traffic') ||
-        relatedCase.currentHandlingAgency?.includes('MDRRMO') ||
+        Boolean(relatedCase.isCitizenReport) ||
+        Boolean(relatedCase.isAccidentEmergency) ||
+        catLower.includes('accident') ||
+        catLower.includes('vehicular') ||
+        origAg.includes('MDRRMO') ||
+        origAg.includes('Resident') ||
+        origAg.includes('Traffic') ||
+        currAg.includes('MDRRMO') ||
         relatedCase.priority === 'Urgent';
 
       if (isMdrrmoRelevantCase) {
@@ -240,12 +243,14 @@ export function isNotificationForUser(
 
     // Related case involving LGU governance, cross-barangay disputes, or inter-agency referrals
     if (relatedCase) {
+      const cat = String(relatedCase.category || '');
+      const origAg = relatedCase.originatingAgency || '';
       const isLguCase =
-        (relatedCase as any).isInterAgency ||
-        (relatedCase.category as string).includes('Nuisance') ||
-        (relatedCase.category as string).includes('Boundary') ||
-        relatedCase.originatingAgency.includes('LGU') ||
-        relatedCase.originatingAgency.includes('Municipal');
+        Boolean((relatedCase as any).isInterAgency) ||
+        cat.includes('Nuisance') ||
+        cat.includes('Boundary') ||
+        origAg.includes('LGU') ||
+        origAg.includes('Municipal');
 
       if (isLguCase) {
         return true;

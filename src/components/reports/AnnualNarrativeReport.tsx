@@ -21,10 +21,14 @@ export const AnnualNarrativeReport: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedBarangay, setSelectedBarangay] = useState<string>('ALL');
 
-  const stats = generateAnnualStatistics(cases, selectedYear);
+  const safeCases = cases || [];
+  const stats = generateAnnualStatistics(safeCases, selectedYear);
 
-  const filteredCases = cases.filter((c) => {
-    const yr = new Date(c.dateReported).getFullYear();
+  const filteredCases = safeCases.filter((c) => {
+    if (!c) return false;
+    const dateStr = c.dateReported || c.dateCreated;
+    if (!dateStr) return false;
+    const yr = new Date(dateStr).getFullYear();
     if (yr !== selectedYear) return false;
     if (selectedBarangay !== 'ALL' && c.barangay !== selectedBarangay) return false;
     return true;
@@ -44,7 +48,7 @@ export const AnnualNarrativeReport: React.FC = () => {
       ['Average Resolution Days', stats.averageResolutionDays],
       ['Complaints Involving Officials', stats.casesInvolvingOfficials]
     ];
-    exportToCsv(`B-CONNECT_Annual_Narrative_Summary_${selectedYear}`, headers, rows);
+    exportToCsv(`B-CONNECT_Case_Narrative_Summary_${selectedYear}`, headers, rows);
   };
 
   return (
@@ -57,10 +61,10 @@ export const AnnualNarrativeReport: React.FC = () => {
             <span>End-of-Year Statutory Documentation</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight">
-            Annual Comprehensive Incident & Case Narrative Report ({selectedYear})
+            Comprehensive Incident & Case Narrative Report ({selectedYear})
           </h2>
           <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-            Formal narrative summary of public safety incidents, Katarungang Pambarangay settlements, inter-agency referrals, and DILG compliance for Roxas, Oriental Mindoro.
+            Formal narrative summary of public safety incidents, Katarungang Pambarangay settlements, and inter-agency referrals for Roxas, Oriental Mindoro.
           </p>
         </div>
 
@@ -122,7 +126,7 @@ export const AnnualNarrativeReport: React.FC = () => {
             B-CONNECT Multi-Agency Coordination & Transparency System
           </div>
           <h1 className="text-lg sm:text-xl font-extrabold uppercase text-slate-950 pt-1 tracking-tight">
-            ANNUAL NARRATIVE REPORT ON INCIDENTS, COMPLAINTS & CASE RESOLUTIONS
+            NARRATIVE REPORT ON INCIDENTS, COMPLAINTS & CASE RESOLUTIONS
           </h1>
           <div className="text-xs font-semibold text-slate-600">
             For the Calendar Year Ended December 31, {selectedYear}

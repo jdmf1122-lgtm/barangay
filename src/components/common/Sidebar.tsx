@@ -1,16 +1,15 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  FileSpreadsheet, 
-  Clock, 
-  Share2, 
-  ArrowRightLeft, 
-  FileCheck2, 
-  Eye, 
-  BookOpenCheck, 
-  FilePieChart, 
-  Layers, 
-  History, 
+import {
+  LayoutDashboard,
+  FileSpreadsheet,
+  Clock,
+  ArrowRightLeft,
+  FileCheck2,
+  Eye,
+  BookOpenCheck,
+  FilePieChart,
+  Layers,
+  History,
   Settings,
   Building2,
   Shield,
@@ -19,7 +18,6 @@ import {
   CheckCircle2,
   AlertCircle,
   UserPlus,
-  LogOut,
   Compass,
   X
 } from 'lucide-react';
@@ -29,10 +27,10 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
 
 export const Sidebar: React.FC = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const { cases } = useCases();
   const { unreadNotifCount } = useNotifications();
-  const { activeTab, setActiveTab, setIsCreateAccountModalOpen, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
+  const { activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
 
   const safeCases = cases || [];
   const officialComplaintsCount = safeCases.filter((c) => c.isInvolvingOfficial).length;
@@ -46,11 +44,12 @@ export const Sidebar: React.FC = () => {
   const getNavItems = () => {
     // 0. RESIDENT CITIZEN VIEW (Clean, accessible, incident reporting & case tracker)
     if (isResident) {
-      const brgyName = currentUser.barangay || 'San Aquilino';
-      const myReports = safeCases.filter(c => 
-        c.residentReporterId === currentUser.id || 
-        c.createdBy?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
-        c.complainants?.some(p => p.name.toLowerCase() === currentUser.name.toLowerCase()) ||
+      const brgyName = currentUser?.barangay || 'San Aquilino';
+      const userName = (currentUser?.name || '').toLowerCase();
+      const myReports = safeCases.filter(c =>
+        c.residentReporterId === currentUser?.id ||
+        (c.createdBy && c.createdBy.toLowerCase().includes(userName)) ||
+        (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === userName)) ||
         (c.barangay === brgyName && c.isCitizenReport)
       );
 
@@ -64,14 +63,12 @@ export const Sidebar: React.FC = () => {
         {
           id: 'submit_report',
           label: 'Report an Incident',
-          subtitle: 'Narrative & Photo Evidence',
           icon: <UserPlus className="w-4 h-4 text-emerald-400" />,
           highlight: true
         },
         {
           id: 'my_reports',
           label: 'My Filed Reports',
-          subtitle: 'Live Tracking & Milestones',
           icon: <Clock className="w-4 h-4" />,
           badge: myReports.length > 0 ? myReports.length : undefined,
           badgeColor: 'bg-emerald-500 text-white'
@@ -83,8 +80,8 @@ export const Sidebar: React.FC = () => {
     if (isMdrrmo) {
       const isMdrrmoAdmin = currentUser.role === 'MDRRMO_ADMIN';
       const brgyName = currentUser.barangay;
-      const mdrrmoCases = brgyName 
-        ? safeCases.filter(c => c.barangay === brgyName || c.originatingAgency.includes(brgyName))
+      const mdrrmoCases = brgyName
+        ? safeCases.filter(c => c.barangay === brgyName || (c.originatingAgency && c.originatingAgency.includes(brgyName)))
         : safeCases;
 
       return [
@@ -120,7 +117,7 @@ export const Sidebar: React.FC = () => {
       ];
     }
 
-    // 2. MUNICIPAL LGU VIEW (Executive Oversight, Multi-Barangay Masterfile, Action Queues)
+    // 2. MUNICIPAL LGU VIEW (Executive Oversight, Action Queues, Governance)
     if (isLgu) {
       const isLguAdmin = currentUser.role === 'LGU_ADMINISTRATOR';
 
@@ -130,26 +127,6 @@ export const Sidebar: React.FC = () => {
           label: isLguAdmin ? 'LGU Executive Dashboard' : 'LGU Department Dashboard',
           subtitle: isLguAdmin ? 'Municipal Executive Oversight' : 'Department Action Queue',
           icon: <LayoutDashboard className="w-4 h-4" />
-        },
-        {
-          id: 'cases',
-          label: 'Municipal Case Masterfile',
-          subtitle: 'All Component Barangays',
-          icon: <FileSpreadsheet className="w-4 h-4" />,
-          badge: safeCases.length
-        },
-        {
-          id: 'gis_map',
-          label: 'Municipal GIS Analytics',
-          subtitle: 'Dispute & Incident Mapping',
-          icon: <Compass className="w-4 h-4" />
-        },
-        {
-          id: 'graph',
-          label: 'Case Relationship Graph',
-          subtitle: 'Network & Cluster Analysis',
-          icon: <Share2 className="w-4 h-4" />,
-          highlight: true
         },
         {
           id: 'transparency',
@@ -163,8 +140,8 @@ export const Sidebar: React.FC = () => {
         },
         {
           id: 'annual_narrative',
-          label: 'Annual Case Narrative',
-          subtitle: 'Yearly Summaries & Outcomes',
+          label: 'Case Narrative',
+          subtitle: 'Summaries & Outcomes',
           icon: <BookOpenCheck className="w-4 h-4" />
         },
         {
@@ -182,7 +159,15 @@ export const Sidebar: React.FC = () => {
           label: 'Audit Trail & Immutable Logs',
           subtitle: 'Security & Access Trail',
           icon: <History className="w-4 h-4" />
-        }
+        },
+        ...(isLguAdmin ? [
+          {
+            id: 'admin',
+            label: 'System Admin & Setup',
+            subtitle: 'Escalation Policy & Settings',
+            icon: <Settings className="w-4 h-4" />
+          }
+        ] : [])
       ];
     }
 
@@ -193,26 +178,6 @@ export const Sidebar: React.FC = () => {
         label: 'Master System Dashboard',
         subtitle: 'Master Node Control',
         icon: <LayoutDashboard className="w-4 h-4" />
-      },
-      {
-        id: 'cases',
-        label: 'Municipal Case Masterfile',
-        subtitle: 'All 5 Barangays Overview',
-        icon: <FileSpreadsheet className="w-4 h-4" />,
-        badge: safeCases.length
-      },
-      {
-        id: 'gis_map',
-        label: 'Municipal GIS Analytics',
-        subtitle: 'Dispute & Incident Mapping',
-        icon: <Compass className="w-4 h-4" />
-      },
-      {
-        id: 'graph',
-        label: 'Case Relationship Graph',
-        subtitle: 'Network & Cluster Analysis',
-        icon: <Share2 className="w-4 h-4" />,
-        highlight: true
       },
       {
         id: 'transparency',
@@ -226,8 +191,8 @@ export const Sidebar: React.FC = () => {
       },
       {
         id: 'annual_narrative',
-        label: 'Annual Case Narrative',
-        subtitle: 'Yearly Summaries & Outcomes',
+        label: 'Case Narrative',
+        subtitle: 'Summaries & Outcomes',
         icon: <BookOpenCheck className="w-4 h-4" />
       },
       {
@@ -302,8 +267,8 @@ export const Sidebar: React.FC = () => {
             {currentUser.agencyType === 'RESIDENT' && <UserPlus className="w-4 h-4" />}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold text-emerald-950 truncate">{currentUser.agencyName}</div>
-            <div className="text-[10px] text-emerald-800/80 truncate font-medium">{currentUser.position}</div>
+            <div className="text-[11px] font-bold text-emerald-950 truncate">{currentUser?.agencyName || 'Agency'}</div>
+            <div className="text-[10px] text-emerald-800/80 truncate font-medium">{currentUser?.position || ''}</div>
           </div>
         </div>
       </div>
@@ -329,11 +294,10 @@ export const Sidebar: React.FC = () => {
               key={item.id}
               id={`nav-link-${item.id}${isMobile ? '-mobile' : ''}`}
               onClick={() => handleNavClick(item.id!)}
-              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between group cursor-pointer ${
-                isActive
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between group cursor-pointer ${isActive
                   ? 'bg-emerald-600 text-white font-bold shadow-xs'
                   : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-950 font-medium'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-1 h-4 rounded-full flex-shrink-0 transition-colors ${isActive ? 'bg-white' : 'bg-emerald-200 group-hover:bg-emerald-400'}`} />
@@ -342,9 +306,11 @@ export const Sidebar: React.FC = () => {
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs truncate">{item.label}</div>
-                  <div className={`text-[10px] truncate ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>
-                    {item.subtitle}
-                  </div>
+                  {item.subtitle && (
+                    <div className={`text-[10px] truncate ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>
+                      {item.subtitle}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -356,9 +322,8 @@ export const Sidebar: React.FC = () => {
                   </span>
                 )}
                 {item.badge !== undefined && !item.urgentAlert && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                    item.badgeColor || (isActive ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800')
-                  }`}>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${item.badgeColor || (isActive ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800')
+                    }`}>
                     {item.badge}
                   </span>
                 )}
@@ -383,48 +348,6 @@ export const Sidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Footer User Profile Card, Create Account & Logout */}
-      <div className="p-3 border-t border-emerald-100 bg-emerald-50/40 space-y-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center font-bold text-emerald-800 text-xs">
-            {currentUser.name.charAt(0)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</p>
-            <p className="text-[10px] text-emerald-800/80 font-medium truncate">{currentUser.position}</p>
-          </div>
-          <button
-            id={`btn-sidebar-logout${isMobile ? '-mobile' : ''}`}
-            onClick={logout}
-            title="Log Out (Sign Out)"
-            className="p-1 rounded hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <button
-            id={`btn-sidebar-create-account${isMobile ? '-mobile' : ''}`}
-            onClick={() => {
-              setIsCreateAccountModalOpen(true);
-              if (isMobile) setIsMobileMenuOpen(false);
-            }}
-            className="w-full py-1 px-2 bg-white hover:bg-emerald-50 text-emerald-800 hover:text-emerald-950 rounded-lg border border-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-          >
-            <UserPlus className="w-3 h-3 text-emerald-600" />
-            <span>+ Account</span>
-          </button>
-          <button
-            id={`btn-sidebar-logout-full${isMobile ? '-mobile' : ''}`}
-            onClick={logout}
-            className="w-full py-1 px-2 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 rounded-lg border border-rose-200 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-          >
-            <LogOut className="w-3 h-3 text-rose-600" />
-            <span>Log Out</span>
-          </button>
-        </div>
-      </div>
     </>
   );
 
@@ -447,9 +370,8 @@ export const Sidebar: React.FC = () => {
       {/* Mobile & Tablet Slide-Over Drawer (< 1024px) */}
       <aside
         id="bconnect-sidebar-mobile"
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r border-emerald-200 select-none transform transition-transform duration-300 ease-in-out lg:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r border-emerald-200 select-none transform transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {renderSidebarContent(true)}
       </aside>

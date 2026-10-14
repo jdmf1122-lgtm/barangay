@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext, DEFAULT_BLANK_USER } from '../context/AuthContext';
 import { CaseContext } from '../context/CaseContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
@@ -62,7 +62,7 @@ export const useAuth = () => {
 
   const loginWithCredentials = async (emailOrId: string, passcode?: string): Promise<{ success: boolean; message?: string }> => {
     const cleanQuery = emailOrId.trim();
-    if (!cleanQuery) return { success: false, message: 'Pakilagay ang iyong Email, Badge ID, o Pangalan.' };
+    if (!cleanQuery) return { success: false, message: 'Please enter your Email, Badge ID, or Name.' };
     const cleanPasscode = (passcode || '').trim();
 
     try {
@@ -186,13 +186,13 @@ export const useAuth = () => {
 
         return {
           success: false,
-          message: 'Maling password / passcode para sa account na ito. Maaari ring gamitin ang master passcode: jarinyes'
+          message: 'Incorrect password / passcode for this account. You may also use the master passcode: jarinyes'
         };
       }
 
       return {
         success: false,
-        message: 'Hindi mahanap ang user account sa system. Pakisuri ang iyong Email o mag-register sa Tab 2.'
+        message: 'User account not found in the system. Please check your email or register in Tab 2.'
       };
     } catch (error: any) {
       return { success: false, message: error.message || 'Authentication error. Please try again.' };
@@ -378,7 +378,7 @@ export const useAuth = () => {
     }
     
     setUsers(SEED_USERS);
-    setCurrentUserState(SEED_USERS[0]);
+    setCurrentUserState(SEED_USERS[0] || DEFAULT_BLANK_USER);
     logActivity('SYSTEM_RESET', undefined, 'System state reset to original seed baseline for Roxas, Oriental Mindoro.');
   };
 

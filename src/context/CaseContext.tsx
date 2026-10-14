@@ -3,11 +3,15 @@ import { Case, AuditLog, ROXAS_BARANGAYS } from '../types';
 import { supabase } from '../utils/supabaseClient';
 import { SEED_CASES, SEED_AUDIT_LOGS } from '../data/seedData';
 
+
 export const sanitizeCaseBarangay = (rawCase: any): Case => {
   let b = rawCase.barangay;
   if (!ROXAS_BARANGAYS.includes(b as any)) {
     b = 'San Aquilino';
   }
+
+  // Seed cases (BC-2026-001 to BC-2026-008) are historical demo records, never unacknowledged resident alerts
+  const isSeedCase = Boolean(rawCase.id && /^BC-2026-00[1-8]/.test(rawCase.id));
 
   let derivedTime = rawCase.incidentTime;
   if (!derivedTime && rawCase.dateReported) {
@@ -21,6 +25,8 @@ export const sanitizeCaseBarangay = (rawCase: any): Case => {
 
   return {
     ...rawCase,
+    emergencyAlarmAcknowledged: isSeedCase ? true : (rawCase.emergencyAlarmAcknowledged ?? false),
+    isCitizenReport: isSeedCase ? false : Boolean(rawCase.isCitizenReport),
     barangay: b,
     incidentTime: derivedTime,
     personsInvolved: Array.isArray(rawCase.personsInvolved) ? rawCase.personsInvolved.map((p: any) => ({
@@ -58,16 +64,9 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
 
         if (casesRes.data && Array.isArray(casesRes.data)) {
           const sanitized = casesRes.data.map((c: any) => sanitizeCaseBarangay(c));
-          setCases((prev) => {
-            const map = new Map<string, Case>();
-            sanitized.forEach((c) => map.set(c.id, c));
-            prev.forEach((c) => {
-              if (!map.has(c.id)) map.set(c.id, c);
-            });
-            return Array.from(map.values()).sort((a, b) => 
-              new Date(b.dateCreated || b.dateReported).getTime() - new Date(a.dateCreated || a.dateReported).getTime()
-            );
-          });
+          setCases(sanitized.sort((a, b) => 
+            new Date(b.dateCreated || b.dateReported).getTime() - new Date(a.dateCreated || a.dateReported).getTime()
+          ));
         }
         if (logsRes.data && Array.isArray(logsRes.data)) {
           setAuditLogs(logsRes.data as AuditLog[]);
@@ -94,6 +93,8 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
           } else if (event.data?.type === 'UPDATE_CASE' && event.data.payload) {
             const updated = sanitizeCaseBarangay(event.data.payload);
             setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          } else if (event.data?.type === 'DELETE_CASE' && event.data.payload?.id) {
+            setCases((prev) => prev.filter((c) => c.id !== event.data.payload.id));
           }
         };
       } catch (e) {
@@ -134,9 +135,13 @@ export const CaseProvider: React.FC<{ children: ReactNode; isAuthenticated: bool
         } else if (payload?.type === 'UPDATE_CASE' && payload.data) {
           const updated = sanitizeCaseBarangay(payload.data);
           setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        } else if (payload?.type === 'DELETE_CASE' && (payload.data?.id || payload.data)) {
+          const delId = payload.data?.id || payload.data;
+          setCases((prev) => prev.filter((c) => c.id !== delId));
         }
       })
       .subscribe();
+
 
     // 3. Periodic fallback poll every 4 seconds
     const intervalTimer = setInterval(() => {

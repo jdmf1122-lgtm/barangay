@@ -9,9 +9,6 @@ import {
   Clock,
   AlertTriangle,
   ShieldCheck,
-  MapPin,
-  Phone,
-  User,
   FileText,
   Calendar,
   PlusCircle,
@@ -23,7 +20,6 @@ import {
   ChevronRight,
   Building2,
   Eye,
-  Shield,
   Info,
   X,
   MessageSquare
@@ -47,30 +43,37 @@ import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 
 export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' | 'my_reports' }> = ({ initialTab = 'overview' }) => {
   const { currentUser } = useAuth();
-  const { cases, createCase, setSelectedCaseId } = useCases();
+  const { cases, createCase, deleteCase, setSelectedCaseId } = useCases();
   const { triggerNotification } = useNotifications();
   const { setActiveTab } = useUI();
 
   const [portalTab, setPortalTab] = useState<'overview' | 'submit' | 'my_reports'>(initialTab);
+
+  React.useEffect(() => {
+    setPortalTab(initialTab);
+    setSubmittedSuccessCaseId(null);
+  }, [initialTab]);
+
+  const handleSwitchTab = (tab: 'overview' | 'submit' | 'my_reports') => {
+    setPortalTab(tab);
+    setSubmittedSuccessCaseId(null);
+    if (tab === 'submit') {
+      setActiveTab('submit_report');
+    } else if (tab === 'my_reports') {
+      setActiveTab('my_reports');
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
 
   // Incident submission form state - Vehicular Accidents
   const [reportTitle, setReportTitle] = useState('');
   const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
-  const [reportLocation, setReportLocation] = useState('');
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportTime, setReportTime] = useState('14:00');
-  const [reportNarrative, setReportNarrative] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-
-  // Complainant & Involved persons
-  const [reporterName, setReporterName] = useState(currentUser.name || '');
-  const [reporterPhone, setReporterPhone] = useState(currentUser.phone || '0917-555-2144');
-  const [reporterAddress, setReporterAddress] = useState(currentUser.address || `Purok 2, ${currentUser.barangay || 'San Aquilino'}`);
-  const [respondentName, setRespondentName] = useState('');
-  const [witnessName, setWitnessName] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedSuccessCaseId, setSubmittedSuccessCaseId] = useState<string | null>(null);
@@ -82,22 +85,25 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   const [reportSearch, setReportSearch] = useState('');
 
   // Filter reports submitted by or involving this resident/barangay
+  const currentResidentName = (currentUser?.name || '').toLowerCase();
   const myReports = (cases || []).filter(c => {
-    const isReporter = c.residentReporterId === currentUser.id ||
-      c.createdBy?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
-      c.complainants?.some(p => p.name.toLowerCase() === currentUser.name.toLowerCase());
-    const isSameBarangay = c.barangay === (currentUser.barangay || 'San Aquilino');
-    return isReporter || (currentUser.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
+    const isReporter = c.residentReporterId === currentUser?.id ||
+      (c.createdBy && c.createdBy.toLowerCase().includes(currentResidentName)) ||
+      (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
+      (c.witnesses && c.witnesses.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
+      (c.personsInvolved && c.personsInvolved.some(p => (p.name || '').toLowerCase() === currentResidentName));
+    const isSameBarangay = c.barangay === (currentUser?.barangay || 'San Aquilino');
+    return isReporter || (currentUser?.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
   });
 
   const filteredMyReports = myReports.filter(c => {
     if (!reportSearch.trim()) return true;
     const q = reportSearch.toLowerCase();
-    return c.id.toLowerCase().includes(q) ||
-      c.title.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q) ||
-      c.status.toLowerCase().includes(q) ||
-      c.specificLocation.toLowerCase().includes(q);
+    return (c.id || '').toLowerCase().includes(q) ||
+      (c.title || '').toLowerCase().includes(q) ||
+      (c.category || '').toLowerCase().includes(q) ||
+      (c.status || '').toLowerCase().includes(q) ||
+      (c.specificLocation || '').toLowerCase().includes(q);
   });
 
 
@@ -110,12 +116,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       alert('Pakilagay ang Pamagat o Paksa ng Insidente (Please enter the incident title).');
       return;
     }
-    if (!reportNarrative.trim()) {
-      alert('Pakilahad ang Salaysay o Detalye ng Pangyayari (Please provide the narrative description).');
-      return;
-    }
-    if (!reportSitio.trim() && !reportLocation.trim()) {
-      alert('Pakilagay ang Sitio/Purok o Tiyak na Lokasyon (Please specify the Sitio or location).');
+    if (!reportSitio.trim()) {
+      alert('Pakilagay ang Sitio ng insidente (Please specify the Sitio).');
       return;
     }
 
@@ -143,30 +145,15 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
     const complainantPerson: PersonInvolved = {
       id: `P-RES-${Date.now()}`,
-      name: isAnonymous ? 'Protected Resident (Anonymous Report)' : (reporterName.trim() || currentUser.name),
+      name: currentUser.name || 'Resident Reporter',
       role: 'Complainant',
-      contact: isAnonymous ? undefined : (reporterPhone.trim() || currentUser.phone),
-      address: isAnonymous ? undefined : (reporterAddress.trim() || currentUser.address),
+      contact: currentUser.phone,
+      address: currentUser.address,
       barangay: reportBarangay
     };
 
-    const respondentPersons: PersonInvolved[] = respondentName.trim() ? [
-      {
-        id: `P-RESP-${Date.now()}`,
-        name: respondentName.trim(),
-        role: 'Respondent',
-        barangay: reportBarangay
-      }
-    ] : [];
-
-    const witnessPersons: PersonInvolved[] = witnessName.trim() ? [
-      {
-        id: `P-WIT-${Date.now()}`,
-        name: witnessName.trim(),
-        role: 'Witness',
-        barangay: reportBarangay
-      }
-    ] : [];
+    const respondentPersons: PersonInvolved[] = [];
+    const witnessPersons: PersonInvolved[] = [];
 
     const isAccidentReport =
       reportCategory === 'Traffic / Vehicular Incident' ||
@@ -175,21 +162,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       reportTitle.toLowerCase().includes('vehicular') ||
       reportTitle.toLowerCase().includes('disgrasya') ||
       reportTitle.toLowerCase().includes('motorcycle') ||
-      reportNarrative.toLowerCase().includes('accident') ||
-      reportNarrative.toLowerCase().includes('banggaan') ||
-      reportNarrative.toLowerCase().includes('nabangga') ||
-      reportNarrative.toLowerCase().includes('crash');
+      reportTitle.toLowerCase().includes('crash');
 
-    const finalSitio = reportSitio.trim() || reportLocation.trim();
-    const finalLocation = reportLocation.trim()
-      ? `${reportSitio.trim() ? `${reportSitio.trim()}, ` : ''}${reportLocation.trim()}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`
-      : `${finalSitio}, Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
+    const finalSitio = reportSitio.trim();
+    const finalLocation = `${finalSitio ? `${finalSitio}, ` : ''}Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
 
     const newCaseId = createCase({
       title: reportTitle.trim(),
       category: reportCategory,
-      description: reportNarrative.trim().substring(0, 180) + '...',
-      initialNarrative: reportNarrative.trim(),
+      description: reportTitle.trim(),
+      initialNarrative: reportTitle.trim(),
       incidentDate: reportDate,
       incidentTime: reportTime,
       barangay: reportBarangay,
@@ -213,7 +195,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       barangayRetentionNotes: isAccidentReport
         ? '🚨 ROAD ACCIDENT REPORT: Dispatched urgent alert to Punong Barangay and Tanod First Responders.'
         : 'Citizen report received via B-CONNECT Resident Portal. Queued for Barangay Secretary / Lupon Tagapamayapa review.',
-      isConfidential: isAnonymous,
+      isConfidential: false,
       imageUrls: uploadedImageUrls
     });
 
@@ -222,11 +204,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
     // Reset Form
     setReportTitle('');
-    setReportNarrative('');
     setReportSitio('');
-    setReportLocation('');
-    setRespondentName('');
-    setWitnessName('');
     setIsUrgent(false);
     setSelectedFiles([]);
 
@@ -265,19 +243,13 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
               Welcome, {currentUser.name}!
             </h1>
-            <p className="text-xs sm:text-sm text-emerald-100/80 max-w-2xl leading-relaxed">
-              Quickly and securely report neighborhood incidents with attached photos and evidence, and monitor real-time case resolution by the Barangay Lupon and Authorities.
-            </p>
           </div>
 
           {/* Quick Action Navigation Buttons */}
           <div className="flex flex-row items-center gap-2 sm:gap-3 w-full md:w-auto">
             <button
               id="btn-nav-file-report"
-              onClick={() => {
-                setPortalTab('submit');
-                setSubmittedSuccessCaseId(null);
-              }}
+              onClick={() => handleSwitchTab('submit')}
               className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm ${portalTab === 'submit'
                   ? 'bg-white text-emerald-950 ring-2 ring-white/40'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white'
@@ -289,10 +261,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
             <button
               id="btn-nav-my-reports"
-              onClick={() => {
-                setPortalTab('my_reports');
-                setSubmittedSuccessCaseId(null);
-              }}
+              onClick={() => handleSwitchTab('my_reports')}
               className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer border ${portalTab === 'my_reports'
                   ? 'bg-white text-emerald-950 border-white'
                   : 'bg-emerald-900/60 hover:bg-emerald-900 border-emerald-700/60 text-emerald-100'
@@ -305,26 +274,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
         </div>
 
         {/* Quick Resident Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-emerald-700/50">
+        <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-emerald-700/50">
           <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
             <span className="text-[11px] text-emerald-200 block font-medium">Total Submitted</span>
             <span className="text-xl font-extrabold text-white mt-0.5 block">{myReports.length}</span>
-          </div>
-          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
-            <span className="text-[11px] text-emerald-200 block font-medium">Under Barangay Action</span>
-            <span className="text-xl font-extrabold text-amber-300 mt-0.5 block">
-              {myReports.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length}
-            </span>
           </div>
           <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
             <span className="text-[11px] text-emerald-200 block font-medium">Resolved / Settled</span>
             <span className="text-xl font-extrabold text-emerald-300 mt-0.5 block">
               {myReports.filter(c => c.status === 'Resolved' || c.status === 'Closed').length}
             </span>
-          </div>
-          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
-            <span className="text-[11px] text-emerald-200 block font-medium">Barangay Response Rate</span>
-            <span className="text-xl font-extrabold text-teal-200 mt-0.5 block">100% Active</span>
           </div>
         </div>
       </div>
@@ -352,6 +311,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <span className="text-xs text-slate-500 font-bold uppercase">Reference Code:</span>
                     <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
                   </div>
+
+
                 </div>
               </div>
 
@@ -368,10 +329,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setPortalTab('my_reports');
-                    setSubmittedSuccessCaseId(null);
-                  }}
+                  onClick={() => handleSwitchTab('my_reports')}
                   className="px-4 py-2 bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
                   View in My Reports List
@@ -396,9 +354,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <FileText className="w-5 h-5 text-emerald-600" />
                     <span>Incident & Complaint Reporting Form</span>
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Fill out the required incident details and attach photos or evidence to expedite review and action by the Barangay and Lupon Tagapamayapa.
-                  </p>
                 </div>
                 <span className="text-[11px] text-slate-400 hidden sm:block">
                   Fields marked with (<span className="text-rose-500 font-bold">*</span>) are mandatory
@@ -443,7 +398,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     id="input-report-title"
                     type="text"
                     required
-                    placeholder="e.g., Motor na-bangga sa Tricycle sa Kanto ng Morente Ave / Nadulas na Motor sa Daan"
                     value={reportTitle}
                     onChange={(e) => setReportTitle(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -452,7 +406,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
               </div>
 
               {/* 2. Location & Date/Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800">
                     Barangay Jurisdiction <span className="text-rose-500">*</span>
@@ -480,34 +434,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800">
-                    Sitio / Purok <span className="text-rose-500">*</span>
+                    Sitio <span className="text-rose-500">*</span>
                   </label>
                   <input
                     id="input-report-sitio"
                     type="text"
                     required
-                    placeholder="e.g., Sitio Riverside or Purok 3"
                     value={reportSitio}
                     onChange={(e) => setReportSitio(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Specific Landmark / Street
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="input-report-location"
-                      type="text"
-                      placeholder="e.g., Near Elementary School / Bridge"
-                      value={reportLocation}
-                      onChange={(e) => setReportLocation(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -575,21 +511,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 </div>
               </div>
 
-              {/* 3. Detailed Narrative */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
-                  Detailed Narrative & Description <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  id="textarea-report-narrative"
-                  required
-                  rows={4}
-                  placeholder="Clearly describe the incident: What happened? Who was involved? Were there any damages or injuries? What assistance or intervention are you requesting from the Barangay?"
-                  value={reportNarrative}
-                  onChange={(e) => setReportNarrative(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-900 leading-relaxed focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
+
 
               {/* 4. Photo / Evidence Upload */}
               <div className="space-y-1.5">
@@ -635,99 +557,13 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 )}
               </div>
 
-              {/* 5. Involved Persons & Anonymous Protection */}
-              <div className="bg-slate-50 rounded-3xl p-5 sm:p-6 border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <User className="w-4 h-4 text-slate-600" />
-                    <span>Parties Involved & Identity Protection</span>
-                  </h3>
 
-                  {/* Anonymous Toggle */}
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={isAnonymous}
-                      onChange={(e) => setIsAnonymous(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-emerald-900">File as Anonymous Report</span>
-                  </label>
-                </div>
-
-                {!isAnonymous ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-bold text-slate-600">Complainant / Reporter Name:</label>
-                      <input
-                        type="text"
-                        value={reporterName}
-                        onChange={(e) => setReporterName(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-bold text-slate-600">Contact Number:</label>
-                      <input
-                        type="text"
-                        value={reporterPhone}
-                        onChange={(e) => setReporterPhone(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-bold text-slate-600">Residential Address in Barangay:</label>
-                      <input
-                        type="text"
-                        value={reporterAddress}
-                        onChange={(e) => setReporterAddress(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-amber-700 flex-shrink-0" />
-                    <span>
-                      <strong>Anonymous Mode Active:</strong> Your personal identity details will remain protected and strictly confidential.
-                    </span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      Respondent / Complained Party Name (If known):
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Juan Dela Cruz / Unknown group"
-                      value={respondentName}
-                      onChange={(e) => setRespondentName(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      Witness Name / Contact (Optional):
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Neighboring resident witness"
-                      value={witnessName}
-                      onChange={(e) => setWitnessName(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setPortalTab('overview')}
+                  onClick={() => handleSwitchTab('overview')}
                   className="w-full sm:w-auto px-5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Cancel
@@ -764,9 +600,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Clock className="w-5 h-5 text-emerald-600" />
                   <span>My Submitted Incident Reports & Resolution Status</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Track every milestone and hearing action taken by the Barangay Lupon Tagapamayapa and Authorities.
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -783,7 +616,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
                 <button
                   type="button"
-                  onClick={() => setPortalTab('submit')}
+                  onClick={() => handleSwitchTab('submit')}
                   className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
@@ -804,7 +637,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 </p>
                 <button
                   type="button"
-                  onClick={() => setPortalTab('submit')}
+                  onClick={() => handleSwitchTab('submit')}
                   className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition cursor-pointer"
                 >
                   Submit First Incident Report
@@ -849,45 +682,53 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                         <div className="flex items-center justify-between text-[11px] text-slate-600 font-bold">
                           <span>Current Processing Stage:</span>
                           <span className="text-emerald-700">
-                            {c.lastActionTaken || 'Under active review by Barangay Lupon'}
+                            {c.lastActionTaken || (isResolved ? 'Resolved' : 'Under active review by Barangay')}
                           </span>
                         </div>
 
                         {/* Visual Progress Steps */}
-                        <div className="grid grid-cols-4 gap-1 pt-1">
+                        <div className="grid grid-cols-2 gap-2 pt-1">
                           <div className="text-center">
                             <div className="h-1.5 rounded-full bg-emerald-600"></div>
                             <span className="text-[9px] font-bold text-slate-700 mt-1 block">1. Received</span>
                           </div>
                           <div className="text-center">
-                            <div className={`h-1.5 rounded-full ${c.status !== 'Received' ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
-                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">2. Blotter / Review</span>
-                          </div>
-                          <div className="text-center">
-                            <div className={`h-1.5 rounded-full ${c.status === 'For Barangay Action' || c.status === 'Resolved' || c.status === 'Closed' ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
-                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">3. Hearing / Lupon</span>
-                          </div>
-                          <div className="text-center">
                             <div className={`h-1.5 rounded-full ${isResolved ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
-                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">4. Resolved</span>
+                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">2. Resolved</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100">
                         <span className="text-[11px] text-slate-500">
                           Assigned to: <strong>{c.currentHandlingAgency}</strong>
                         </span>
 
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCaseId(c.id)}
-                          className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Open Full Case Dossier & Timeline</span>
-                        </button>
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete report ${c.id} ("${c.title}")? This action cannot be undone.`)) {
+                                deleteCase(c.id);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                            title="Delete this incident report"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Report</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCaseId(c.id)}
+                            className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Open Full Case Dossier & Timeline</span>
+                          </button>
+                        </div>
                       </div>
 
                     </div>
@@ -913,17 +754,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Camera className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-black text-slate-900">Report an Incident</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  File neighborhood disturbances, boundary conflicts, sanitation issues, or damages with photo evidence for prompt barangay action.
-                </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => {
-                  setPortalTab('submit');
-                  setSubmittedSuccessCaseId(null);
-                }}
+                onClick={() => handleSwitchTab('submit')}
                 className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <span>Start Incident Report</span>
@@ -938,14 +773,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-black text-slate-900">Track Reports & Status</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  View real-time case updates, scheduled Lupon hearing dates, and official settlement notes on your filed reports.
-                </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setPortalTab('my_reports')}
+                onClick={() => handleSwitchTab('my_reports')}
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <span>View My Reports ({myReports.length})</span>
@@ -963,14 +795,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   <FileText className="w-4 h-4 text-emerald-600" />
                   <span>Recent Incident Reports in Barangay {currentUser.barangay || 'San Aquilino'}</span>
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Official blotter and mediation logs handled by Lupon Tagapamayapa
-                </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setPortalTab('my_reports')}
+                onClick={() => handleSwitchTab('my_reports')}
                 className="text-xs font-bold text-emerald-700 hover:text-emerald-900"
               >
                 View All →

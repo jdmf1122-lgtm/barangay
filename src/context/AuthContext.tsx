@@ -15,10 +15,35 @@ export interface AuthState {
 
 export const AuthContext = createContext<AuthState | undefined>(undefined);
 
+export const DEFAULT_BLANK_USER: User = {
+  id: '',
+  name: '',
+  role: 'RESIDENT',
+  agencyType: 'RESIDENT',
+  agencyName: '',
+  position: '',
+  badgeOrIdNumber: '',
+  email: ''
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUserState] = useState<User>(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('bconnect_clean_slate_v2')) {
+      try {
+        localStorage.removeItem('bconnect_roxas_cases_v7');
+        localStorage.removeItem('bconnect_roxas_logs_v7');
+        localStorage.removeItem('bconnect_roxas_notifs_v7');
+        localStorage.removeItem('bconnect_roxas_user_v11');
+        localStorage.removeItem('bconnect_roxas_users_v11');
+        localStorage.removeItem('bconnect_passcodes_vault');
+        localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
+        localStorage.setItem('bconnect_clean_slate_v2', 'true');
+      } catch (e) {}
+      return DEFAULT_BLANK_USER;
+    }
+
     const savedUserStr = localStorage.getItem('bconnect_roxas_user_v11');
     if (savedUserStr) {
       try {
@@ -26,7 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (parsed?.id) return parsed;
       } catch (e) { }
     }
-    return SEED_USERS[0];
+    return SEED_USERS[0] || DEFAULT_BLANK_USER;
   });
   const [users, setUsers] = useState<User[]>(() => {
     const savedUsersStr = localStorage.getItem('bconnect_roxas_users_v11');
