@@ -172,6 +172,8 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       category: reportCategory,
       description: reportTitle.trim(),
       initialNarrative: reportTitle.trim(),
+      dateReported: new Date().toISOString(),
+      dateCreated: new Date().toISOString(),
       incidentDate: reportDate,
       incidentTime: reportTime,
       barangay: reportBarangay,
@@ -664,7 +666,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
                         <span className="text-[11px] text-slate-500 flex items-center gap-1">
                           <Calendar className="w-3 h-3 text-slate-400" />
-                          <span>Reported on {formatDateShort(c.dateReported)}</span>
+                          <span>Reported on {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}</span>
                         </span>
                       </div>
 

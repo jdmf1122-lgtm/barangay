@@ -25,7 +25,6 @@ import { useCases } from '../../hooks/useCases';
 import { StatusBadge, PriorityBadge, OfficialBadge } from '../common/StatusBadge';
 import { CaseStatus, TimelineEvent, AGENCIES_LIST } from '../../types';
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
-import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 export const CaseDetailModal: React.FC = () => {
   const { currentUser } = useAuth();
@@ -206,12 +205,6 @@ export const CaseDetailModal: React.FC = () => {
             {selectedCase.isInvolvingOfficial && (
               <OfficialBadge officialType={selectedCase.officialInvolvedType} />
             )}
-            {isConsolidatedCase(selectedCase) && (
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full font-bold text-[10px] flex items-center gap-1 shadow-xs">
-                <CheckCircle className="w-3 h-3 text-emerald-600" />
-                <span>Single Unified Report (Auto-Consolidated)</span>
-              </span>
-            )}
           </div>
 
           {/* Interactive Case Action Triggers */}
@@ -259,23 +252,6 @@ export const CaseDetailModal: React.FC = () => {
           {/* TAB 1: OVERVIEW & PARTIES */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Auto-Consolidated Single Report Banner */}
-              {isConsolidatedCase(selectedCase) && (
-                <div id="case-auto-deduplicated-callout" className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-2 border-emerald-400 rounded-xl p-4 space-y-2 text-emerald-950 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-emerald-900">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Pinag-isang Ulat (Auto-Deduplicated & Consolidated Docket)</span>
-                    </div>
-                    <span className="bg-emerald-600 text-white text-[9px] uppercase font-black px-2 py-0.5 rounded-full">
-                      1 Report Retained
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Napansin ng system na nagkaroon ng higit sa isang pag-report ukol sa insidenteng ito na may kaunting pagkakaiba sa mga detalye. Awtomatikong inalis ang ka-parehas na report at pinag-isa ang lahat ng impormasyon, litrato, at talaan sa nag-iisang opisyal na dossier na ito upang maiwasan ang kalituhan at dobleng pag-responde ng MDRRMO at Barangay.
-                  </p>
-                </div>
-              )}
 
               {/* MDRRMO-to-LGU Automatic Escalation Callout & LGU Intervention Desk */}
               {selectedCase.isEscalatedToLgu && (
