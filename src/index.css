@@ -21,14 +21,16 @@
     --sal: env(safe-area-inset-left, 0px);
   }
 
-  html, body {
+  html,
+  body {
     height: 100%;
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
   }
 
   /* Smooth momentum scrolling on mobile */
-  .overflow-y-auto, .overflow-x-auto {
+  .overflow-y-auto,
+  .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
   }
 
@@ -45,13 +47,16 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(16, 185, 129, 0.2);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(16, 185, 129, 0.4);
 }
@@ -91,4 +96,140 @@
   }
 }
 
+/* =========================================================================
+   Green Neomorphic Soft-UI Theme Styles (Authentic 3D Embossed Lighting)
+   ========================================================================= */
 
+.neo-bg-soft {
+  background-color: #ebf4ee;
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(5, 150, 105, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
+}
+
+.neo-card {
+  background: #f0f7f3;
+  box-shadow: 
+    18px 18px 45px rgba(16, 185, 129, 0.08), 
+    -18px -18px 45px #ffffff,
+    inset 1px 1px 2px rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.neo-badge-frame {
+  background: #edf5f0;
+  box-shadow: 
+    8px 8px 20px rgba(16, 185, 129, 0.12), 
+    -8px -8px 20px #ffffff,
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.neo-input-pill {
+  background: #e7f1eb;
+  box-shadow: 
+    inset 3px 3px 6px rgba(16, 185, 129, 0.07), 
+    inset -3px -3px 6px #ffffff,
+    0 1px 2px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neo-input-pill:focus-within,
+.neo-input-pill:focus {
+  background: #ebf5ef;
+  box-shadow: 
+    inset 2px 2px 4px rgba(16, 185, 129, 0.1), 
+    inset -2px -2px 4px #ffffff,
+    0 0 0 3px rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.neo-btn-pill {
+  background: linear-gradient(135deg, #10b981 0%, #059669 55%, #047857 100%);
+  box-shadow: 
+    0 14px 28px -6px rgba(16, 185, 129, 0.46), 
+    0 6px 12px -2px rgba(16, 185, 129, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neo-btn-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 18px 32px -4px rgba(16, 185, 129, 0.55), 
+    0 8px 16px -2px rgba(16, 185, 129, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  filter: brightness(1.03);
+}
+
+.neo-btn-pill:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 6px 14px -2px rgba(16, 185, 129, 0.4), 
+    inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.neo-squircle-btn {
+  background: #eff6f2;
+  box-shadow: 
+    6px 6px 14px rgba(16, 185, 129, 0.1), 
+    -6px -6px 14px #ffffff,
+    inset 1px 1px 2px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neo-squircle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    8px 8px 18px rgba(16, 185, 129, 0.14), 
+    -8px -8px 18px #ffffff;
+}
+
+.neo-squircle-btn:active {
+  transform: translateY(1px);
+  box-shadow: 
+    inset 3px 3px 6px rgba(16, 185, 129, 0.12), 
+    inset -3px -3px 6px #ffffff;
+}
+
+.neo-checkbox-custom {
+  background: #e7f1eb;
+  box-shadow: 
+    inset 2px 2px 4px rgba(16, 185, 129, 0.1), 
+    inset -2px -2px 4px #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.15s ease-in-out;
+}
+
+.neo-tab-pill {
+  background: #e7f1eb;
+  box-shadow: 
+    inset 2px 2px 5px rgba(16, 185, 129, 0.08), 
+    inset -2px -2px 5px #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.neo-tab-active {
+  background: #ffffff;
+  box-shadow: 
+    4px 4px 10px rgba(16, 185, 129, 0.09), 
+    -4px -4px 10px #ffffff;
+}
+
+.neo-sphere-decor {
+  box-shadow: 
+    14px 14px 30px rgba(16, 185, 129, 0.1), 
+    -14px -14px 30px #ffffff,
+    inset 4px 4px 8px rgba(255, 255, 255, 0.8);
+}
+
+.neo-ring-decor {
+  box-shadow: 
+    16px 16px 36px rgba(16, 185, 129, 0.08), 
+    -16px -16px 36px #ffffff,
+    inset 8px 8px 20px rgba(16, 185, 129, 0.05),
+    inset -8px -8px 20px #ffffff;
+}

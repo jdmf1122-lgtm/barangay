@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  UserPlus, 
-  Shield, 
+import {
+  X,
+  UserPlus,
+  Shield,
   ShieldAlert,
-  Building2, 
-  Landmark, 
-  CheckCircle2, 
-  Settings, 
-  Mail, 
-  UserCheck, 
+  Building2,
+  Landmark,
+  CheckCircle2,
+  Settings,
+  Mail,
+  UserCheck,
   Sparkles,
   AlertCircle,
   KeyRound,
@@ -181,38 +181,38 @@ export const CreateAccountModal: React.FC = () => {
   };
 
   return (
-    <div 
-      id="create-account-modal-overlay" 
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto"
+    <div
+      id="create-account-modal-overlay"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
     >
-      <div 
-        id="create-account-modal" 
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92dvh]"
+      <div
+        id="create-account-modal"
+        className="bg-[#f0f7f3] rounded-[32px] shadow-2xl border border-emerald-100 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92dvh] neo-card"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-3.5 sm:p-5 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="p-2 sm:p-2.5 rounded-xl bg-blue-600/30 border border-blue-400/30 text-blue-400 flex-shrink-0">
-              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+        <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-950 text-white p-4 sm:p-5 flex items-center justify-between border-b border-emerald-800/50 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/20 text-emerald-300 flex-shrink-0">
+              <UserPlus className="w-5 h-5 text-emerald-300" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 truncate">
-                <h3 className="font-bold text-sm sm:text-base tracking-tight text-white truncate">
-                  Create Personnel Account
+                <h3 className="font-extrabold text-sm sm:text-base tracking-tight text-white truncate">
+                  Create Personnel / Citizen Account
                 </h3>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-400/30 flex-shrink-0">
-                  Access
+                <span className="hidden sm:inline-block text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30 flex-shrink-0">
+                  Official Roxas Gateway
                 </span>
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-300 mt-0.5 truncate">
-                Authorized agency personnel • Roxas, Oriental Mindoro
+              <p className="text-[10px] sm:text-xs text-emerald-200/80 mt-0.5 truncate">
+                Authorized agency personnel & resident accounts • Municipality of Roxas
               </p>
             </div>
           </div>
           <button
             id="btn-close-create-account"
             onClick={() => setIsCreateAccountModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex-shrink-0 ml-2"
+            className="p-2 rounded-xl text-emerald-200 hover:text-white hover:bg-emerald-700/50 transition cursor-pointer flex-shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -247,11 +247,10 @@ export const CreateAccountModal: React.FC = () => {
                     type="button"
                     id={`agency-select-${ag.type}`}
                     onClick={() => handleAgencyTypeChange(ag.type)}
-                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
-                      isSelected 
-                        ? 'bg-emerald-50 border-emerald-600 ring-2 ring-emerald-600/20 text-emerald-950 shadow-xs' 
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${isSelected
+                      ? 'bg-emerald-50 border-emerald-600 ring-2 ring-emerald-600/20 text-emerald-950 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     <div className={`p-2 rounded-lg ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                       <Icon className="w-4 h-4" />
@@ -428,11 +427,10 @@ export const CreateAccountModal: React.FC = () => {
                   placeholder="Re-type password"
                   value={confirmPasscode}
                   onChange={(e) => setConfirmPasscode(e.target.value)}
-                  className={`w-full bg-slate-50 border rounded-lg pl-3 pr-10 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 ${
-                    confirmPasscode && passcode !== confirmPasscode
-                      ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
-                      : 'border-slate-300 focus:ring-blue-500'
-                  }`}
+                  className={`w-full bg-slate-50 border rounded-lg pl-3 pr-10 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 ${confirmPasscode && passcode !== confirmPasscode
+                    ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:ring-blue-500'
+                    }`}
                 />
                 <button
                   type="button"
@@ -454,12 +452,12 @@ export const CreateAccountModal: React.FC = () => {
         </form>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
+        <div className="p-4 bg-emerald-50/70 border-t border-emerald-100 flex items-center justify-between flex-shrink-0">
           <button
             type="button"
             id="btn-cancel-create-account"
             onClick={() => setIsCreateAccountModalOpen(false)}
-            className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer"
+            className="px-5 py-2.5 bg-white hover:bg-slate-50 border border-emerald-200 text-slate-700 rounded-full text-xs font-bold transition cursor-pointer shadow-xs"
           >
             Cancel
           </button>
@@ -468,9 +466,9 @@ export const CreateAccountModal: React.FC = () => {
             type="button"
             id="btn-submit-create-account"
             onClick={handleSubmit}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+            className="neo-btn-pill inline-flex items-center gap-2 px-6 py-2.5 text-white rounded-full text-xs font-bold shadow-md transition active:scale-95 cursor-pointer"
           >
-            <UserCheck className="w-4 h-4" />
+            <UserCheck className="w-4 h-4 text-white" />
             <span>Create Account & Grant Access</span>
           </button>
         </div>
