@@ -3,7 +3,6 @@ import {
   FileSpreadsheet, 
   Search, 
   Filter, 
-  PlusCircle, 
   Download, 
   Eye, 
   Clock, 
@@ -23,7 +22,7 @@ import { formatDateShort, exportToCsv } from '../../utils/reportGenerators';
 export const CaseList: React.FC = () => {
   const { currentUser } = useAuth();
   const { cases, setSelectedCaseId } = useCases();
-  const { setIsNewCaseModalOpen, searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
+  const { searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
 
   const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
   const userBarangay = currentUser?.barangay;
@@ -136,14 +135,6 @@ export const CaseList: React.FC = () => {
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV
-          </button>
-          <button
-            id="btn-case-list-new-case"
-            onClick={() => setIsNewCaseModalOpen(true)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            New Incident / Case
           </button>
         </div>
       </div>
