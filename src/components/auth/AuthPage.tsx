@@ -279,8 +279,8 @@ export const AuthPage: React.FC = () => {
       return;
     }
 
-    if (regPasscode.trim().length < 4) {
-      setRegError('Password must be at least 4 characters long.');
+    if (regPasscode.trim().length < 6) {
+      setRegError('Password must be at least 6 characters long.');
       return;
     }
 
@@ -321,7 +321,7 @@ export const AuthPage: React.FC = () => {
     const existing = (users || []).find((u) => u.agencyType === type);
     if (existing) {
       setLoginIdentifier(existing.email || existing.badgeOrIdNumber || existing.name);
-      setLoginPasscode('jarinyes');
+      setLoginPasscode(existing.passcode || '');
       login(existing);
       return;
     }
@@ -931,18 +931,17 @@ export const AuthPage: React.FC = () => {
               For security compliance, passwords are reset via the Roxas Municipal IT Administrator or through your registered department head.
             </p>
             <div className="mt-3 p-3 bg-emerald-50/80 rounded-xl text-xs text-emerald-900 border border-emerald-200">
-              <strong>Master Demo Passcode:</strong>{' '}
-              <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300">jarinyes</span>
+              <strong>Official Assistance:</strong>{' '}
+              <span>Please coordinate with your agency administrator or IT department to request a password reset.</span>
             </div>
             <button
               type="button"
               onClick={() => {
-                setLoginPasscode('jarinyes');
                 setShowForgotModal(false);
               }}
               className="mt-5 w-full py-3 neo-btn-pill text-white text-xs font-bold rounded-full cursor-pointer"
             >
-              Apply Demo Passcode & Close
+              Close
             </button>
           </div>
         </div>

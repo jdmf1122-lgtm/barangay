@@ -140,8 +140,8 @@ export const CreateAccountModal: React.FC = () => {
       return;
     }
 
-    if (passcode.trim().length < 4) {
-      setError('Password must be at least 4 characters long.');
+    if (passcode.trim().length < 6) {
+      setError('Password must be at least 6 characters long.');
       return;
     }
 

@@ -30,7 +30,7 @@ async function migrateUsers() {
     // Create user in auth.users
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: user.email,
-      password: (user as any).passcode || 'jarinyes', // Default password
+      password: (user as any).passcode || '',
       email_confirm: true,
       user_metadata: {
         name: user.name,

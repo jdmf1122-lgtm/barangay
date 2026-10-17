@@ -88,8 +88,8 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       setBadgeOrIdNumber(targetUser.badgeOrIdNumber || '');
 
       setRole(targetUser.role || 'MDRRMO_OFFICER');
-      setPasscode(targetUser.passcode || 'jarinyes');
-      setConfirmPasscode(targetUser.passcode || 'jarinyes');
+      setPasscode(targetUser.passcode || '');
+      setConfirmPasscode(targetUser.passcode || '');
       setError(null);
       setSuccess(false);
     }
@@ -140,7 +140,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       badgeOrIdNumber: badgeOrIdNumber.trim() || undefined,
 
       role,
-      passcode: passcode.trim() || targetUser.passcode || 'jarinyes'
+      passcode: passcode.trim() || targetUser.passcode || ''
     });
 
     if (updated) {

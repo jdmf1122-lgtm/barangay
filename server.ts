@@ -98,7 +98,7 @@ app.post('/api/auth/login', async (req, res) => {
         } else {
           await supabaseAdmin.auth.admin.createUser({
             email: matchedUser.email,
-            password: cleanPasscode && cleanPasscode.length >= 6 ? cleanPasscode : 'jarinyes',
+            password: cleanPasscode || '',
             email_confirm: true,
             user_metadata: {
               name: matchedUser.name,
@@ -137,7 +137,7 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     let authId: string | undefined;
     const cleanEmail = newUserData.email?.trim() || `${newUserData.name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@${newUserData.agencyType === 'MDRRMO' ? 'mdrrmo.' : ''}roxas.gov.ph`;
-    const cleanPassword = newUserData.passcode?.trim() && newUserData.passcode.trim().length >= 6 ? newUserData.passcode.trim() : 'jarinyes';
+    const cleanPassword = newUserData.passcode?.trim() || '';
 
     if (supabaseAdmin) {
       try {

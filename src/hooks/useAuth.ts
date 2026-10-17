@@ -163,7 +163,6 @@ export const useAuth = () => {
         const userPass = (matchedUser as any).passcode;
         const vaultPass = vault[matchedUser.email?.toLowerCase()] || vault[matchedUser.id?.toLowerCase()];
         const isMasterPass =
-          cleanPasscode === 'jarinyes' ||
           cleanPasscode === '123456' ||
           cleanPasscode === 'password123' ||
           cleanPasscode === 'mdrrmo2026';
@@ -186,7 +185,7 @@ export const useAuth = () => {
 
         return {
           success: false,
-          message: 'Incorrect password / passcode for this account. You may also use the master passcode: jarinyes'
+          message: 'Incorrect password / passcode for this account. Please verify your credentials or contact the administrator.'
         };
       }
 
@@ -213,34 +212,36 @@ export const useAuth = () => {
 
   const registerUser = async (newUserData: Omit<User, 'id'> & { id?: string; passcode?: string }): Promise<User> => {
     let authUserId: string | undefined;
+    const cleanPass = newUserData.passcode?.trim() || '';
 
     // 1. Sign up user in Supabase Auth with complete metadata (graceful on network failure)
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserData.email || '',
-        password: newUserData.passcode && newUserData.passcode.length >= 6 ? newUserData.passcode : 'jarinyes',
-        options: {
-          data: {
-            name: newUserData.name,
-            role: newUserData.role,
-            agencyType: newUserData.agencyType,
-            agencyName: newUserData.agencyName,
-            position: newUserData.position,
-            badgeOrIdNumber: newUserData.badgeOrIdNumber,
-            barangay: newUserData.barangay
+      if (newUserData.email && cleanPass) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newUserData.email,
+          password: cleanPass,
+          options: {
+            data: {
+              name: newUserData.name,
+              role: newUserData.role,
+              agencyType: newUserData.agencyType,
+              agencyName: newUserData.agencyName,
+              position: newUserData.position,
+              badgeOrIdNumber: newUserData.badgeOrIdNumber,
+              barangay: newUserData.barangay
+            }
           }
-        }
-      });
+        });
 
-      if (!authError || authError.message.includes('already registered')) {
-        authUserId = authData?.user?.id;
+        if (!authError || authError.message.includes('already registered')) {
+          authUserId = authData?.user?.id;
+        }
       }
     } catch (authErr) {
       console.warn('Supabase remote sign up notice:', authErr);
     }
 
     const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${String((users?.length || 0) + 1).padStart(2, '0')}`;
-    const cleanPass = newUserData.passcode?.trim() || 'jarinyes';
 
     const newUser: User = {
       ...newUserData,
