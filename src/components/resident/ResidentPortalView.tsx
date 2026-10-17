@@ -235,16 +235,32 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
         <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute left-1/3 bottom-0 -mb-12 w-60 h-60 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
-            </div>
+        {/* Subtle background watermark */}
+        <img
+          src="/bconnect_logo_transparent.png"
+          alt=""
+          className="absolute -right-8 -bottom-8 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110"
+        />
 
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Welcome, {currentUser.name}!
-            </h1>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1 shadow-md border-2 border-emerald-400 ring-2 ring-emerald-700/40 flex-shrink-0 flex items-center justify-center">
+              <img
+                src="/bconnect_logo_transparent.png"
+                alt="B-CONNECT Official Logo"
+                className="w-full h-full object-contain rounded-xl"
+              />
+            </div>
+            <div className="space-y-1 sm:space-y-1.5">
+              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
+              </div>
+
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white leading-tight">
+                Welcome, {currentUser.name}!
+              </h1>
+            </div>
           </div>
 
           {/* Quick Action Navigation Buttons */}

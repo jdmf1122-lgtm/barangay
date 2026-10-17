@@ -61,7 +61,7 @@ const AppContent: React.FC = () => {
       case 'resident_portal':
         return <ResidentPortalView key="overview" initialTab="overview" />;
       case 'submit_report':
-        return <ResidentPortalView key="submit" initialTab="submit" />;
+        return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : (currentUser?.agencyType === 'MDRRMO' ? <MdrrmoDashboard /> : <SystemAdminView />);
       case 'my_reports':
         return <ResidentPortalView key="my_reports" initialTab="my_reports" />;
 
@@ -169,9 +169,8 @@ const AppContent: React.FC = () => {
       {/* Mobile Bottom Navigation Bar (Visible on mobile/tablet screens < 1024px) */}
       <MobileBottomNav />
 
-      {/* Global Modals */}
       <CaseDetailModal />
-      <NewCaseModal />
+      {currentUser?.agencyType !== 'LGU' && currentUser?.agencyType !== 'MDRRMO' && <NewCaseModal />}
       <CreateAccountModal />
       <EditAccountModal
         isOpen={isEditAccountModalOpen}

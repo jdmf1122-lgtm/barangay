@@ -94,8 +94,11 @@ export const useCases = () => {
   };
 
   const createCase = (data: Partial<Case>): string => {
-
-    const year = new Date().getFullYear();
+    // Enforcement: Only verified resident citizens can submit incident reports
+    if (currentUser?.agencyType === 'LGU' || currentUser?.agencyType === 'MDRRMO') {
+      console.warn('[Access Control] Unauthorized: LGU and MDRRMO accounts cannot submit incident reports. Only residents are permitted.');
+      return '';
+    }
     let maxNum = 0;
     (cases || []).forEach((c) => {
       const match = c.id?.match(/BC-(\d{4})-(\d+)/);

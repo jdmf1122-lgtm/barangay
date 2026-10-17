@@ -338,7 +338,8 @@ export const AuthPage: React.FC = () => {
         barangay: 'San Aquilino',
         position: 'Verified Resident Citizen',
         badgeOrIdNumber: 'RES-SAQ-2026',
-        email: 'resident.roxas@orientalmindoro.ph'
+        email: 'resident.roxas@orientalmindoro.ph',
+        avatarUrl: '/bconnect_logo_transparent.png'
       };
       login(demoRes);
     } else if (type === 'MDRRMO') {

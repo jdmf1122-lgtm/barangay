@@ -193,11 +193,13 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             />
           </div>
         ) : (
-          <img
-            src="/bconnect_logo_transparent.png"
-            alt="B-CONNECT"
-            className="lg:hidden w-7 h-7 object-contain flex-shrink-0"
-          />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <img
+              src="/bconnect_logo_transparent.png"
+              alt="B-CONNECT"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full shadow-2xs border border-emerald-300 bg-white"
+            />
+          </div>
         )}
 
         <h2
@@ -250,27 +252,15 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           />
         </div>
 
-        {/* Action Button: Record Incident (Hidden for LGU accounts; hidden on mobile screens to keep mobile view clean) */}
-        {!isLgu && (
+        {/* Action Button: Submit Incident Report (Residents ONLY - LGU and MDRRMO cannot submit reports) */}
+        {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') && (
           <button
             id="btn-register-new-case"
-            onClick={() => {
-              if (currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') {
-                setActiveTab('submit_report');
-              } else {
-                setIsNewCaseModalOpen(true);
-              }
-            }}
-            className={`hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
-              isMdrrmo
-                ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-sm shadow-orange-600/30'
-                : 'bg-emerald-600 hover:bg-emerald-700 shadow-xs'
-            }`}
+            onClick={() => setActiveTab('submit_report')}
+            className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer bg-emerald-600 hover:bg-emerald-700 shadow-xs"
           >
             <PlusCircle className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">
-              {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Submit Report' : 'New Incident'}
-            </span>
+            <span>Submit Report</span>
           </button>
         )}
 
@@ -612,14 +602,14 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                 ? 'bg-white border border-orange-300 w-7 h-7 p-0.5'
                 : currentUser.agencyType === 'LGU'
                 ? 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
-                : `p-1 ${getAgencyColor(currentUser.agencyType)}`
+                : 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
             }`}>
               {currentUser.agencyType === 'MDRRMO' ? (
                 <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-full h-full object-contain" />
               ) : currentUser.agencyType === 'LGU' ? (
                 <img src="/lgu_logo.png" alt="LGU" className="w-full h-full object-contain" />
               ) : (
-                getAgencyIcon(currentUser.agencyType)
+                <img src="/bconnect_logo_transparent.png" alt="B-CONNECT" className="w-full h-full object-contain" />
               )}
             </div>
             <div className="hidden sm:block">
@@ -683,8 +673,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                         <img src="/lgu_logo.png" alt="LGU Roxas" className="w-full h-full object-contain rounded-lg" />
                       </div>
                     ) : (
-                      <div className={`p-2.5 rounded-xl text-white shadow-xs ${getAgencyColor(currentUser.agencyType)}`}>
-                        {getAgencyIcon(currentUser.agencyType)}
+                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-emerald-300 shadow-xs flex-shrink-0 flex items-center justify-center">
+                        <img src="/bconnect_logo_transparent.png" alt="B-CONNECT Resident" className="w-full h-full object-contain rounded-lg" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

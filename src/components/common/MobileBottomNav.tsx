@@ -18,7 +18,6 @@ export const MobileBottomNav: React.FC = () => {
   const {
     activeTab,
     setActiveTab,
-    setIsNewCaseModalOpen,
     isMobileMenuOpen,
     setIsMobileMenuOpen
   } = useUI();
@@ -28,14 +27,6 @@ export const MobileBottomNav: React.FC = () => {
   const isResident = currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT';
   const isLgu = currentUser?.agencyType === 'LGU';
   const isMdrrmo = currentUser?.agencyType === 'MDRRMO';
-
-  const handleCenterAction = () => {
-    if (isResident) {
-      setActiveTab('submit_report');
-    } else {
-      setIsNewCaseModalOpen(true);
-    }
-  };
 
   if (isResident) {
     return (
