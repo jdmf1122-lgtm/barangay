@@ -232,8 +232,12 @@ export const Sidebar: React.FC = () => {
       {/* Brand Header */}
       <div className="p-4 sm:p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/40">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center font-black text-white text-base shadow-xs">
-            B
+          <div className="w-9 h-9 bg-white rounded-xl p-1 flex items-center justify-center shadow-xs border border-emerald-200/80">
+            <img
+              src="/bconnect_logo_transparent.png"
+              alt="B-CONNECT Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h1 className="text-emerald-950 font-extrabold tracking-tight text-base leading-tight">

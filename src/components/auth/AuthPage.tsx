@@ -418,11 +418,15 @@ export const AuthPage: React.FC = () => {
           ========================================================================= */}
       <div className="w-full max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between z-20">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-emerald-600/20">
-            B
+          <div className="w-8 h-8 rounded-xl bg-white/90 p-0.5 flex items-center justify-center shadow-xs border border-emerald-200/80">
+            <img
+              src="/bconnect_logo_transparent.png"
+              alt="B-CONNECT Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
-            <span className="font-extrabold text-xs sm:text-sm tracking-tight text-emerald-950">
+            <span className={`font-extrabold text-xs sm:text-sm tracking-tight ${isDarkMode ? 'text-emerald-100' : 'text-emerald-950'}`}>
               B-CONNECT
             </span>
             <span className="text-[10px] ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
@@ -457,19 +461,31 @@ export const AuthPage: React.FC = () => {
               : 'neo-card text-slate-800'
           }`}
         >
-          {/* 3D Green Ribbon Emblem in Neomorphic Squircle Frame */}
+          {/* Official B-CONNECT Emblem in Neomorphic Squircle Frame */}
           <div className="flex justify-center mb-5">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[28px] neo-badge-frame flex items-center justify-center p-3 relative group">
-              <GreenRibbonEmblem className="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-md transition-transform duration-300 group-hover:scale-105" />
+            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[30px] neo-badge-frame flex items-center justify-center p-2.5 relative group transition-all duration-300 hover:scale-[1.04] ${
+              isDarkMode 
+                ? 'bg-white/95 shadow-2xl shadow-emerald-950/60 ring-2 ring-emerald-500/20' 
+                : 'bg-white/95 shadow-md shadow-emerald-900/5 ring-1 ring-emerald-100'
+            }`}>
+              <img
+                src="/bconnect_logo_transparent.png"
+                alt="B-CONNECT Official Logo"
+                className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+              />
             </div>
           </div>
 
           {/* Title and Subtitle */}
           <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#0c2e1f]">
+            <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
+              isDarkMode ? 'text-white drop-shadow-xs' : 'text-[#0c2e1f]'
+            }`}>
               {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+            <p className={`text-xs sm:text-sm font-medium mt-1 ${
+              isDarkMode ? 'text-emerald-200/90' : 'text-slate-500'
+            }`}>
               {authMode === 'login' ? 'Sign in to continue' : 'Sign up to get started'}
             </p>
           </div>

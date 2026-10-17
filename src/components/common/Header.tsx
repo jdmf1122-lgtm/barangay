@@ -151,6 +151,12 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           <Menu className="w-5 h-5 text-emerald-700" />
         </button>
 
+        <img
+          src="/bconnect_logo_transparent.png"
+          alt="B-CONNECT"
+          className="lg:hidden w-7 h-7 object-contain flex-shrink-0"
+        />
+
         <h2 className="font-extrabold text-emerald-950 text-xs sm:text-sm md:text-base tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
           {getTabLabel(activeTab)}
         </h2>
