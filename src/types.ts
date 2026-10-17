@@ -44,6 +44,7 @@ export interface User {
   phone?: string;
   address?: string;
   residentIdNumber?: string;
+  avatarUrl?: string;
 }
 
 export type CaseStatus =

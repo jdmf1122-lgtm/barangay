@@ -48,7 +48,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (savedUserStr) {
       try {
         const parsed = JSON.parse(savedUserStr);
-        if (parsed?.id) return parsed;
+        if (parsed?.id) {
+          if (!parsed.avatarUrl) {
+            if (parsed.agencyType === 'MDRRMO') parsed.avatarUrl = '/mdrrmo_logo.png';
+            else if (parsed.agencyType === 'LGU') parsed.avatarUrl = '/lgu_logo.png';
+          }
+          return parsed;
+        }
       } catch (e) { }
     }
     return SEED_USERS[0] || DEFAULT_BLANK_USER;
@@ -58,7 +64,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (savedUsersStr) {
       try {
         const parsed = JSON.parse(savedUsersStr);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((u: User) => {
+            if (!u.avatarUrl) {
+              if (u.agencyType === 'MDRRMO') return { ...u, avatarUrl: '/mdrrmo_logo.png' };
+              if (u.agencyType === 'LGU') return { ...u, avatarUrl: '/lgu_logo.png' };
+            }
+            return u;
+          });
+        }
       } catch (e) { }
     }
     return SEED_USERS;
@@ -78,9 +92,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .single();
 
           if (profile) {
-            setCurrentUserState(profile as User);
+            const profileUser = profile as User;
+            if (!profileUser.avatarUrl) {
+              if (profileUser.agencyType === 'MDRRMO') profileUser.avatarUrl = '/mdrrmo_logo.png';
+              else if (profileUser.agencyType === 'LGU') profileUser.avatarUrl = '/lgu_logo.png';
+            }
+            setCurrentUserState(profileUser);
             setIsAuthenticated(true);
-            localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profile));
+            localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profileUser));
             localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
           }
         } else {
@@ -90,6 +109,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
               const parsed = JSON.parse(savedUserStr);
               if (parsed?.id) {
+                if (!parsed.avatarUrl) {
+                  if (parsed.agencyType === 'MDRRMO') parsed.avatarUrl = '/mdrrmo_logo.png';
+                  else if (parsed.agencyType === 'LGU') parsed.avatarUrl = '/lgu_logo.png';
+                }
                 setCurrentUserState(parsed);
                 setIsAuthenticated(true);
               }

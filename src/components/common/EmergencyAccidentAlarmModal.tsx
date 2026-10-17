@@ -319,9 +319,12 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
 
         {/* Content Body: MDRRMO (Timestamp) and Alert text */}
         <div className="text-slate-800 text-[14px] sm:text-[15px] leading-relaxed font-normal space-y-2 pt-1">
-          <p className="font-semibold text-slate-900 text-xs sm:text-sm">
-            MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
-          </p>
+          <div className="flex items-center gap-2">
+            <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain shadow-2xs border border-orange-200" />
+            <p className="font-bold text-slate-900 text-xs sm:text-sm">
+              MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
+            </p>
+          </div>
           <p className="text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
             {smsMessage}
           </p>

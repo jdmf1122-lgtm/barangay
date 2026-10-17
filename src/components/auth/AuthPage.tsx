@@ -296,7 +296,7 @@ export const AuthPage: React.FC = () => {
 
     const cleanEmail = regEmail.trim() || `${regName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@${regAgencyType === 'MDRRMO' ? 'mdrrmo.' : ''}roxas.gov.ph`;
 
-    const newUserPayload: Omit<UserType, 'id'> & { passcode: string } = {
+    const newUserPayload: Omit<UserType, 'id'> & { passcode: string; avatarUrl?: string } = {
       name: regName.trim(),
       role: regRole,
       agencyType: regAgencyType,
@@ -306,6 +306,7 @@ export const AuthPage: React.FC = () => {
       badgeOrIdNumber: regBadge.trim() || `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
       email: cleanEmail,
       passcode: regPasscode.trim(),
+      avatarUrl: regAgencyType === 'MDRRMO' ? '/mdrrmo_logo.png' : regAgencyType === 'LGU' ? '/lgu_logo.png' : undefined,
     };
 
     try {
@@ -349,7 +350,8 @@ export const AuthPage: React.FC = () => {
         agencyName: 'MDRRMO Roxas Emergency Operations Center',
         position: 'MDRRMO Operations Head / Admin',
         badgeOrIdNumber: 'MDRRMO-ROX-01',
-        email: 'mdrrmo@roxas.gov.ph'
+        email: 'mdrrmo@roxas.gov.ph',
+        avatarUrl: '/mdrrmo_logo.png'
       };
       login(demoMdr);
     } else {
@@ -361,7 +363,8 @@ export const AuthPage: React.FC = () => {
         agencyName: 'Municipal Government of Roxas (LGU Admin)',
         position: 'Municipal Administrator (LGU Admin)',
         badgeOrIdNumber: 'LGU-ROX-ADMIN',
-        email: 'admin@roxas.gov.ph'
+        email: 'admin@roxas.gov.ph',
+        avatarUrl: '/lgu_logo.png'
       };
       login(demoLgu);
     }
@@ -657,7 +660,21 @@ export const AuthPage: React.FC = () => {
                             : 'neo-squircle-btn text-slate-600 hover:text-emerald-950'
                         }`}
                       >
-                        <Icon className="w-4 h-4" />
+                        {ag.type === 'MDRRMO' ? (
+                          <img
+                            src="/mdrrmo_logo.png"
+                            alt="MDRRMO"
+                            className="w-5 h-5 rounded-full object-contain"
+                          />
+                        ) : ag.type === 'LGU' ? (
+                          <img
+                            src="/lgu_logo.png"
+                            alt="LGU"
+                            className="w-5 h-5 rounded-full object-contain"
+                          />
+                        ) : (
+                          <Icon className="w-4 h-4" />
+                        )}
                         <span className="text-[11px]">{ag.label}</span>
                       </button>
                     );

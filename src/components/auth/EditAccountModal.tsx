@@ -140,7 +140,8 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       badgeOrIdNumber: badgeOrIdNumber.trim() || undefined,
 
       role,
-      passcode: passcode.trim() || targetUser.passcode || ''
+      passcode: passcode.trim() || targetUser.passcode || '',
+      avatarUrl: agencyType === 'MDRRMO' ? '/mdrrmo_logo.png' : agencyType === 'LGU' ? '/lgu_logo.png' : targetUser.avatarUrl
     });
 
     if (updated) {
@@ -163,8 +164,14 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
         {/* Header */}
         <div className="p-3.5 sm:p-5 bg-gradient-to-r from-emerald-900 to-emerald-950 text-white flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-800/80 border border-emerald-700/80 flex items-center justify-center text-emerald-200 shadow-inner flex-shrink-0">
-              <UserCheck className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-800/80 border border-emerald-700/80 flex items-center justify-center text-emerald-200 shadow-inner flex-shrink-0 overflow-hidden">
+              {agencyType === 'MDRRMO' ? (
+                <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-full h-full object-contain p-0.5 bg-white" />
+              ) : agencyType === 'LGU' ? (
+                <img src="/lgu_logo.png" alt="LGU" className="w-full h-full object-contain p-0.5 bg-white" />
+              ) : (
+                <UserCheck className="w-5 h-5" />
+              )}
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-1.5 sm:gap-2 truncate">

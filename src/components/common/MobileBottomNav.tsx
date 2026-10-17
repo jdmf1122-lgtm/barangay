@@ -26,6 +26,7 @@ export const MobileBottomNav: React.FC = () => {
 
   const isResident = currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT';
   const isLgu = currentUser?.agencyType === 'LGU';
+  const isMdrrmo = currentUser?.agencyType === 'MDRRMO';
 
   const handleCenterAction = () => {
     if (isResident) {
@@ -128,7 +129,9 @@ export const MobileBottomNav: React.FC = () => {
     <nav
       id="bconnect-mobile-bottom-nav"
       aria-label="Mobile Bottom Navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around select-none"
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around select-none transition-colors ${
+        isMdrrmo ? 'border-orange-100' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
+      }`}
       style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
     >
       {/* 1. Dashboard */}
@@ -141,11 +144,29 @@ export const MobileBottomNav: React.FC = () => {
         }}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
           activeTab === 'dashboard'
-            ? 'text-emerald-700 font-bold'
+            ? isMdrrmo
+              ? 'text-orange-700 font-bold'
+              : isLgu
+              ? 'text-[#0f532a] font-black'
+              : 'text-emerald-700 font-bold'
+            : isMdrrmo
+            ? 'text-slate-500 hover:text-orange-800'
+            : isLgu
+            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
-        <div className={`p-1 rounded-xl transition ${activeTab === 'dashboard' ? 'bg-emerald-50' : ''}`}>
+        <div
+          className={`p-1 rounded-xl transition ${
+            activeTab === 'dashboard'
+              ? isMdrrmo
+                ? 'bg-orange-50'
+                : isLgu
+                ? 'bg-emerald-50/90 border border-amber-300/50'
+                : 'bg-emerald-50'
+              : ''
+          }`}
+        >
           <LayoutDashboard className="w-5 h-5" />
         </div>
         <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
@@ -161,11 +182,29 @@ export const MobileBottomNav: React.FC = () => {
         }}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
           activeTab === 'cases' || (isLgu && activeTab === 'annual_narrative')
-            ? 'text-emerald-700 font-bold'
+            ? isMdrrmo
+              ? 'text-orange-700 font-bold'
+              : isLgu
+              ? 'text-[#0f532a] font-black'
+              : 'text-emerald-700 font-bold'
+            : isMdrrmo
+            ? 'text-slate-500 hover:text-orange-800'
+            : isLgu
+            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
-        <div className={`p-1 rounded-xl transition ${activeTab === 'cases' || (isLgu && activeTab === 'annual_narrative') ? 'bg-emerald-50' : ''}`}>
+        <div
+          className={`p-1 rounded-xl transition ${
+            activeTab === 'cases' || (isLgu && activeTab === 'annual_narrative')
+              ? isMdrrmo
+                ? 'bg-orange-50'
+                : isLgu
+                ? 'bg-emerald-50/90 border border-amber-300/50'
+                : 'bg-emerald-50'
+              : ''
+          }`}
+        >
           {isLgu ? <BookOpenCheck className="w-5 h-5" /> : <FileSpreadsheet className="w-5 h-5" />}
         </div>
         <span className="text-[10px] mt-0.5 leading-tight">
@@ -179,12 +218,22 @@ export const MobileBottomNav: React.FC = () => {
           id="mobile-nav-center-action"
           type="button"
           onClick={handleCenterAction}
-          className="w-12 h-12 -mt-5 bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/40 ring-4 ring-white active:scale-95 transition cursor-pointer"
+          className={`w-12 h-12 -mt-5 rounded-full flex items-center justify-center ring-4 ring-white active:scale-95 transition cursor-pointer ${
+            isMdrrmo
+              ? 'bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-lg shadow-orange-600/40'
+              : isLgu
+              ? 'bg-gradient-to-tr from-[#0b3d1f] via-[#0f532a] to-[#082e16] hover:from-[#0d4a25] hover:to-[#0f532a] text-white border-2 border-amber-400 shadow-lg shadow-emerald-950/40'
+              : 'bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-600/40'
+          }`}
           title="Record New Incident"
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
         </button>
-        <span className="text-[9px] font-bold text-emerald-900 mt-1 leading-tight">
+        <span
+          className={`text-[9px] font-bold mt-1 leading-tight ${
+            isMdrrmo ? 'text-orange-950' : isLgu ? 'text-[#062612] font-black' : 'text-emerald-900'
+          }`}
+        >
           New
         </span>
       </div>
@@ -199,11 +248,29 @@ export const MobileBottomNav: React.FC = () => {
         }}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
           activeTab === 'gis_map'
-            ? 'text-emerald-700 font-bold'
+            ? isMdrrmo
+              ? 'text-orange-700 font-bold'
+              : isLgu
+              ? 'text-[#0f532a] font-black'
+              : 'text-emerald-700 font-bold'
+            : isMdrrmo
+            ? 'text-slate-500 hover:text-orange-800'
+            : isLgu
+            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
-        <div className={`p-1 rounded-xl transition ${activeTab === 'gis_map' ? 'bg-emerald-50' : ''}`}>
+        <div
+          className={`p-1 rounded-xl transition ${
+            activeTab === 'gis_map'
+              ? isMdrrmo
+                ? 'bg-orange-50'
+                : isLgu
+                ? 'bg-emerald-50/90 border border-amber-300/50'
+                : 'bg-emerald-50'
+              : ''
+          }`}
+        >
           <Compass className="w-5 h-5" />
         </div>
         <span className="text-[10px] mt-0.5 leading-tight">GIS Map</span>
@@ -216,11 +283,29 @@ export const MobileBottomNav: React.FC = () => {
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
           isMobileMenuOpen
-            ? 'text-emerald-700 font-bold'
+            ? isMdrrmo
+              ? 'text-orange-700 font-bold'
+              : isLgu
+              ? 'text-[#0f532a] font-black'
+              : 'text-emerald-700 font-bold'
+            : isMdrrmo
+            ? 'text-slate-500 hover:text-orange-800'
+            : isLgu
+            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
-        <div className={`p-1 rounded-xl transition ${isMobileMenuOpen ? 'bg-emerald-50' : ''}`}>
+        <div
+          className={`p-1 rounded-xl transition ${
+            isMobileMenuOpen
+              ? isMdrrmo
+                ? 'bg-orange-50'
+                : isLgu
+                ? 'bg-emerald-50/90 border border-amber-300/50'
+                : 'bg-emerald-50'
+              : ''
+          }`}
+        >
           <Menu className="w-5 h-5" />
         </div>
         <span className="text-[10px] mt-0.5 leading-tight">Menu</span>

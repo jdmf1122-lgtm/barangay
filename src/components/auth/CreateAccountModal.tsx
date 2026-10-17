@@ -152,7 +152,7 @@ export const CreateAccountModal: React.FC = () => {
 
     const cleanEmail = email.trim() || `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@${agencyType === 'MDRRMO' ? 'mdrrmo.' : ''}roxas.gov.ph`;
 
-    const newUserPayload: Omit<User, 'id'> & { passcode: string } = {
+    const newUserPayload: Omit<User, 'id'> & { passcode: string; avatarUrl?: string } = {
       name: name.trim(),
       role,
       agencyType,
@@ -162,7 +162,7 @@ export const CreateAccountModal: React.FC = () => {
       badgeOrIdNumber: badgeOrIdNumber.trim() || `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
       email: cleanEmail,
       passcode: passcode.trim(),
-
+      avatarUrl: agencyType === 'MDRRMO' ? '/mdrrmo_logo.png' : agencyType === 'LGU' ? '/lgu_logo.png' : undefined,
     };
 
     try {
@@ -252,8 +252,14 @@ export const CreateAccountModal: React.FC = () => {
                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                   >
-                    <div className={`p-2 rounded-lg ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                      <Icon className="w-4 h-4" />
+                    <div className={`p-2 rounded-lg flex items-center justify-center ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      {ag.type === 'MDRRMO' ? (
+                        <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-4 h-4 rounded-full object-contain" />
+                      ) : ag.type === 'LGU' ? (
+                        <img src="/lgu_logo.png" alt="LGU" className="w-4 h-4 rounded-full object-contain" />
+                      ) : (
+                        <Icon className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-bold truncate">{ag.label}</div>

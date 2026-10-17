@@ -230,21 +230,73 @@ export const Sidebar: React.FC = () => {
   const renderSidebarContent = (isMobile: boolean) => (
     <>
       {/* Brand Header */}
-      <div className="p-4 sm:p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/40">
+      <div
+        className={`p-4 sm:p-5 border-b flex items-center justify-between transition-colors ${
+          isMdrrmo
+            ? 'bg-orange-50/50 border-orange-100'
+            : isLgu
+            ? 'bg-gradient-to-r from-emerald-50/80 via-emerald-50/50 to-amber-50/40 border-emerald-200/90'
+            : 'bg-emerald-50/40 border-emerald-100'
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white rounded-xl p-1 flex items-center justify-center shadow-xs border border-emerald-200/80">
+          <div
+            className={`w-10 h-10 bg-white rounded-xl p-0.5 flex items-center justify-center shadow-xs border ${
+              isMdrrmo
+                ? 'border-orange-200/90'
+                : isLgu
+                ? 'border-2 border-amber-400 ring-1 ring-emerald-700/20'
+                : 'border-emerald-200/80'
+            }`}
+          >
             <img
-              src="/bconnect_logo_transparent.png"
-              alt="B-CONNECT Logo"
-              className="w-full h-full object-contain"
+              src={
+                currentUser.agencyType === 'MDRRMO'
+                  ? '/mdrrmo_logo.png'
+                  : currentUser.agencyType === 'LGU'
+                  ? '/lgu_logo.png'
+                  : '/bconnect_logo_transparent.png'
+              }
+              alt={
+                currentUser.agencyType === 'MDRRMO'
+                  ? 'MDRRMO Logo'
+                  : currentUser.agencyType === 'LGU'
+                  ? 'LGU Roxas Seal'
+                  : 'B-CONNECT Logo'
+              }
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
           <div>
-            <h1 className="text-emerald-950 font-extrabold tracking-tight text-base leading-tight">
-              B-CONNECT
+            <h1
+              className={`font-extrabold tracking-tight text-base leading-tight ${
+                isMdrrmo
+                  ? 'text-slate-900'
+                  : isLgu
+                  ? 'text-[#062612]'
+                  : 'text-emerald-950'
+              }`}
+            >
+              {currentUser.agencyType === 'MDRRMO'
+                ? 'MDRRMO ROXAS'
+                : currentUser.agencyType === 'LGU'
+                ? 'LGU ROXAS'
+                : 'B-CONNECT'}
             </h1>
-            <span className="text-[9px] text-emerald-700 uppercase tracking-widest font-bold block">
-              ROXAS, ORI. MINDORO
+            <span
+              className={`text-[9px] uppercase tracking-widest font-black block ${
+                isMdrrmo
+                  ? 'text-orange-600'
+                  : isLgu
+                  ? 'text-[#0f532a]'
+                  : 'text-emerald-700'
+              }`}
+            >
+              {currentUser.agencyType === 'MDRRMO'
+                ? 'DISASTER RISK & RESCUE'
+                : currentUser.agencyType === 'LGU'
+                ? 'MUNICIPAL GOVERNMENT'
+                : 'ROXAS, ORI. MINDORO'}
             </span>
           </div>
         </div>
@@ -253,7 +305,13 @@ export const Sidebar: React.FC = () => {
           <button
             id="btn-close-mobile-sidebar"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="p-1.5 rounded-lg text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70 transition cursor-pointer"
+            className={`p-1.5 rounded-lg transition cursor-pointer ${
+              isMdrrmo
+                ? 'text-orange-800 hover:text-orange-950 hover:bg-orange-100/70'
+                : isLgu
+                ? 'text-emerald-900 hover:text-[#062612] hover:bg-emerald-100/80'
+                : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70'
+            }`}
             title="Close navigation"
           >
             <X className="w-5 h-5" />
@@ -263,16 +321,58 @@ export const Sidebar: React.FC = () => {
 
       {/* Active Operating Jurisdiction info pill */}
       <div className="px-3 pt-3">
-        <div className="flex items-center gap-2.5 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/80">
-          <div className="text-emerald-700">
-            {currentUser.agencyType === 'MDRRMO' && <ShieldAlert className="w-4 h-4 text-orange-600" />}
-            {currentUser.agencyType === 'LGU' && <Landmark className="w-4 h-4" />}
-            {currentUser.agencyType === 'ADMIN' && <Settings className="w-4 h-4" />}
-            {currentUser.agencyType === 'RESIDENT' && <UserPlus className="w-4 h-4" />}
+        <div
+          className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors ${
+            isMdrrmo
+              ? 'bg-orange-50/70 border-orange-200/90 shadow-2xs'
+              : isLgu
+              ? 'bg-gradient-to-r from-emerald-50/90 to-amber-50/50 border-2 border-amber-400/70 shadow-2xs'
+              : 'bg-emerald-50/70 border-emerald-200/80'
+          }`}
+        >
+          <div className={`${isMdrrmo ? 'text-orange-700' : isLgu ? 'text-emerald-800' : 'text-emerald-700'} flex-shrink-0`}>
+            {currentUser.agencyType === 'MDRRMO' ? (
+              <img
+                src="/mdrrmo_logo.png"
+                alt="MDRRMO Seal"
+                className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border border-orange-300 shadow-2xs"
+              />
+            ) : currentUser.agencyType === 'LGU' ? (
+              <img
+                src="/lgu_logo.png"
+                alt="LGU Roxas Seal"
+                className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border-2 border-amber-400 shadow-2xs"
+              />
+            ) : (
+              <>
+                {currentUser.agencyType === 'ADMIN' && <Settings className="w-4 h-4" />}
+                {currentUser.agencyType === 'RESIDENT' && <UserPlus className="w-4 h-4" />}
+              </>
+            )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold text-emerald-950 truncate">{currentUser?.agencyName || 'Agency'}</div>
-            <div className="text-[10px] text-emerald-800/80 truncate font-medium">{currentUser?.position || ''}</div>
+            <div
+              className={`text-[11px] font-extrabold truncate ${
+                isMdrrmo
+                  ? 'text-slate-900'
+                  : isLgu
+                  ? 'text-[#062612]'
+                  : 'text-emerald-950'
+              }`}
+            >
+              {currentUser?.agencyName || 'Agency'}
+            </div>
+            <div
+              className={`text-[10px] truncate font-semibold ${
+                isMdrrmo
+                  ? 'text-orange-800/90'
+                  : isLgu
+                  ? 'text-amber-800 font-bold'
+                  : 'text-emerald-800/80'
+              }`}
+            >
+              {currentUser?.position || ''}
+            </div>
           </div>
         </div>
       </div>
@@ -284,7 +384,13 @@ export const Sidebar: React.FC = () => {
             return (
               <div
                 key={`header-${index}`}
-                className="text-[10px] uppercase font-bold text-emerald-800/70 px-3 mt-4 mb-1.5 tracking-widest"
+                className={`text-[10px] uppercase font-black px-3 mt-4 mb-1.5 tracking-widest ${
+                  isMdrrmo
+                    ? 'text-orange-800/90'
+                    : isLgu
+                    ? 'text-[#0f532a]'
+                    : 'text-emerald-800/70'
+                }`}
               >
                 {item.label}
               </div>
@@ -298,20 +404,65 @@ export const Sidebar: React.FC = () => {
               key={item.id}
               id={`nav-link-${item.id}${isMobile ? '-mobile' : ''}`}
               onClick={() => handleNavClick(item.id!)}
-              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between group cursor-pointer ${isActive
-                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
+              className={`w-full text-left px-3 py-2 rounded-lg transition-all flex items-center justify-between group cursor-pointer ${
+                isActive
+                  ? isMdrrmo
+                    ? 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white font-black shadow-md shadow-orange-600/20 border border-orange-500'
+                    : isLgu
+                    ? 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] text-white font-black shadow-md border-2 border-amber-400/80 ring-1 ring-amber-300/30'
+                    : 'bg-emerald-600 text-white font-bold shadow-xs'
+                  : isMdrrmo
+                  ? 'hover:bg-orange-50/80 text-slate-700 hover:text-orange-950 font-medium'
+                  : isLgu
+                  ? 'hover:bg-emerald-50/80 text-slate-700 hover:text-[#062612] font-medium'
                   : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-950 font-medium'
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className={`w-1 h-4 rounded-full flex-shrink-0 transition-colors ${isActive ? 'bg-white' : 'bg-emerald-200 group-hover:bg-emerald-400'}`} />
-                <span className={`${isActive ? 'text-white' : 'text-emerald-700 group-hover:text-emerald-900'}`}>
+                <span
+                  className={`w-1 h-4 rounded-full flex-shrink-0 transition-colors ${
+                    isActive
+                      ? isMdrrmo
+                        ? 'bg-amber-300'
+                        : isLgu
+                        ? 'bg-amber-400'
+                        : 'bg-white'
+                      : isMdrrmo
+                      ? 'bg-orange-200 group-hover:bg-orange-400'
+                      : isLgu
+                      ? 'bg-emerald-200 group-hover:bg-amber-400'
+                      : 'bg-emerald-200 group-hover:bg-emerald-400'
+                  }`}
+                />
+                <span
+                  className={`transition-colors ${
+                    isActive
+                      ? isLgu
+                        ? 'text-amber-300'
+                        : 'text-white'
+                      : isMdrrmo
+                      ? 'text-orange-600 group-hover:text-orange-800'
+                      : isLgu
+                      ? 'text-[#0f532a] group-hover:text-emerald-900'
+                      : 'text-emerald-700 group-hover:text-emerald-900'
+                  }`}
+                >
                   {item.icon}
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs truncate">{item.label}</div>
                   {item.subtitle && (
-                    <div className={`text-[10px] truncate ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>
+                    <div
+                      className={`text-[10px] truncate ${
+                        isActive
+                          ? isMdrrmo
+                            ? 'text-orange-100 font-medium'
+                            : isLgu
+                            ? 'text-amber-100/90 font-medium'
+                            : 'text-emerald-100'
+                          : 'text-slate-400'
+                      }`}
+                    >
                       {item.subtitle}
                     </div>
                   )}
@@ -326,8 +477,22 @@ export const Sidebar: React.FC = () => {
                   </span>
                 )}
                 {item.badge !== undefined && !item.urgentAlert && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${item.badgeColor || (isActive ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800')
-                    }`}>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      item.badgeColor ||
+                      (isActive
+                        ? isMdrrmo
+                          ? 'bg-orange-900/90 text-amber-200 border border-orange-400/40'
+                          : isLgu
+                          ? 'bg-amber-400 text-[#082e16] border border-amber-300'
+                          : 'bg-emerald-700 text-white'
+                        : isMdrrmo
+                        ? 'bg-orange-100 text-orange-900 border border-orange-200'
+                        : isLgu
+                        ? 'bg-emerald-100 text-[#0f532a] border border-emerald-200'
+                        : 'bg-emerald-100 text-emerald-800')
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 )}
@@ -358,7 +523,12 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Persistent Sidebar (Laptop & Desktop screens >= 1024px) */}
-      <aside id="bconnect-sidebar" className="hidden lg:flex w-64 bg-white text-slate-700 flex-col border-r border-emerald-100 flex-shrink-0 select-none">
+      <aside
+        id="bconnect-sidebar"
+        className={`hidden lg:flex w-64 bg-white text-slate-700 flex-col border-r flex-shrink-0 select-none ${
+          isMdrrmo ? 'border-orange-200/80' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
+        }`}
+      >
         {renderSidebarContent(false)}
       </aside>
 
@@ -374,8 +544,9 @@ export const Sidebar: React.FC = () => {
       {/* Mobile & Tablet Slide-Over Drawer (< 1024px) */}
       <aside
         id="bconnect-sidebar-mobile"
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r border-emerald-200 select-none transform transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r select-none transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isMdrrmo ? 'border-orange-200' : isLgu ? 'border-emerald-200' : 'border-emerald-200'
+        } ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {renderSidebarContent(true)}
       </aside>

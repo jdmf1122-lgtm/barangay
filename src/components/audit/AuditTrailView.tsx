@@ -11,13 +11,17 @@ import {
   Lock
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
+import { useAuth } from '../../hooks/useAuth';
 import { formatDate, exportToCsv } from '../../utils/reportGenerators';
 
 export const AuditTrailView: React.FC = () => {
   const { auditLogs } = useCases();
+  const { currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
   const [agencyFilter, setAgencyFilter] = useState('ALL');
+
+  const isMdrrmo = currentUser?.agencyType === 'MDRRMO';
 
   const filteredLogs = auditLogs.filter((log) => {
     if (actionFilter !== 'ALL' && log.action !== actionFilter) return false;
@@ -51,28 +55,58 @@ export const AuditTrailView: React.FC = () => {
 
   return (
     <div id="audit-trail-view" className="space-y-4">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-stone-900 to-slate-950 text-white rounded-xl p-5 shadow-sm border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-200 text-xs font-semibold mb-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Immutable Integrity Log • Chain of Custody</span>
+      {/* Top Banner with Official Agency Seal & Dynamic Palette */}
+      <div className={`text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 relative overflow-hidden ${
+        isMdrrmo
+          ? 'bg-gradient-to-r from-[#0a1628] via-[#142642] to-[#1c1208] border-orange-500/80 ring-1 ring-amber-400/30'
+          : 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] border-amber-400/80 ring-1 ring-amber-300/30'
+      }`}>
+        {/* Subtle background seal watermark */}
+        <img
+          src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
+          alt=""
+          className={`absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 ${
+            isMdrrmo ? 'drop-shadow-[0_0_15px_rgba(249,115,22,0.25)]' : 'drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]'
+          }`}
+        />
+
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
+          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 flex-shrink-0 flex items-center justify-center ${
+            isMdrrmo ? 'border-orange-500 ring-2 ring-amber-400/50' : 'border-amber-400 ring-2 ring-[#0f532a]/60'
+          }`}>
+            <img
+              src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
+              alt={isMdrrmo ? 'MDRRMO Roxas Official Seal' : 'Municipal Government of Roxas Official Seal'}
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
-          <h2 className="text-xl font-bold tracking-tight">
-            System Audit Trail & Accountability Logs
-          </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Real-time, non-repudiable audit logs recording all case registrations, status transitions, delay diagnoses, inter-agency endorsements, and DILG directives.
-          </p>
+          <div>
+            <div className={`inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs font-bold border shadow-xs mb-1.5 ${
+              isMdrrmo
+                ? 'bg-[#06101e]/90 text-amber-300 border-orange-500/60'
+                : 'bg-[#062612]/90 text-amber-300 border-amber-400/60'
+            }`}>
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Immutable Integrity Log • Chain of Custody</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
+              System Audit Trail & Accountability Logs
+            </h2>
+            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
+              Real-time, non-repudiable audit logs recording all case registrations, status transitions, delay diagnoses, inter-agency endorsements, and DILG directives.
+            </p>
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 z-10">
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 border-amber-200 ${
+              isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'
+            }`}
           >
-            <Download className="w-4 h-4" />
-            Export Audit Log CSV
+            <Download className={`w-4 h-4 ${isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'}`} />
+            <span>Export Audit Log CSV</span>
           </button>
         </div>
       </div>

@@ -44,32 +44,45 @@ export const LguDashboard: React.FC = () => {
 
   return (
     <div id="lgu-dashboard-view" className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-xs font-semibold">
-              <Landmark className="w-3.5 h-3.5" />
-              <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-800/60 text-emerald-200 text-[10px] font-mono font-bold border border-emerald-700/50">
-              POV: {isAdministrator ? 'LGU Administrator' : 'Department Desk Officer'}
-            </span>
+      {/* Top Banner with Official LGU Roxas Seal */}
+      <div className="bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 border-amber-400/80 ring-1 ring-amber-300/30 relative overflow-hidden">
+        {/* Subtle background seal watermark */}
+        <img
+          src="/lgu_logo.png"
+          alt=""
+          className="absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]"
+        />
+
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 border-amber-400 ring-2 ring-[#0f532a]/60 flex-shrink-0 flex items-center justify-center">
+            <img
+              src="/lgu_logo.png"
+              alt="Municipal Government of Roxas Official Seal"
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-            {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
-          </h2>
-          <p className="text-xs text-emerald-100 mt-1 max-w-2xl leading-relaxed">
-            Coordinating municipal departments (MENRO, Market Operations, Municipal Legal, Engineering, MSWDO) across the 5 Barangays of Roxas, Oriental Mindoro.
-          </p>
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#062612]/90 text-amber-300 text-xs font-bold border border-amber-400/60 shadow-xs">
+                <Landmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
+              </div>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
+              {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
+            </h2>
+            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
+              <span className="text-amber-300 font-bold tracking-wide">MUNICIPALITY OF ROXAS &bull; ORIENTAL MINDORO (EST. 1948)</span> &bull; <span className="text-emerald-100/90">Coordinating municipal departments across all barangays.</span>
+            </p>
+          </div>
         </div>
 
-        <div className="flex w-full md:w-auto">
+        <div className="flex w-full md:w-auto z-10">
           <button
             onClick={() => setActiveTab('standard_reports')}
-            className="w-full sm:w-auto justify-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] rounded-xl text-xs font-black shadow-md border border-amber-200 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-[#082e16]" />
             <span>Municipal Report</span>
           </button>
         </div>
@@ -189,7 +202,7 @@ export const LguDashboard: React.FC = () => {
           <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Municipality Total</p>
           <h3 className="text-3xl font-bold mt-1 text-slate-900">{totalCases}</h3>
           <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-bold">
-            <span>Across 5 Barangays</span>
+            <span>Across 20 Barangays</span>
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
         </div>
@@ -290,11 +303,11 @@ export const LguDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Col: 5 Barangays Distribution */}
+        {/* Right Col: 20 Barangays Distribution */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <h3 className="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-emerald-700" />
-            5 Barangays Incident Distribution
+            20 Barangays Incident Distribution
           </h3>
           <p className="text-xs text-slate-500 mb-3">Case load across Roxas, Oriental Mindoro</p>
 

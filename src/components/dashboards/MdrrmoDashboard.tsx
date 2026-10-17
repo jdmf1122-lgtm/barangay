@@ -116,28 +116,44 @@ export const MdrrmoDashboard: React.FC = () => {
 
   return (
     <div id="mdrrmo-dashboard-view" className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-orange-900 via-amber-950 to-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-md border border-orange-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-800/80 text-orange-200 text-xs font-bold border border-orange-700/50">
-              <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
-              <span>MDRRMO Roxas • Emergency Medical & Rescue Operations</span>
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-orange-700/60 text-orange-200 text-[10px] font-mono font-bold border border-orange-600/40">
-              POV: {isOfficer ? 'Responder & Field Triage' : 'Operations Head & Dispatch Chief'}
-            </span>
+      {/* Top Banner with Official MDRRMO Seal */}
+      <div className="bg-gradient-to-r from-[#0a1628] via-[#142642] to-[#1c1208] text-white rounded-2xl p-4 sm:p-5 shadow-lg border-2 border-orange-500/80 ring-1 ring-amber-400/30 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        {/* Subtle background seal watermark */}
+        <img
+          src="/mdrrmo_logo.png"
+          alt=""
+          className="absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 drop-shadow-[0_0_15px_rgba(249,115,22,0.25)]"
+        />
+
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 border-orange-500 ring-2 ring-amber-400/50 flex-shrink-0 flex items-center justify-center">
+            <img
+              src="/mdrrmo_logo.png"
+              alt="MDRRMO Roxas Official Seal"
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
-          <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white">
-            {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
-          </h2>
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#06101e]/90 text-amber-300 text-xs font-bold border border-orange-500/60 shadow-xs">
+                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+                <span>MDRRMO Roxas • Emergency Medical & Rescue Operations</span>
+              </div>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight drop-shadow-xs">
+              {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
+            </h2>
+            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
+              <span className="text-amber-300 font-bold tracking-wide">PROTECT &bull; SERVE &bull; RESCUE &bull; THAT YOU MAY LIVE</span> &bull; <span className="text-orange-100/90">MUNICIPALITY OF ROXAS</span>
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto z-10">
           <button
             id="btn-mdrrmo-test-alarm"
             onClick={handleTestAccidentAlarm}
-            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow transition flex items-center justify-center gap-2 cursor-pointer ring-2 ring-rose-400/50 active:scale-95"
+            className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl text-xs font-black shadow-md border border-red-400/60 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             title="Simulate incoming accident report to test automated SMS broadcast and dispatch popup"
           >
             <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
@@ -146,9 +162,9 @@ export const MdrrmoDashboard: React.FC = () => {
           <button
             id="btn-mdrrmo-view-annual"
             onClick={() => setActiveTab('annual_narrative')}
-            className="w-full sm:w-auto px-3 sm:px-3.5 py-2 sm:py-2.5 bg-orange-950/60 hover:bg-orange-900 text-orange-100 border border-orange-700/60 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#0a1628] rounded-xl text-xs font-black shadow-md border border-amber-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-[#0a1628]" />
             <span>Logs</span>
           </button>
         </div>

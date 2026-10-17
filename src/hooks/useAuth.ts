@@ -53,11 +53,22 @@ export const useAuth = () => {
   };
 
   const login = (user: User) => {
-    setCurrentUserState(user);
+    const fallbackLogo =
+      user.agencyType === 'MDRRMO'
+        ? '/mdrrmo_logo.png'
+        : user.agencyType === 'LGU'
+        ? '/lgu_logo.png'
+        : user.avatarUrl;
+
+    const userWithLogo: User = {
+      ...user,
+      avatarUrl: user.avatarUrl || fallbackLogo
+    };
+    setCurrentUserState(userWithLogo);
     setIsAuthenticated(true);
-    localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(user));
+    localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(userWithLogo));
     localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
-    logActivity('USER_LOGIN', undefined, `Officer ${user.name} (${user.position}, ${user.agencyName}) logged in to B-CONNECT.`);
+    logActivity('USER_LOGIN', undefined, `Officer ${userWithLogo.name} (${userWithLogo.position}, ${userWithLogo.agencyName}) logged in to B-CONNECT.`);
   };
 
   const loginWithCredentials = async (emailOrId: string, passcode?: string): Promise<{ success: boolean; message?: string }> => {
@@ -243,10 +254,18 @@ export const useAuth = () => {
 
     const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${String((users?.length || 0) + 1).padStart(2, '0')}`;
 
+    const fallbackLogo =
+      newUserData.agencyType === 'MDRRMO'
+        ? '/mdrrmo_logo.png'
+        : newUserData.agencyType === 'LGU'
+        ? '/lgu_logo.png'
+        : newUserData.avatarUrl;
+
     const newUser: User = {
       ...newUserData,
       id: userId,
-      passcode: cleanPass
+      passcode: cleanPass,
+      avatarUrl: newUserData.avatarUrl || fallbackLogo
     };
 
     // 2. Save to local passcode vault
@@ -335,7 +354,20 @@ export const useAuth = () => {
     setUsers((prev) => {
       const updated = (prev || []).map((u) => {
         if (u.id === userId) {
-          resultUser = { ...u, ...updatedData, id: u.id };
+          const mergedAgency = updatedData.agencyType || u.agencyType;
+          const fallbackLogo =
+            mergedAgency === 'MDRRMO'
+              ? '/mdrrmo_logo.png'
+              : mergedAgency === 'LGU'
+              ? '/lgu_logo.png'
+              : undefined;
+
+          resultUser = {
+            ...u,
+            ...updatedData,
+            id: u.id,
+            avatarUrl: updatedData.avatarUrl || u.avatarUrl || fallbackLogo
+          };
           return resultUser;
         }
         return u;
