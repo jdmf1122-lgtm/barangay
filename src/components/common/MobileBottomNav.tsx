@@ -7,7 +7,8 @@ import {
   Menu,
   Clock,
   UserCheck,
-  BookOpenCheck
+  BookOpenCheck,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
@@ -124,13 +125,119 @@ export const MobileBottomNav: React.FC = () => {
     );
   }
 
-  // Non-Resident Official / Responder View (Dashboard, Blotter/Narrative, Elevated New, GIS Map, Menu)
+  // LGU Executive / Municipal Administration View (Dashboard, Transparency, Narrative, Menu)
+  // Spec: Remove "GIS Map" and "New (+)" for LGU on mobile since LGU focuses on executive governance and oversight
+  if (isLgu) {
+    return (
+      <nav
+        id="bconnect-mobile-bottom-nav"
+        aria-label="Mobile Bottom Navigation - LGU"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-emerald-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-3 py-1.5 flex items-center justify-around select-none transition-colors"
+        style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        {/* 1. Executive Dashboard */}
+        <button
+          id="mobile-nav-dashboard"
+          type="button"
+          onClick={() => {
+            setActiveTab('dashboard');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+            activeTab === 'dashboard'
+              ? 'text-[#0f532a] font-black'
+              : 'text-slate-500 hover:text-[#062612]'
+          }`}
+        >
+          <div
+            className={`p-1 rounded-xl transition ${
+              activeTab === 'dashboard' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
+        </button>
+
+        {/* 2. Transparency & Oversight */}
+        <button
+          id="mobile-nav-transparency"
+          type="button"
+          onClick={() => {
+            setActiveTab('transparency');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+            activeTab === 'transparency'
+              ? 'text-[#0f532a] font-black'
+              : 'text-slate-500 hover:text-[#062612]'
+          }`}
+        >
+          <div
+            className={`p-1 rounded-xl transition ${
+              activeTab === 'transparency' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            }`}
+          >
+            <Eye className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] mt-0.5 leading-tight">Transparency</span>
+        </button>
+
+        {/* 3. Case Narrative & Outcomes */}
+        <button
+          id="mobile-nav-narrative"
+          type="button"
+          onClick={() => {
+            setActiveTab('annual_narrative');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+            activeTab === 'annual_narrative'
+              ? 'text-[#0f532a] font-black'
+              : 'text-slate-500 hover:text-[#062612]'
+          }`}
+        >
+          <div
+            className={`p-1 rounded-xl transition ${
+              activeTab === 'annual_narrative' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            }`}
+          >
+            <BookOpenCheck className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] mt-0.5 leading-tight">Narrative</span>
+        </button>
+
+        {/* 4. Menu Drawer Toggle */}
+        <button
+          id="mobile-nav-drawer-toggle"
+          type="button"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+            isMobileMenuOpen
+              ? 'text-[#0f532a] font-black'
+              : 'text-slate-500 hover:text-[#062612]'
+          }`}
+        >
+          <div
+            className={`p-1 rounded-xl transition ${
+              isMobileMenuOpen ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            }`}
+          >
+            <Menu className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] mt-0.5 leading-tight">Menu</span>
+        </button>
+      </nav>
+    );
+  }
+
+  // MDRRMO Responders & Field Operations View (Dashboard, Blotter, Elevated New, GIS Map, Menu)
   return (
     <nav
       id="bconnect-mobile-bottom-nav"
       aria-label="Mobile Bottom Navigation"
       className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around select-none transition-colors ${
-        isMdrrmo ? 'border-orange-100' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
+        isMdrrmo ? 'border-orange-100' : 'border-emerald-100'
       }`}
       style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
     >
@@ -146,13 +253,9 @@ export const MobileBottomNav: React.FC = () => {
           activeTab === 'dashboard'
             ? isMdrrmo
               ? 'text-orange-700 font-bold'
-              : isLgu
-              ? 'text-[#0f532a] font-black'
               : 'text-emerald-700 font-bold'
             : isMdrrmo
             ? 'text-slate-500 hover:text-orange-800'
-            : isLgu
-            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
@@ -161,8 +264,6 @@ export const MobileBottomNav: React.FC = () => {
             activeTab === 'dashboard'
               ? isMdrrmo
                 ? 'bg-orange-50'
-                : isLgu
-                ? 'bg-emerald-50/90 border border-amber-300/50'
                 : 'bg-emerald-50'
               : ''
           }`}
@@ -172,73 +273,39 @@ export const MobileBottomNav: React.FC = () => {
         <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
       </button>
 
-      {/* 2. Blotter / Narrative */}
+      {/* 2. Blotter */}
       <button
         id="mobile-nav-cases"
         type="button"
         onClick={() => {
-          setActiveTab(isLgu ? 'annual_narrative' : 'cases');
+          setActiveTab('cases');
           setIsMobileMenuOpen(false);
         }}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          activeTab === 'cases' || (isLgu && activeTab === 'annual_narrative')
+          activeTab === 'cases'
             ? isMdrrmo
               ? 'text-orange-700 font-bold'
-              : isLgu
-              ? 'text-[#0f532a] font-black'
               : 'text-emerald-700 font-bold'
             : isMdrrmo
             ? 'text-slate-500 hover:text-orange-800'
-            : isLgu
-            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
         <div
           className={`p-1 rounded-xl transition ${
-            activeTab === 'cases' || (isLgu && activeTab === 'annual_narrative')
+            activeTab === 'cases'
               ? isMdrrmo
                 ? 'bg-orange-50'
-                : isLgu
-                ? 'bg-emerald-50/90 border border-amber-300/50'
                 : 'bg-emerald-50'
               : ''
           }`}
         >
-          {isLgu ? <BookOpenCheck className="w-5 h-5" /> : <FileSpreadsheet className="w-5 h-5" />}
+          <FileSpreadsheet className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">
-          {isLgu ? 'Narrative' : 'Blotter'}
-        </span>
+        <span className="text-[10px] mt-0.5 leading-tight">Blotter</span>
       </button>
 
-      {/* 3. Center Elevated Action Button (+ New) */}
-      <div className="flex flex-col items-center justify-center px-1">
-        <button
-          id="mobile-nav-center-action"
-          type="button"
-          onClick={handleCenterAction}
-          className={`w-12 h-12 -mt-5 rounded-full flex items-center justify-center ring-4 ring-white active:scale-95 transition cursor-pointer ${
-            isMdrrmo
-              ? 'bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-lg shadow-orange-600/40'
-              : isLgu
-              ? 'bg-gradient-to-tr from-[#0b3d1f] via-[#0f532a] to-[#082e16] hover:from-[#0d4a25] hover:to-[#0f532a] text-white border-2 border-amber-400 shadow-lg shadow-emerald-950/40'
-              : 'bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-600/40'
-          }`}
-          title="Record New Incident"
-        >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
-        </button>
-        <span
-          className={`text-[9px] font-bold mt-1 leading-tight ${
-            isMdrrmo ? 'text-orange-950' : isLgu ? 'text-[#062612] font-black' : 'text-emerald-900'
-          }`}
-        >
-          New
-        </span>
-      </div>
-
-      {/* 4. GIS Hazard Map */}
+      {/* 3. GIS Hazard Map */}
       <button
         id="mobile-nav-map"
         type="button"
@@ -250,13 +317,9 @@ export const MobileBottomNav: React.FC = () => {
           activeTab === 'gis_map'
             ? isMdrrmo
               ? 'text-orange-700 font-bold'
-              : isLgu
-              ? 'text-[#0f532a] font-black'
               : 'text-emerald-700 font-bold'
             : isMdrrmo
             ? 'text-slate-500 hover:text-orange-800'
-            : isLgu
-            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
@@ -265,8 +328,6 @@ export const MobileBottomNav: React.FC = () => {
             activeTab === 'gis_map'
               ? isMdrrmo
                 ? 'bg-orange-50'
-                : isLgu
-                ? 'bg-emerald-50/90 border border-amber-300/50'
                 : 'bg-emerald-50'
               : ''
           }`}
@@ -276,7 +337,7 @@ export const MobileBottomNav: React.FC = () => {
         <span className="text-[10px] mt-0.5 leading-tight">GIS Map</span>
       </button>
 
-      {/* 5. Menu Drawer Toggle */}
+      {/* 4. Menu Drawer Toggle */}
       <button
         id="mobile-nav-drawer-toggle"
         type="button"
@@ -285,13 +346,9 @@ export const MobileBottomNav: React.FC = () => {
           isMobileMenuOpen
             ? isMdrrmo
               ? 'text-orange-700 font-bold'
-              : isLgu
-              ? 'text-[#0f532a] font-black'
               : 'text-emerald-700 font-bold'
             : isMdrrmo
             ? 'text-slate-500 hover:text-orange-800'
-            : isLgu
-            ? 'text-slate-500 hover:text-[#062612]'
             : 'text-slate-500 hover:text-emerald-800'
         }`}
       >
@@ -300,8 +357,6 @@ export const MobileBottomNav: React.FC = () => {
             isMobileMenuOpen
               ? isMdrrmo
                 ? 'bg-orange-50'
-                : isLgu
-                ? 'bg-emerald-50/90 border border-amber-300/50'
                 : 'bg-emerald-50'
               : ''
           }`}

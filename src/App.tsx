@@ -82,7 +82,7 @@ const AppContent: React.FC = () => {
       case 'cases':
         return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <CaseList />;
       case 'gis_map':
-        return <GeographicBarangayMap />;
+        return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <GeographicBarangayMap />;
       case 'transparency':
         return <TransparencyDashboard />;
       case 'annual_narrative':

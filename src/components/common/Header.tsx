@@ -250,29 +250,29 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           />
         </div>
 
-        {/* Action Button: Record Incident */}
-        <button
-          id="btn-register-new-case"
-          onClick={() => {
-            if (currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') {
-              setActiveTab('submit_report');
-            } else {
-              setIsNewCaseModalOpen(true);
-            }
-          }}
-          className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
-            isMdrrmo
-              ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-sm shadow-orange-600/30'
-              : isLgu
-              ? 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] hover:from-[#0d4a25] hover:to-[#0f532a] border border-amber-400/60 shadow-md shadow-emerald-950/20'
-              : 'bg-emerald-600 hover:bg-emerald-700 shadow-xs'
-          }`}
-        >
-          <PlusCircle className="w-4 h-4 flex-shrink-0" />
-          <span className="hidden sm:inline">
-            {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Submit Report' : 'New Incident'}
-          </span>
-        </button>
+        {/* Action Button: Record Incident (Hidden for LGU accounts; hidden on mobile screens to keep mobile view clean) */}
+        {!isLgu && (
+          <button
+            id="btn-register-new-case"
+            onClick={() => {
+              if (currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') {
+                setActiveTab('submit_report');
+              } else {
+                setIsNewCaseModalOpen(true);
+              }
+            }}
+            className={`hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
+              isMdrrmo
+                ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-sm shadow-orange-600/30'
+                : 'bg-emerald-600 hover:bg-emerald-700 shadow-xs'
+            }`}
+          >
+            <PlusCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">
+              {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? 'Submit Report' : 'New Incident'}
+            </span>
+          </button>
+        )}
 
         {/* Notification Bell with Role Badge */}
         <div className="relative">
