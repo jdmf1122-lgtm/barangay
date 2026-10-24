@@ -519,11 +519,11 @@ export const SystemAdminView: React.FC = () => {
         )}
       </div>
 
-      {/* 5 Barangays Master List */}
+      {/* 20 Barangays Master List */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
         <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
           <Building2 className="w-4 h-4 text-sky-700" />
-          Master Barangay Registry (5 Barangays of Roxas, Oriental Mindoro)
+          Master Barangay Registry ({ROXAS_BARANGAYS.length} Barangays of Roxas, Oriental Mindoro)
         </h3>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">

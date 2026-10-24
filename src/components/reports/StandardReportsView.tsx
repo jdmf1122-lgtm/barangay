@@ -150,7 +150,7 @@ export const StandardReportsView: React.FC = () => {
             <h3 className="font-bold text-sm text-slate-900 mb-1">
               Quarterly Katarungang Pambarangay Performance Matrix (RA 7160)
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Conciliation and mediation output across the 5 Barangays</p>
+            <p className="text-xs text-slate-500 mb-3">Conciliation and mediation output across all {ROXAS_BARANGAYS.length} Barangays</p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs divide-y divide-slate-200">
                 <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">

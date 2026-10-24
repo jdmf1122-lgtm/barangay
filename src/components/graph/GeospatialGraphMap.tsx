@@ -586,25 +586,17 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
             <span className="text-slate-600 font-medium">Cases ({graphData.nodes.filter((n) => n.type === 'case').length})</span>
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
+            <span className="text-slate-600 font-medium">Persons / Residents ({graphData.nodes.filter((n) => n.type === 'person').length})</span>
+          </div>
+          <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-orange-600 inline-block" />
-            <span className="text-slate-600 font-medium">Persons ({graphData.nodes.filter((n) => n.type === 'person').length})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
-            <span className="text-slate-600 font-medium">Officials ({graphData.nodes.filter((n) => n.type === 'official').length})</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-sm bg-teal-600 inline-block" />
-            <span className="text-slate-600 font-medium">5 Barangays</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-700 inline-block" />
-            <span className="text-slate-600 font-medium">3 Agency Hubs</span>
+            <span className="text-slate-700 font-bold">MDRRMO ({graphData.nodes.filter((n) => n.type === 'agency').length || 1})</span>
           </div>
         </div>
       </div>
