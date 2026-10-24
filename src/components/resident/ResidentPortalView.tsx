@@ -52,6 +52,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   React.useEffect(() => {
     setPortalTab(initialTab);
     setSubmittedSuccessCaseId(null);
+    if (initialTab === 'submit') {
+      const now = new Date();
+      setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      setReportDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
+    }
   }, [initialTab]);
 
   const handleSwitchTab = (tab: 'overview' | 'submit' | 'my_reports') => {
@@ -59,6 +64,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     setSubmittedSuccessCaseId(null);
     if (tab === 'submit') {
       setActiveTab('submit_report');
+      const now = new Date();
+      setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      setReportDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
     } else if (tab === 'my_reports') {
       setActiveTab('my_reports');
     } else {
@@ -71,8 +79,14 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
-  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
-  const [reportTime, setReportTime] = useState('14:00');
+  const [reportDate, setReportDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
+  const [reportTime, setReportTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
   const [isUrgent, setIsUrgent] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -379,46 +393,19 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
             <form onSubmit={handleSubmitReport} className="space-y-6">
 
-              {/* 1. Category & Title */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-5 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Accident / Crash Category <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    id="select-incident-category"
-                    value={reportCategory}
-                    onChange={(e) => setReportCategory(e.target.value as IncidentCategory)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Motorcycle vs Motorcycle Collision">Motorcycle vs Motorcycle Collision</option>
-                    <option value="Motorcycle vs Car / SUV Collision">Motorcycle vs Car / SUV Collision</option>
-                    <option value="Motorcycle vs Tricycle Collision">Motorcycle vs Tricycle Collision</option>
-                    <option value="Car / 4-Wheeled Vehicle Collision">Car / 4-Wheeled Vehicle Collision</option>
-                    <option value="Tricycle Collision / Rollover">Tricycle Collision / Rollover</option>
-                    <option value="Truck / Bus / Heavy Vehicle Crash">Truck / Bus / Heavy Vehicle Crash</option>
-                    <option value="PUV / Jeepney / Multicab Accident">PUV / Jeepney / Multicab Accident</option>
-                    <option value="Pedestrian Hit by Vehicle / Motorcycle">Pedestrian Hit by Vehicle / Motorcycle</option>
-                    <option value="Bicycle / E-Bike / E-Trike Crash">Bicycle / E-Bike / E-Trike Crash</option>
-                    <option value="Single-Vehicle Road Skid / Fixed Object Crash">Single-Vehicle Road Skid / Fixed Object Crash</option>
-                    <option value="Multi-Vehicle Pileup Collision">Multi-Vehicle Pileup Collision</option>
-                    <option value="Hit-and-Run Vehicular Crash">Hit-and-Run Vehicular Crash</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-7 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Accident Title / Summary <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="input-report-title"
-                    type="text"
-                    required
-                    value={reportTitle}
-                    onChange={(e) => setReportTitle(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+              {/* 1. Incident Title / Summary */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800">
+                  Accident Title / Summary <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="input-report-title"
+                  type="text"
+                  required
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               {/* 2. Location & Date/Time */}
@@ -478,15 +465,28 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Estimated Time</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Estimated Time</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+                      }}
+                      className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
+                      title="I-set sa kasalukuyang oras ng device"
+                    >
+                      Oras Ngayon
+                    </button>
+                  </div>
                   <input
                     type="time"
                     value={reportTime}
                     onChange={(e) => setReportTime(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                   />
                 </div>
 

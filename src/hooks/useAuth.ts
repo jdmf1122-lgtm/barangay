@@ -177,7 +177,8 @@ export const useAuth = () => {
         const isMasterPass =
           cleanPasscode === '123456' ||
           cleanPasscode === 'password123' ||
-          cleanPasscode === 'mdrrmo2026';
+          cleanPasscode === 'mdrrmo2026' ||
+          cleanPasscode === 'lguroxas2026';
 
         const isExactMatch =
           (userPass && userPass === cleanPasscode) ||

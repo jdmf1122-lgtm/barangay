@@ -57,11 +57,11 @@ export const CreateAccountModal: React.FC = () => {
   const { isCreateAccountModalOpen, setIsCreateAccountModalOpen } = useUI();
 
   const [name, setName] = useState('');
-  const [agencyType, setAgencyType] = useState<AgencyType>('MDRRMO');
+  const [agencyType, setAgencyType] = useState<AgencyType>('RESIDENT');
   const [barangay, setBarangay] = useState<string>(ROXAS_BARANGAYS[0]);
-  const [position, setPosition] = useState('MDRRMO Operations Head / Admin');
-  const [role, setRole] = useState<UserRole>('MDRRMO_ADMIN');
-  const [badgeOrIdNumber, setBadgeOrIdNumber] = useState('MDRRMO-ROX-2026');
+  const [position, setPosition] = useState('Verified Resident Citizen');
+  const [role, setRole] = useState<UserRole>('RESIDENT');
+  const [badgeOrIdNumber, setBadgeOrIdNumber] = useState(`RES-${ROXAS_BARANGAYS[0].slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
   const [confirmPasscode, setConfirmPasscode] = useState('');
@@ -232,11 +232,9 @@ export const CreateAccountModal: React.FC = () => {
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
               1. Government Agency / Operating Unit <span className="text-rose-500">*</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               {[
                 { type: 'RESIDENT' as AgencyType, label: 'Resident Citizen', icon: UserPlus, color: 'hover:border-emerald-500' },
-                { type: 'MDRRMO' as AgencyType, label: 'MDRRMO (Emergency Ops)', icon: ShieldAlert, color: 'hover:border-orange-500' },
-                { type: 'LGU' as AgencyType, label: 'Municipal LGU (Admin)', icon: Landmark, color: 'hover:border-emerald-500' },
                 { type: 'ADMIN' as AgencyType, label: 'System Admin', icon: Settings, color: 'hover:border-purple-500' },
               ].map((ag) => {
                 const Icon = ag.icon;
@@ -253,13 +251,7 @@ export const CreateAccountModal: React.FC = () => {
                       }`}
                   >
                     <div className={`p-2 rounded-lg flex items-center justify-center ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                      {ag.type === 'MDRRMO' ? (
-                        <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-4 h-4 rounded-full object-contain" />
-                      ) : ag.type === 'LGU' ? (
-                        <img src="/lgu_logo.png" alt="LGU" className="w-4 h-4 rounded-full object-contain" />
-                      ) : (
-                        <Icon className="w-4 h-4" />
-                      )}
+                      <Icon className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-bold truncate">{ag.label}</div>
@@ -268,6 +260,10 @@ export const CreateAccountModal: React.FC = () => {
                   </button>
                 );
               })}
+            </div>
+            <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+              <span className="font-semibold text-slate-700">Official Fixed Accounts: </span>
+              <span>Ang MDRRMO (<code className="text-orange-700 font-mono">mdrrmoroxas@gmail.com</code>) at LGU (<code className="text-emerald-700 font-mono">lguroxas@gmail.com</code>) ay permanente at fixed accounts na sa system.</span>
             </div>
           </div>
 

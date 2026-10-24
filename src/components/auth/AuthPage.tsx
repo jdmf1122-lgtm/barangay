@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { AgencyType, UserRole, ROXAS_BARANGAYS, User as UserType } from '../../types';
+import { MDRRMO_FIXED_USER, LGU_FIXED_USER } from '../../data/seedData';
 
 const POSITION_SUGGESTIONS: Record<AgencyType, string[]> = {
   RESIDENT: [
@@ -173,15 +174,13 @@ export const AuthPage: React.FC = () => {
   const [showLoginPassword, setShowLoginPassword] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Register Form States
+  // Register Form States (Resident Citizens Only)
   const [regName, setRegName] = useState('');
-  const [regAgencyType, setRegAgencyType] = useState<AgencyType>('MDRRMO');
   const [regBarangay, setRegBarangay] = useState<string>(ROXAS_BARANGAYS[0]);
   const [isBarangayDropdownOpen, setIsBarangayDropdownOpen] = useState(false);
   const barangayDropdownRef = useRef<HTMLDivElement>(null);
-  const [regPosition, setRegPosition] = useState('MDRRMO Operations Head / Admin');
-  const [regRole, setRegRole] = useState<UserRole>('MDRRMO_ADMIN');
-  const [regBadge, setRegBadge] = useState('MDRRMO-ROX-2026');
+  const [regPosition] = useState('Verified Resident Citizen');
+  const [regBadge, setRegBadge] = useState(`RES-${ROXAS_BARANGAYS[0].slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
   const [regEmail, setRegEmail] = useState('');
   const [regPasscode, setRegPasscode] = useState('');
   const [regConfirmPasscode, setRegConfirmPasscode] = useState('');
@@ -204,46 +203,6 @@ export const AuthPage: React.FC = () => {
   }, [isBarangayDropdownOpen]);
 
   const [regError, setRegError] = useState<string | null>(null);
-
-  const handleAgencyChange = (newAgency: AgencyType) => {
-    setRegAgencyType(newAgency);
-    const suggestions = POSITION_SUGGESTIONS[newAgency] || [];
-    setRegPosition(suggestions[0] || '');
-
-    switch (newAgency) {
-      case 'RESIDENT':
-        setRegRole('RESIDENT');
-        setRegBadge(`RES-${(regBarangay || 'SAQ').slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
-        break;
-      case 'MDRRMO':
-        setRegRole('MDRRMO_ADMIN');
-        setRegBadge(`MDRRMO-ROX-${Math.floor(100 + Math.random() * 900)}`);
-        break;
-      case 'LGU':
-        setRegRole('LGU_ADMINISTRATOR');
-        setRegBadge(`LGU-ROX-${Math.floor(100 + Math.random() * 900)}`);
-        break;
-      case 'ADMIN':
-        setRegRole('SYSTEM_ADMIN');
-        setRegBadge(`SYS-ADM-${Math.floor(10 + Math.random() * 90)}`);
-        break;
-    }
-  };
-
-  const getAgencyName = (): string => {
-    switch (regAgencyType) {
-      case 'RESIDENT':
-        return `Barangay ${regBarangay} Resident Citizen`;
-      case 'MDRRMO':
-        return 'MDRRMO Roxas Emergency & Rescue Operations';
-      case 'LGU':
-        return 'Municipal Government of Roxas (LGU Admin)';
-      case 'ADMIN':
-        return 'System Administration Master Node';
-      default:
-        return 'Municipal Government of Roxas';
-    }
-  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,11 +228,6 @@ export const AuthPage: React.FC = () => {
       return;
     }
 
-    if (!regPosition.trim()) {
-      setRegError('Please provide your position or designation.');
-      return;
-    }
-
     if (!regPasscode.trim()) {
       setRegError('Please set a password / passcode for your account.');
       return;
@@ -294,19 +248,19 @@ export const AuthPage: React.FC = () => {
       return;
     }
 
-    const cleanEmail = regEmail.trim() || `${regName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@${regAgencyType === 'MDRRMO' ? 'mdrrmo.' : ''}roxas.gov.ph`;
+    const cleanEmail = regEmail.trim() || `${regName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@resident.roxas.ph`;
 
     const newUserPayload: Omit<UserType, 'id'> & { passcode: string; avatarUrl?: string } = {
       name: regName.trim(),
-      role: regRole,
-      agencyType: regAgencyType,
-      agencyName: getAgencyName(),
-      barangay: regAgencyType === 'RESIDENT' ? regBarangay : undefined,
+      role: 'RESIDENT',
+      agencyType: 'RESIDENT',
+      agencyName: `Barangay ${regBarangay} Resident Citizen`,
+      barangay: regBarangay,
       position: regPosition.trim(),
-      badgeOrIdNumber: regBadge.trim() || `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+      badgeOrIdNumber: regBadge.trim() || `RES-${regBarangay.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
       email: cleanEmail,
       passcode: regPasscode.trim(),
-      avatarUrl: regAgencyType === 'MDRRMO' ? '/mdrrmo_logo.png' : regAgencyType === 'LGU' ? '/lgu_logo.png' : undefined,
+      avatarUrl: '/bconnect_logo_transparent.png',
     };
 
     try {
@@ -317,58 +271,46 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  // Quick Agency Demo Access shortcuts (corresponding to the 3 round icons)
+  // Quick Agency Demo Access shortcuts (corresponding to fixed accounts)
   const handleQuickRoleAccess = (type: 'RESIDENT' | 'MDRRMO' | 'LGU') => {
-    const existing = (users || []).find((u) => u.agencyType === type);
-    if (existing) {
-      setLoginIdentifier(existing.email || existing.badgeOrIdNumber || existing.name);
-      setLoginPasscode(existing.passcode || '');
-      login(existing);
+    if (type === 'MDRRMO') {
+      const fixedMdr = (users || []).find((u) => u.email?.toLowerCase() === 'mdrrmoroxas@gmail.com') || MDRRMO_FIXED_USER;
+      setLoginIdentifier(fixedMdr.email);
+      setLoginPasscode('mdrrmo2026');
+      login(fixedMdr);
       return;
     }
 
-    // Default fast login payloads if no stored user in local db
-    if (type === 'RESIDENT') {
-      const demoRes: UserType = {
-        id: 'USR-RES-DEMO',
-        name: 'Maria Santos (Resident Citizen)',
-        role: 'RESIDENT',
-        agencyType: 'RESIDENT',
-        agencyName: 'Barangay San Aquilino Resident Citizen',
-        barangay: 'San Aquilino',
-        position: 'Verified Resident Citizen',
-        badgeOrIdNumber: 'RES-SAQ-2026',
-        email: 'resident.roxas@orientalmindoro.ph',
-        avatarUrl: '/bconnect_logo_transparent.png'
-      };
-      login(demoRes);
-    } else if (type === 'MDRRMO') {
-      const demoMdr: UserType = {
-        id: 'USR-MDR-DEMO',
-        name: 'Capt. Edgardo Ramos',
-        role: 'MDRRMO_ADMIN',
-        agencyType: 'MDRRMO',
-        agencyName: 'MDRRMO Roxas Emergency Operations Center',
-        position: 'MDRRMO Operations Head / Admin',
-        badgeOrIdNumber: 'MDRRMO-ROX-01',
-        email: 'mdrrmo@roxas.gov.ph',
-        avatarUrl: '/mdrrmo_logo.png'
-      };
-      login(demoMdr);
-    } else {
-      const demoLgu: UserType = {
-        id: 'USR-LGU-DEMO',
-        name: 'Hon. Mayor Office Admin',
-        role: 'LGU_ADMINISTRATOR',
-        agencyType: 'LGU',
-        agencyName: 'Municipal Government of Roxas (LGU Admin)',
-        position: 'Municipal Administrator (LGU Admin)',
-        badgeOrIdNumber: 'LGU-ROX-ADMIN',
-        email: 'admin@roxas.gov.ph',
-        avatarUrl: '/lgu_logo.png'
-      };
-      login(demoLgu);
+    if (type === 'LGU') {
+      const fixedLgu = (users || []).find((u) => u.email?.toLowerCase() === 'lguroxas@gmail.com') || LGU_FIXED_USER;
+      setLoginIdentifier(fixedLgu.email);
+      setLoginPasscode('lguroxas2026');
+      login(fixedLgu);
+      return;
     }
+
+    // Resident Citizen fast login
+    const existingRes = (users || []).find((u) => u.agencyType === 'RESIDENT');
+    if (existingRes) {
+      setLoginIdentifier(existingRes.email || existingRes.badgeOrIdNumber || existingRes.name);
+      setLoginPasscode(existingRes.passcode || '');
+      login(existingRes);
+      return;
+    }
+
+    const demoRes: UserType = {
+      id: 'USR-RES-DEMO',
+      name: 'Maria Santos (Resident Citizen)',
+      role: 'RESIDENT',
+      agencyType: 'RESIDENT',
+      agencyName: 'Barangay San Aquilino Resident Citizen',
+      barangay: 'San Aquilino',
+      position: 'Verified Resident Citizen',
+      badgeOrIdNumber: 'RES-SAQ-2026',
+      email: 'resident.roxas@orientalmindoro.ph',
+      avatarUrl: '/bconnect_logo_transparent.png'
+    };
+    login(demoRes);
   };
 
   return (
@@ -485,12 +427,12 @@ export const AuthPage: React.FC = () => {
             <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
               isDarkMode ? 'text-white drop-shadow-xs' : 'text-[#0c2e1f]'
             }`}>
-              {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
+              {authMode === 'login' ? 'Welcome Back' : 'Resident Portal'}
             </h2>
             <p className={`text-xs sm:text-sm font-medium mt-1 ${
               isDarkMode ? 'text-emerald-200/90' : 'text-slate-500'
             }`}>
-              {authMode === 'login' ? 'Sign in to continue' : 'Sign up to get started'}
+              {authMode === 'login' ? 'Sign in to continue' : 'Register as a Resident Citizen of Roxas'}
             </p>
           </div>
 
@@ -526,7 +468,7 @@ export const AuthPage: React.FC = () => {
               }`}
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Register</span>
+              <span>Resident Register</span>
             </button>
           </div>
 
@@ -634,118 +576,58 @@ export const AuthPage: React.FC = () => {
             </form>
           ) : (
             /* =====================================================================
-                TAB 2: REGISTER (SIGN UP)
+                TAB 2: REGISTER (SIGN UP - RESIDENT CITIZENS ONLY)
                 ===================================================================== */
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              {/* Agency Type Selector Chips */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 px-1">
-                  Agency / Department
+              {/* Barangay Dropdown (from all 20 Roxas barangays) */}
+              <div className="relative" ref={barangayDropdownRef}>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 px-1 mb-1">
+                  Home Barangay in Roxas (Pumili ng Barangay)
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { type: 'RESIDENT' as AgencyType, label: 'Resident', icon: User },
-                    { type: 'MDRRMO' as AgencyType, label: 'MDRRMO', icon: ShieldAlert },
-                    { type: 'LGU' as AgencyType, label: 'LGU Admin', icon: Landmark }
-                  ].map((ag) => {
-                    const isSelected = regAgencyType === ag.type;
-                    const Icon = ag.icon;
-                    return (
+                <button
+                  type="button"
+                  onClick={() => setIsBarangayDropdownOpen((prev) => !prev)}
+                  className="neo-input-pill w-full rounded-full px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between cursor-pointer"
+                >
+                  <span className="truncate">Barangay {regBarangay}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-emerald-700 transition-transform ${
+                      isBarangayDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {isBarangayDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-emerald-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto py-1 divide-y divide-emerald-50">
+                    {ROXAS_BARANGAYS.map((b) => (
                       <button
-                        key={ag.type}
+                        key={b}
                         type="button"
-                        onClick={() => handleAgencyChange(ag.type)}
-                        className={`py-2 px-2 rounded-2xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500/30'
-                            : 'neo-squircle-btn text-slate-600 hover:text-emerald-950'
+                        onClick={() => {
+                          setRegBarangay(b);
+                          setRegBadge(`RES-${b.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
+                          setIsBarangayDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-2 text-xs text-left flex items-center justify-between hover:bg-emerald-50 cursor-pointer ${
+                          regBarangay === b ? 'bg-emerald-50 text-emerald-900 font-bold' : 'text-slate-700'
                         }`}
                       >
-                        {ag.type === 'MDRRMO' ? (
-                          <img
-                            src="/mdrrmo_logo.png"
-                            alt="MDRRMO"
-                            className="w-5 h-5 rounded-full object-contain"
-                          />
-                        ) : ag.type === 'LGU' ? (
-                          <img
-                            src="/lgu_logo.png"
-                            alt="LGU"
-                            className="w-5 h-5 rounded-full object-contain"
-                          />
-                        ) : (
-                          <Icon className="w-4 h-4" />
-                        )}
-                        <span className="text-[11px]">{ag.label}</span>
+                        <span>Barangay {b}</span>
+                        {regBarangay === b && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                       </button>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {/* Barangay Dropdown (if resident citizen) */}
-              {regAgencyType === 'RESIDENT' && (
-                <div className="relative" ref={barangayDropdownRef}>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 px-1 mb-1">
-                    Home Barangay in Roxas
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsBarangayDropdownOpen((prev) => !prev)}
-                    className="neo-input-pill w-full rounded-full px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="truncate">Barangay {regBarangay}</span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-emerald-700 transition-transform ${
-                        isBarangayDropdownOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
-
-                  {isBarangayDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-emerald-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto py-1 divide-y divide-emerald-50">
-                      {ROXAS_BARANGAYS.map((b) => (
-                        <button
-                          key={b}
-                          type="button"
-                          onClick={() => {
-                            setRegBarangay(b);
-                            setRegBadge(`RES-${b.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
-                            setIsBarangayDropdownOpen(false);
-                          }}
-                          className={`w-full px-4 py-2 text-xs text-left flex items-center justify-between hover:bg-emerald-50 cursor-pointer ${
-                            regBarangay === b ? 'bg-emerald-50 text-emerald-900 font-bold' : 'text-slate-700'
-                          }`}
-                        >
-                          <span>Barangay {b}</span>
-                          {regBarangay === b && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Full Name Input */}
               <div className="neo-input-pill rounded-full flex items-center px-4 py-3 gap-3">
                 <User className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
                 <input
                   type="text"
-                  placeholder="Official Full Name"
+                  placeholder="Official Full Name (Pangalan)"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                />
-              </div>
-
-              {/* Position / Designation Input */}
-              <div className="neo-input-pill rounded-full flex items-center px-4 py-3 gap-3">
-                <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
-                <input
-                  type="text"
-                  placeholder="Position or Designation"
-                  value={regPosition}
-                  onChange={(e) => setRegPosition(e.target.value)}
                   className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
                 />
               </div>
@@ -755,7 +637,7 @@ export const AuthPage: React.FC = () => {
                 <Mail className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
                 <input
                   type="email"
-                  placeholder="Official Email Address"
+                  placeholder="Email Address (e.g. resident@gmail.com)"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
@@ -812,7 +694,7 @@ export const AuthPage: React.FC = () => {
                   {regAgreeTerms && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                 </div>
                 <span className="text-[11px] font-medium text-slate-600">
-                  I certify that the provided credentials are valid and agree to official governance terms.
+                  I certify that I am a resident of Roxas, Oriental Mindoro and agree to Data Privacy terms.
                 </span>
               </label>
 
@@ -822,7 +704,7 @@ export const AuthPage: React.FC = () => {
                 type="submit"
                 className="neo-btn-pill w-full py-4 px-6 rounded-full flex items-center justify-center relative font-bold text-base text-white tracking-wide cursor-pointer group mt-2"
               >
-                <span>Register & Sign In</span>
+                <span>Register as Resident</span>
                 <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center absolute right-3 shadow-inner group-hover:translate-x-0.5 transition-transform">
                   <ArrowRight className="w-4 h-4 text-white stroke-[2.5]" />
                 </div>
