@@ -160,7 +160,7 @@ export const AuthPage: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Remember Me checkbox
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Forgot Password modal
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -498,14 +498,19 @@ export const AuthPage: React.FC = () => {
               TAB 1: SIGN IN (LOG IN)
               ===================================================================== */}
           {authMode === 'login' ? (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
               {/* Username or Email Input */}
               <div className="neo-input-pill rounded-full flex items-center px-4 py-3.5 gap-3">
                 <User className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
                 <input
                   id="input-login-email"
+                  name="user_login_credential_field"
                   type="text"
-                  autoComplete="username"
+                  autoComplete="off"
+                  readOnly
+                  onFocus={(e) => { e.target.readOnly = false; }}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
                   placeholder="Username or Email"
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
@@ -518,8 +523,13 @@ export const AuthPage: React.FC = () => {
                 <KeyRound className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
                 <input
                   id="input-login-passcode"
+                  name="user_password_credential_field"
                   type={showLoginPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
+                  readOnly
+                  onFocus={(e) => { e.target.readOnly = false; }}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
                   placeholder="Password"
                   value={loginPasscode}
                   onChange={(e) => setLoginPasscode(e.target.value)}
