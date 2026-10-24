@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  Shield, 
+import {
+  Bell,
+  Shield,
   ShieldAlert,
-  UserCheck, 
-  Building2, 
-  Landmark, 
-  PlusCircle, 
-  CheckCircle2, 
-  AlertTriangle, 
-  FileText, 
-  Search, 
-  LogOut, 
+  UserCheck,
+  Building2,
+  Landmark,
+  PlusCircle,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+  Search,
+  LogOut,
   Edit3,
   Send,
   Radio,
@@ -127,20 +127,21 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
       case 'submit_report': return 'Citizen Incident Report & Evidence Submission';
       case 'my_reports': return 'Citizen Reports & Resolution Tracker';
 
-      case 'dashboard': 
+      case 'dashboard':
         if (currentUser.agencyType === 'MDRRMO') {
-          return currentUser.role === 'MDRRMO_ADMIN' 
-            ? 'MDRRMO Operations Hub & Emergency Dispatch' 
+          return currentUser.role === 'MDRRMO_ADMIN'
+            ? 'MDRRMO Operations Hub & Emergency Dispatch'
             : 'MDRRMO Incident Response & Triage';
         }
         if (currentUser.agencyType === 'LGU') {
-          return currentUser.role === 'LGU_ADMINISTRATOR' 
-            ? 'LGU Executive Administration Dashboard' 
+          return currentUser.role === 'LGU_ADMINISTRATOR'
+            ? 'LGU Executive Administration Dashboard'
             : 'LGU Departmental Action & Grievance Desk';
         }
-      case 'cases': 
+      case 'cases':
         if (currentUser.agencyType === 'MDRRMO') return 'Crash Blotter & Emergency Incident Queue';
         return 'Incident & Complaint Ledger';
+      case 'incident_graph': return 'MDRRMO Resident Incident Reports Graph';
       case 'transparency': return 'Inter-Agency Transparency & Oversight';
       case 'annual_narrative': return 'Case Narrative & Governance Report';
       case 'standard_reports': return 'Standard Operational & KP Reports';
@@ -153,9 +154,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   return (
     <header
       id="bconnect-main-header"
-      className={`h-16 bg-white border-b flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-2xs transition-colors ${
-        isMdrrmo ? 'border-orange-100' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
-      }`}
+      className={`h-16 bg-white border-b flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-2xs transition-colors ${isMdrrmo ? 'border-orange-100' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
+        }`}
     >
       {/* Left: Mobile hamburger menu & view title */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -163,13 +163,12 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           id="btn-toggle-mobile-sidebar"
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`lg:hidden p-2 -ml-1 rounded-xl transition cursor-pointer flex-shrink-0 ${
-            isMdrrmo
+          className={`lg:hidden p-2 -ml-1 rounded-xl transition cursor-pointer flex-shrink-0 ${isMdrrmo
               ? 'text-orange-800 hover:text-orange-950 hover:bg-orange-100/70'
               : isLgu
-              ? 'text-emerald-900 hover:text-[#062612] hover:bg-emerald-100/80'
-              : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70'
-          }`}
+                ? 'text-emerald-900 hover:text-[#062612] hover:bg-emerald-100/80'
+                : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70'
+            }`}
           aria-label="Open navigation menu"
           title="Toggle Navigation Menu"
         >
@@ -203,25 +202,22 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
         )}
 
         <h2
-          className={`font-extrabold text-xs sm:text-sm md:text-base tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md ${
-            isMdrrmo ? 'text-slate-900' : isLgu ? 'text-[#062612]' : 'text-emerald-950'
-          }`}
+          className={`font-extrabold text-xs sm:text-sm md:text-base tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md ${isMdrrmo ? 'text-slate-900' : isLgu ? 'text-[#062612]' : 'text-emerald-950'
+            }`}
         >
           {getTabLabel(activeTab)}
         </h2>
         <span
-          className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider flex-shrink-0 ${
-            isMdrrmo
+          className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider flex-shrink-0 ${isMdrrmo
               ? 'bg-orange-50 text-orange-700 border-orange-200'
               : isLgu
-              ? 'bg-emerald-50 text-emerald-900 border-2 border-amber-400/60'
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-          }`}
+                ? 'bg-emerald-50 text-emerald-900 border-2 border-amber-400/60'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-              isMdrrmo ? 'bg-orange-500' : isLgu ? 'bg-amber-400' : 'bg-emerald-500'
-            }`}
+            className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMdrrmo ? 'bg-orange-500' : isLgu ? 'bg-amber-400' : 'bg-emerald-500'
+              }`}
           ></span>
           System Online
         </span>
@@ -232,9 +228,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
         {/* Search Input */}
         <div className="relative hidden md:block">
           <Search
-            className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${
-              isMdrrmo ? 'text-orange-600' : isLgu ? 'text-[#0f532a]' : 'text-emerald-600'
-            }`}
+            className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${isMdrrmo ? 'text-orange-600' : isLgu ? 'text-[#0f532a]' : 'text-emerald-600'
+              }`}
           />
           <input
             id="global-search-input"
@@ -242,13 +237,12 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             placeholder="Search Case ID or Person..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`border rounded-xl pl-8 pr-4 py-1.5 text-xs text-slate-800 w-44 lg:w-60 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
-              isMdrrmo
+            className={`border rounded-xl pl-8 pr-4 py-1.5 text-xs text-slate-800 w-44 lg:w-60 focus:bg-white focus:outline-none focus:ring-2 transition-all ${isMdrrmo
                 ? 'bg-orange-50/50 border-orange-200 placeholder-orange-700/50 focus:ring-orange-500'
                 : isLgu
-                ? 'bg-emerald-50/60 border-emerald-200 placeholder-emerald-800/50 focus:ring-emerald-700 focus:border-amber-400'
-                : 'bg-emerald-50/50 border-emerald-200 placeholder-emerald-700/50 focus:ring-emerald-500'
-            }`}
+                  ? 'bg-emerald-50/60 border-emerald-200 placeholder-emerald-800/50 focus:ring-emerald-700 focus:border-amber-400'
+                  : 'bg-emerald-50/50 border-emerald-200 placeholder-emerald-700/50 focus:ring-emerald-500'
+              }`}
           />
         </div>
 
@@ -269,19 +263,18 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           <button
             id="btn-notifications-bell"
             onClick={toggleNotif}
-            className={`p-2 rounded-full transition cursor-pointer relative border ${
-              isNotifOpen
+            className={`p-2 rounded-full transition cursor-pointer relative border ${isNotifOpen
                 ? isMdrrmo
                   ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
                   : isLgu
-                  ? 'bg-[#0f532a] text-amber-300 border-amber-400 shadow-sm'
-                  : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    ? 'bg-[#0f532a] text-amber-300 border-amber-400 shadow-sm'
+                    : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                 : isMdrrmo
-                ? 'bg-orange-50 hover:bg-orange-100 text-orange-800 border-orange-200/60'
-                : isLgu
-                ? 'bg-emerald-50 hover:bg-emerald-100 text-[#0f532a] border border-emerald-200/80'
-                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200/60'
-            }`}
+                  ? 'bg-orange-50 hover:bg-orange-100 text-orange-800 border-orange-200/60'
+                  : isLgu
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-[#0f532a] border border-emerald-200/80'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200/60'
+              }`}
             title={`${roleMeta.centerTitle} (${currentUser.agencyType})`}
             aria-expanded={isNotifOpen}
             aria-haspopup="dialog"
@@ -298,38 +291,35 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           {isNotifOpen && (
             <>
               {/* Backdrop for closing popover on mobile/desktop outside click */}
-              <div 
+              <div
                 className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
                 onClick={() => setIsNotifOpen(false)}
                 aria-hidden="true"
               />
 
-              <div 
-                id="notifications-popover" 
-                className={`fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-lg sm:max-w-none mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-2xl border z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150 ${
-                  isMdrrmo ? 'border-orange-200' : isLgu ? 'border-2 border-amber-400/80 shadow-2xl' : 'border-emerald-200'
-                }`}
+              <div
+                id="notifications-popover"
+                className={`fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-lg sm:max-w-none mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-2xl border z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150 ${isMdrrmo ? 'border-orange-200' : isLgu ? 'border-2 border-amber-400/80 shadow-2xl' : 'border-emerald-200'
+                  }`}
               >
                 {/* Header Box Tailored to Role */}
                 <div
-                  className={`p-3.5 text-white border-b flex-shrink-0 ${
-                    isMdrrmo
+                  className={`p-3.5 text-white border-b flex-shrink-0 ${isMdrrmo
                       ? 'bg-gradient-to-r from-slate-950 via-[#1c2c44] to-orange-950 border-orange-800/80'
                       : isLgu
-                      ? 'bg-gradient-to-r from-[#062612] via-[#0f532a] to-[#082e16] border-amber-400/60'
-                      : 'bg-gradient-to-r from-emerald-900 to-teal-950 border-emerald-800'
-                  }`}
+                        ? 'bg-gradient-to-r from-[#062612] via-[#0f532a] to-[#082e16] border-amber-400/60'
+                        : 'bg-gradient-to-r from-emerald-900 to-teal-950 border-emerald-800'
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className={`p-1 rounded-lg flex-shrink-0 ${
-                          isMdrrmo
+                        className={`p-1 rounded-lg flex-shrink-0 ${isMdrrmo
                             ? 'bg-orange-800/80 text-orange-200'
                             : isLgu
-                            ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                            : 'bg-emerald-800/80 text-emerald-300'
-                        }`}
+                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                              : 'bg-emerald-800/80 text-emerald-300'
+                          }`}
                       >
                         <Bell className="w-3.5 h-3.5" />
                       </div>
@@ -338,9 +328,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           {roleMeta.centerTitle}
                         </h4>
                         <p
-                          className={`text-[10px] truncate ${
-                            isMdrrmo ? 'text-amber-200/90' : isLgu ? 'text-amber-300 font-bold' : 'text-emerald-300'
-                          }`}
+                          className={`text-[10px] truncate ${isMdrrmo ? 'text-amber-200/90' : isLgu ? 'text-amber-300 font-bold' : 'text-emerald-300'
+                            }`}
                         >
                           {roleMeta.badgeLabel}
                         </p>
@@ -357,13 +346,12 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                         id="btn-close-notifications"
                         type="button"
                         onClick={() => setIsNotifOpen(false)}
-                        className={`p-1 rounded-lg transition cursor-pointer ${
-                          isMdrrmo
+                        className={`p-1 rounded-lg transition cursor-pointer ${isMdrrmo
                             ? 'text-orange-200 hover:text-white hover:bg-orange-800/60'
                             : isLgu
-                            ? 'text-amber-200 hover:text-white hover:bg-emerald-800/60'
-                            : 'text-emerald-300 hover:text-white hover:bg-emerald-800/60'
-                        }`}
+                              ? 'text-amber-200 hover:text-white hover:bg-emerald-800/60'
+                              : 'text-emerald-300 hover:text-white hover:bg-emerald-800/60'
+                          }`}
                         aria-label="Close notification panel"
                         title="Close"
                       >
@@ -374,55 +362,51 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
 
                   {/* Sub-header text */}
                   <p
-                    className={`text-[10px] mt-1.5 line-clamp-1 ${
-                      isMdrrmo ? 'text-orange-100/80' : isLgu ? 'text-amber-100/90' : 'text-emerald-200/70'
-                    }`}
+                    className={`text-[10px] mt-1.5 line-clamp-1 ${isMdrrmo ? 'text-orange-100/80' : isLgu ? 'text-amber-100/90' : 'text-emerald-200/70'
+                      }`}
                   >
                     {roleMeta.subHeader}
                   </p>
 
                   {/* Quick actions row */}
                   <div
-                    className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] gap-2 ${
-                      isMdrrmo ? 'border-orange-800/60' : isLgu ? 'border-amber-400/30' : 'border-emerald-800/60'
-                    }`}
+                    className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] gap-2 ${isMdrrmo ? 'border-orange-800/60' : isLgu ? 'border-amber-400/30' : 'border-emerald-800/60'
+                      }`}
                   >
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => setNotifFilter('ALL')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                          notifFilter === 'ALL'
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${notifFilter === 'ALL'
                             ? isMdrrmo
                               ? 'bg-white text-slate-900 font-black'
                               : isLgu
-                              ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
-                              : 'bg-white text-emerald-950 font-black'
+                                ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
+                                : 'bg-white text-emerald-950 font-black'
                             : isMdrrmo
-                            ? 'text-orange-200 hover:text-white'
-                            : isLgu
-                            ? 'text-amber-200 hover:text-white'
-                            : 'text-emerald-200 hover:text-white'
-                        }`}
+                              ? 'text-orange-200 hover:text-white'
+                              : isLgu
+                                ? 'text-amber-200 hover:text-white'
+                                : 'text-emerald-200 hover:text-white'
+                          }`}
                       >
                         All ({userNotifications?.length || 0})
                       </button>
                       <button
                         type="button"
                         onClick={() => setNotifFilter('UNREAD')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                          notifFilter === 'UNREAD'
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${notifFilter === 'UNREAD'
                             ? isMdrrmo
                               ? 'bg-white text-slate-900 font-black'
                               : isLgu
-                              ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
-                              : 'bg-white text-emerald-950 font-black'
+                                ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
+                                : 'bg-white text-emerald-950 font-black'
                             : isMdrrmo
-                            ? 'text-orange-200 hover:text-white'
-                            : isLgu
-                            ? 'text-amber-200 hover:text-white'
-                            : 'text-emerald-200 hover:text-white'
-                        }`}
+                              ? 'text-orange-200 hover:text-white'
+                              : isLgu
+                                ? 'text-amber-200 hover:text-white'
+                                : 'text-emerald-200 hover:text-white'
+                          }`}
                       >
                         Unread ({unreadNotifCount})
                       </button>
@@ -434,9 +418,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           id="btn-mark-all-read"
                           type="button"
                           onClick={markAllNotificationsAsRead}
-                          className={`text-[10px] font-semibold cursor-pointer underline underline-offset-2 ${
-                            isMdrrmo ? 'text-amber-200 hover:text-white' : isLgu ? 'text-amber-300 hover:text-amber-100 font-bold' : 'text-emerald-300 hover:text-white'
-                          }`}
+                          className={`text-[10px] font-semibold cursor-pointer underline underline-offset-2 ${isMdrrmo ? 'text-amber-200 hover:text-white' : isLgu ? 'text-amber-300 hover:text-amber-100 font-bold' : 'text-emerald-300 hover:text-white'
+                            }`}
                         >
                           Mark read
                         </button>
@@ -450,13 +433,12 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                             setIsNotifOpen(false);
                             setIsCreateNotifModalOpen(true);
                           }}
-                          className={`px-2 py-0.5 text-white text-[10px] font-bold rounded flex items-center gap-1 transition cursor-pointer shadow-xs ${
-                            isMdrrmo
+                          className={`px-2 py-0.5 text-white text-[10px] font-bold rounded flex items-center gap-1 transition cursor-pointer shadow-xs ${isMdrrmo
                               ? 'bg-orange-600 hover:bg-orange-500'
                               : isLgu
-                              ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] font-black'
-                              : 'bg-emerald-600 hover:bg-emerald-500'
-                          }`}
+                                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] font-black'
+                                : 'bg-emerald-600 hover:bg-emerald-500'
+                            }`}
                           title="Send / Dispatch Alert for this Role"
                         >
                           <Send className="w-2.5 h-2.5" />
@@ -494,9 +476,8 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           }
                           setIsNotifOpen(false);
                         }}
-                        className={`p-3 text-xs hover:bg-emerald-50/60 cursor-pointer transition flex items-start gap-2.5 bg-white ${
-                          !n.isRead ? 'border-l-3 border-l-emerald-600 bg-emerald-50/20' : ''
-                        }`}
+                        className={`p-3 text-xs hover:bg-emerald-50/60 cursor-pointer transition flex items-start gap-2.5 bg-white ${!n.isRead ? 'border-l-3 border-l-emerald-600 bg-emerald-50/20' : ''
+                          }`}
                       >
                         <div className="mt-0.5 shrink-0">
                           {n.type === 'pending_alert' ? (
@@ -588,22 +569,20 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           <button
             id="btn-role-switcher"
             onClick={toggleRoleDropdown}
-            className={`flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition cursor-pointer text-left ${
-              isRoleDropdownOpen
+            className={`flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition cursor-pointer text-left ${isRoleDropdownOpen
                 ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-400/30'
                 : 'bg-emerald-50/60 hover:bg-emerald-100 border-emerald-200'
-            }`}
+              }`}
             title="View Logged-in Profile"
             aria-expanded={isRoleDropdownOpen}
             aria-haspopup="dialog"
           >
-            <div className={`rounded-lg overflow-hidden flex items-center justify-center ${
-              currentUser.agencyType === 'MDRRMO'
+            <div className={`rounded-lg overflow-hidden flex items-center justify-center ${currentUser.agencyType === 'MDRRMO'
                 ? 'bg-white border border-orange-300 w-7 h-7 p-0.5'
                 : currentUser.agencyType === 'LGU'
-                ? 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
-                : 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
-            }`}>
+                  ? 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
+                  : 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
+              }`}>
               {currentUser.agencyType === 'MDRRMO' ? (
                 <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-full h-full object-contain" />
               ) : currentUser.agencyType === 'LGU' ? (
@@ -628,7 +607,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           {isRoleDropdownOpen && (
             <>
               {/* Backdrop */}
-              <div 
+              <div
                 className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
                 onClick={() => setIsRoleDropdownOpen(false)}
                 aria-hidden="true"

@@ -5,11 +5,11 @@ import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
 import { Case, CaseStatus, TimelineEvent, AgencyType, UserRole, ROXAS_BARANGAYS } from '../types';
 import { sendAutomatedResponderSMS, startSmsResendInterval, stopSmsResendInterval } from '../utils/smsService';
-import { 
-  getEscalationConfig, 
-  sendLguEscalationSms, 
-  formatElapsedTime, 
-  isCaseEligibleForEscalation 
+import {
+  getEscalationConfig,
+  sendLguEscalationSms,
+  formatElapsedTime,
+  isCaseEligibleForEscalation
 } from '../utils/escalationService';
 const isConsolidatedCase = (_c?: any) => false;
 
@@ -81,7 +81,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_notifs_sync');
         bc.postMessage({ type: 'NEW_NOTIFICATION', payload: newNotif });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     // Remote network broadcast
     try {
@@ -90,7 +90,7 @@ export const useCases = () => {
         event: 'notif_event',
         payload: { type: 'NEW_NOTIFICATION', data: newNotif }
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const createCase = (data: Partial<Case>): string => {
@@ -99,6 +99,7 @@ export const useCases = () => {
       console.warn('[Access Control] Unauthorized: LGU and MDRRMO accounts cannot submit incident reports. Only residents are permitted.');
       return '';
     }
+    const year = new Date().getFullYear();
     let maxNum = 0;
     (cases || []).forEach((c) => {
       const match = c.id?.match(/BC-(\d{4})-(\d+)/);
@@ -235,7 +236,7 @@ export const useCases = () => {
         }).catch((netErr) => {
           console.warn('Backend sync notice:', netErr);
         });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Instant local cross-tab broadcast (0ms latency)
@@ -244,7 +245,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_cases_sync');
         bc.postMessage({ type: 'NEW_CASE', payload: newCaseItem });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     // Remote network broadcast
     try {
@@ -253,7 +254,7 @@ export const useCases = () => {
         event: 'case_event',
         payload: { type: 'NEW_CASE', data: newCaseItem }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     logActivity('CASE_CREATED', caseId, `Registered new case ${caseId} (${newCaseItem.title}) at ${currentUser.agencyName}`);
 
@@ -365,7 +366,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -373,7 +374,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })
@@ -422,7 +423,7 @@ export const useCases = () => {
           const bc = new BroadcastChannel('bconnect_cases_sync');
           bc.postMessage({ type: 'DELETE_CASE', payload: { id: caseId } });
           bc.close();
-        } catch (e) {}
+        } catch (e) { }
       }
 
       try {
@@ -431,7 +432,7 @@ export const useCases = () => {
           event: 'case_event',
           payload: { type: 'DELETE_CASE', data: { id: caseId } }
         });
-      } catch (e) {}
+      } catch (e) { }
 
       return true;
     } catch (err) {
@@ -499,7 +500,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -507,7 +508,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })
@@ -521,8 +522,8 @@ export const useCases = () => {
   };
 
   const escalateIncidentToLgu = async (
-    caseId: string, 
-    elapsedStrOverride?: string, 
+    caseId: string,
+    elapsedStrOverride?: string,
     customReason?: string,
     fallbackCase?: Partial<Case>
   ) => {
@@ -557,7 +558,7 @@ export const useCases = () => {
 
     const now = new Date().toISOString();
     const eventTitle = '🚨 Emergency Case Escalated to LGU';
-    const eventDescription = customReason || 
+    const eventDescription = customReason ||
       `Statutory Escalation Triggered: MDRRMO did not respond or acknowledge the emergency within the required response threshold (${elapsedDisplay}). Automated emergency escalation SMS successfully delivered to ${config.designatedLguName} (${config.designatedLguPhone}). Recommended Action: LGU intervention/review required.`;
 
     const newEvent: TimelineEvent = {
@@ -622,7 +623,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_cases_sync');
         bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCaseRef });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     try {
       supabase.channel('cases_realtime_sync').send({
@@ -630,7 +631,7 @@ export const useCases = () => {
         event: 'case_event',
         payload: { type: 'UPDATE_CASE', data: updatedCaseRef }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     // 4. Show the escalation in the system's activity/audit logs
     logActivity(
@@ -666,12 +667,12 @@ export const useCases = () => {
     if (!targetCase) return;
 
     const now = new Date().toISOString();
-    const actionLabel = 
+    const actionLabel =
       actionType === 'MDRRMO Mobilized' ? '🚨 Executive Directive: Direct MDRRMO Immediate Mobilization' :
-      actionType === 'Municipal Team Dispatched' ? '🚒 Municipal Team Deployed & Dispatched' :
-      actionType === 'Resolved by LGU' ? '✅ Resolved by Municipal LGU Authority' :
-      actionType === 'Dismissed' ? '⚠️ Case Inquired & Dismissed' :
-      '📋 Under Formal LGU Executive Review';
+        actionType === 'Municipal Team Dispatched' ? '🚒 Municipal Team Deployed & Dispatched' :
+          actionType === 'Resolved by LGU' ? '✅ Resolved by Municipal LGU Authority' :
+            actionType === 'Dismissed' ? '⚠️ Case Inquired & Dismissed' :
+              '📋 Under Formal LGU Executive Review';
 
     const newEvent: TimelineEvent = {
       id: `TL-LGU-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -716,7 +717,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -724,7 +725,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })

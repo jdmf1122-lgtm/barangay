@@ -54,8 +54,8 @@ export const MdrrmoDashboard: React.FC = () => {
   // Must strictly be an actual report submitted by a resident citizen (never seed cases or internal blotters)
   const incomingResidentAlerts = safeCases.filter((c) => {
     if (!c) return false;
-    // Exclude seed / demo cases
-    if (c.id?.startsWith('BC-2026-00')) return false;
+    // Exclude seed / demo cases (strictly BC-2026-001 to BC-2026-008)
+    if (c.id && /^BC-2026-00[1-8]$/.test(c.id)) return false;
 
     // Must be reported by a resident citizen
     const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
@@ -218,15 +218,14 @@ export const MdrrmoDashboard: React.FC = () => {
                     )}
 
                     {/* Response Timer & Escalation Monitor */}
-                    <div className={`mt-2.5 p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1.5 ${
-                      c.isEscalatedToLgu
+                    <div className={`mt-2.5 p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1.5 ${c.isEscalatedToLgu
                         ? 'bg-rose-100/90 border-rose-300 text-rose-950 font-bold'
                         : isOverdue
-                        ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold animate-pulse'
-                        : remainingMins <= 30
-                        ? 'bg-amber-50 border-amber-300 text-amber-900 font-medium'
-                        : 'bg-slate-50 border-slate-200 text-slate-700'
-                    }`}>
+                          ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold animate-pulse'
+                          : remainingMins <= 30
+                            ? 'bg-amber-50 border-amber-300 text-amber-900 font-medium'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Timer className={`w-3.5 h-3.5 shrink-0 ${c.isEscalatedToLgu || isOverdue ? 'text-rose-600' : 'text-amber-600'}`} />
                         <span className="truncate">
@@ -235,7 +234,7 @@ export const MdrrmoDashboard: React.FC = () => {
                           ) : isOverdue ? (
                             <span>⚠️ Deadline reached ({elapsed.displayStr} elapsed) • Escalating to LGU</span>
                           ) : (
-                            <span>Timer: <strong>{elapsed.displayStr}</strong> • Escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins/60)}h ${remainingMins%60}m` : `${remainingMins}m`}</span>
+                            <span>Timer: <strong>{elapsed.displayStr}</strong> • Escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins / 60)}h ${remainingMins % 60}m` : `${remainingMins}m`}</span>
                           )}
                         </span>
                       </div>

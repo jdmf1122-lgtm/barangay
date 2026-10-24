@@ -101,8 +101,8 @@ export function isCaseEligibleForEscalation(
 ): boolean {
   if (!c || !config.enabled) return false;
 
-  // Never auto-escalate seed/demo cases (e.g. BC-2026-001 to BC-2026-008)
-  if (c.id?.startsWith('BC-2026-00')) return false;
+  // Never auto-escalate seed/demo cases (strictly BC-2026-001 to BC-2026-008)
+  if (c.id && /^BC-2026-00[1-8]$/.test(c.id)) return false;
 
   // If MDRRMO has already acknowledged, responded, or marked as seen, timer is halted
   if (c.emergencyAlarmAcknowledged) return false;

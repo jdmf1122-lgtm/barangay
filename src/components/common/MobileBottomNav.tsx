@@ -8,7 +8,8 @@ import {
   Clock,
   UserCheck,
   BookOpenCheck,
-  Eye
+  Eye,
+  Share2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
@@ -296,16 +297,16 @@ export const MobileBottomNav: React.FC = () => {
         <span className="text-[10px] mt-0.5 leading-tight">Blotter</span>
       </button>
 
-      {/* 3. GIS Hazard Map */}
+      {/* 3. Resident Cases Graph */}
       <button
         id="mobile-nav-map"
         type="button"
         onClick={() => {
-          setActiveTab('gis_map');
+          setActiveTab('incident_graph');
           setIsMobileMenuOpen(false);
         }}
         className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
-          activeTab === 'gis_map'
+          activeTab === 'incident_graph'
             ? isMdrrmo
               ? 'text-orange-700 font-bold'
               : 'text-emerald-700 font-bold'
@@ -316,16 +317,16 @@ export const MobileBottomNav: React.FC = () => {
       >
         <div
           className={`p-1 rounded-xl transition ${
-            activeTab === 'gis_map'
+            activeTab === 'incident_graph'
               ? isMdrrmo
                 ? 'bg-orange-50'
                 : 'bg-emerald-50'
               : ''
           }`}
         >
-          <Compass className="w-5 h-5" />
+          <Share2 className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">GIS Map</span>
+        <span className="text-[10px] mt-0.5 leading-tight">Cases Graph</span>
       </button>
 
       {/* 4. Menu Drawer Toggle */}

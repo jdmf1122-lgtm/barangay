@@ -1,25 +1,25 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  Share2, 
-  Search, 
-  Layers, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Sparkles, 
-  ExternalLink, 
-  Route, 
-  ArrowRight, 
-  Shield, 
-  Building2, 
-  User, 
-  AlertTriangle, 
-  Move, 
-  Info, 
-  CheckCircle2, 
-  X, 
-  MapPin, 
-  Compass, 
+import {
+  Share2,
+  Search,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Sparkles,
+  ExternalLink,
+  Route,
+  ArrowRight,
+  Shield,
+  Building2,
+  User,
+  AlertTriangle,
+  Move,
+  Info,
+  CheckCircle2,
+  X,
+  MapPin,
+  Compass,
   Network,
   Globe
 } from 'lucide-react';
@@ -41,7 +41,7 @@ export const GraphNetworkView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<GraphCluster | null>(null);
-  
+
   // Interactive Pathfinding state
   const [pathfindingMode, setPathfindingMode] = useState<boolean>(false);
   const [startNodeId, setStartNodeId] = useState<string>('');
@@ -104,41 +104,18 @@ export const GraphNetworkView: React.FC = () => {
       const singleCaseNode = caseNodes[0];
       map.set(singleCaseNode.id, { x: centerX, y: centerY });
 
-      // Layout surrounding nodes radially by role
-      const complainants = graphData.nodes.filter(n => n.type === 'person' && n.subLabel?.includes('Complainant'));
-      complainants.forEach((p, idx) => {
-        map.set(p.id, { x: centerX - 190, y: centerY - 60 + idx * 110 });
-      });
-
-      const respondents = graphData.nodes.filter(n => n.type === 'person' && n.subLabel?.includes('Respondent'));
-      respondents.forEach((p, idx) => {
-        map.set(p.id, { x: centerX + 190, y: centerY - 60 + idx * 110 });
-      });
-
-      const witnesses = graphData.nodes.filter(n => n.type === 'person' && n.subLabel?.includes('Witness'));
-      witnesses.forEach((p, idx) => {
-        map.set(p.id, { x: centerX + 180, y: centerY + 130 + idx * 70 });
-      });
-
-      const barangayNodes = graphData.nodes.filter(n => n.type === 'barangay');
-      barangayNodes.forEach((b, idx) => {
-        map.set(b.id, { x: centerX, y: centerY - 160 + idx * 50 });
+      // Layout surrounding nodes: Resident Reporter on left, MDRRMO on right
+      const residentReporters = graphData.nodes.filter(n => n.type === 'person');
+      residentReporters.forEach((p, idx) => {
+        map.set(p.id, { x: centerX - 200, y: centerY + (idx - (residentReporters.length - 1) / 2) * 80 });
       });
 
       const agencyNodes = graphData.nodes.filter(n => n.type === 'agency');
-      agencyNodes.forEach((a, idx) => {
-        map.set(a.id, { x: centerX - 240 + idx * 90, y: centerY - 170 });
+      agencyNodes.forEach((a) => {
+        map.set(a.id, { x: centerX + 200, y: centerY });
       });
 
-      const locationNodes = graphData.nodes.filter(n => n.type === 'location');
-      locationNodes.forEach((l, idx) => {
-        map.set(l.id, { x: centerX, y: centerY + 170 + idx * 50 });
-      });
 
-      const officialNodes = graphData.nodes.filter(n => n.type === 'official');
-      officialNodes.forEach((o, idx) => {
-        map.set(o.id, { x: centerX + 230, y: centerY - 160 + idx * 60 });
-      });
 
       // Fallback for remaining unmapped nodes
       graphData.nodes.forEach((n, idx) => {
@@ -155,37 +132,26 @@ export const GraphNetworkView: React.FC = () => {
     }
 
     // Structural coordinates for multi-case or all-cases view
+    // Structural coordinates: Central MDRRMO Command Hub
     const agencyCoords: Record<string, { x: number; y: number }> = {
-      'AGENCY-BARANGAY': { x: centerX - 120, y: centerY - 90 },
-      'AGENCY-LGU': { x: centerX - 120, y: centerY + 100 },
-      'AGENCY-DILG': { x: centerX + 120, y: centerY + 100 }
+      'AGENCY-MDRRMO': { x: centerX, y: centerY } // Central Destination Hub
     };
 
-    // Place barangay nodes around barangay agency
-    const barangayNodes = graphData.nodes.filter(n => n.type === 'barangay');
-    barangayNodes.forEach((bNode, bIdx) => {
-      const angle = (bIdx * 2 * Math.PI) / Math.max(1, barangayNodes.length);
-      map.set(bNode.id, {
-        x: centerX - 240 + Math.cos(angle) * 70,
-        y: centerY - 110 + Math.sin(angle) * 70
-      });
-    });
-
-    // Place case nodes in middle perimeter
+    // Place case nodes in inner-middle perimeter around MDRRMO central hub
     caseNodes.forEach((cNode, cIdx) => {
       const angle = (cIdx * 2 * Math.PI) / Math.max(1, caseNodes.length);
-      const dist = 180 + (cIdx % 2 === 0 ? 30 : -20);
+      const dist = 180 + (cIdx % 2 === 0 ? 25 : -25);
       map.set(cNode.id, {
         x: centerX + Math.cos(angle) * dist,
         y: centerY + Math.sin(angle) * dist
       });
     });
 
-    // Place person & official nodes outer ring
-    const personNodes = graphData.nodes.filter(n => n.type === 'person' || n.type === 'official');
+    // Place person nodes outer ring (resident citizens who filed reports)
+    const personNodes = graphData.nodes.filter(n => n.type === 'person');
     personNodes.forEach((pNode, pIdx) => {
       const angle = (pIdx * 2 * Math.PI) / Math.max(1, personNodes.length);
-      const dist = 280 + (pIdx % 3 === 0 ? 30 : -15);
+      const dist = 330 + (pIdx % 3 === 0 ? 25 : -15);
       map.set(pNode.id, {
         x: centerX + Math.cos(angle) * dist,
         y: centerY + Math.sin(angle) * dist
@@ -257,14 +223,12 @@ export const GraphNetworkView: React.FC = () => {
 
   const getNodeColor = (node: GraphNode) => {
     if (node.type === 'case') {
-      if (node.rawCase?.isInvolvingOfficial) return '#ef4444'; // Red
+      if (node.rawCase?.priority === 'Urgent' || node.rawCase?.priority === 'High') return '#ef4444'; // Red
       if (node.rawCase?.status === 'Resolved') return '#10b981'; // Green
       return '#3b82f6'; // Blue
     }
-    if (node.type === 'official') return '#dc2626'; // Deep Red
     if (node.type === 'person') return node.color || '#ea580c'; // Orange
-    if (node.type === 'agency') return '#059669'; // Emerald
-    if (node.type === 'barangay') return '#0d9488'; // Teal
+    if (node.type === 'agency') return '#ea580c'; // MDRRMO Orange
     return '#64748b'; // Slate
   };
 
@@ -344,11 +308,10 @@ export const GraphNetworkView: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-emerald-50/70 p-1 rounded-lg border border-emerald-200/60 overflow-x-auto">
           <button
             onClick={() => setEngineTab('osm_graph')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${
-              engineTab === 'osm_graph'
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${engineTab === 'osm_graph'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-emerald-950 hover:bg-emerald-100/50'
-            }`}
+              }`}
           >
             <Compass className="w-4 h-4" />
             <span>Geospatial Radar (OpenStreetMap)</span>
@@ -359,11 +322,10 @@ export const GraphNetworkView: React.FC = () => {
 
           <button
             onClick={() => setEngineTab('network_graph')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${
-              engineTab === 'network_graph'
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${engineTab === 'network_graph'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-emerald-950 hover:bg-emerald-100/50'
-            }`}
+              }`}
           >
             <Network className="w-4 h-4" />
             <span>Topological Entity Orbit Graph</span>
@@ -377,11 +339,10 @@ export const GraphNetworkView: React.FC = () => {
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start sm:self-auto">
           <button
             onClick={() => setScopeFilter('ACTIVE_ONLY')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-              scopeFilter === 'ACTIVE_ONLY'
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${scopeFilter === 'ACTIVE_ONLY'
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span>Active Cases Only</span>
@@ -392,11 +353,10 @@ export const GraphNetworkView: React.FC = () => {
 
           <button
             onClick={() => setScopeFilter('ALL')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-              scopeFilter === 'ALL'
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${scopeFilter === 'ALL'
                 ? 'bg-slate-800 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-            }`}
+              }`}
           >
             <span>All Incidents</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${scopeFilter === 'ALL' ? 'bg-white/20' : 'bg-slate-200 text-slate-700'}`}>
@@ -415,13 +375,13 @@ export const GraphNetworkView: React.FC = () => {
             </div>
             <div>
               <div className="font-bold flex items-center gap-2">
-                <span>Accurate Active Incident Relationship Network</span>
-                <span className="bg-amber-200/80 text-amber-900 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  {activeCasesList.length} Active Dispute
+                <span>MDRRMO Resident Incident Reports Graph Network</span>
+                <span className="bg-orange-200 text-orange-950 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {graphData.nodes.filter(n => n.type === 'case').length} Resident Cases
                 </span>
               </div>
               <p className="text-[11px] text-amber-900/80 mt-0.5">
-                Displaying only active and pending cases with synchronized entity nodes (complainants, respondents, witnesses, barangay lupon, and LGU oversight).
+                Visualizing cases reported by residents from each barangay flowing directly into the MDRRMO Operations & Command Center.
               </p>
             </div>
           </div>
@@ -478,524 +438,510 @@ export const GraphNetworkView: React.FC = () => {
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
               <div className="flex items-center space-x-1.5">
+                <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />
+                <span className="text-slate-600 font-medium">Resident Cases ({graphData.nodes.filter(n => n.type === 'case').length})</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
                 <span className="w-3 h-3 rounded-full bg-blue-600 inline-block" />
-                <span className="text-slate-600 font-medium">Cases ({graphData.nodes.filter(n => n.type === 'case').length})</span>
+                <span className="text-slate-600 font-medium">Resident Reporters ({graphData.nodes.filter(n => n.type === 'person').length})</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-3 h-3 rounded-full bg-orange-600 inline-block" />
-                <span className="text-slate-600 font-medium">Persons ({graphData.nodes.filter(n => n.type === 'person').length})</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-600 inline-block" />
-                <span className="text-slate-600 font-medium">Officials ({graphData.nodes.filter(n => n.type === 'official').length})</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-teal-600 inline-block" />
-                <span className="text-slate-600 font-medium">Barangays ({graphData.nodes.filter(n => n.type === 'barangay').length})</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block" />
-                <span className="text-slate-600 font-medium">Agencies (3)</span>
+                <span className="text-slate-700 font-bold">MDRRMO (1)</span>
               </div>
             </div>
           </div>
 
-      {/* Mode Bar & Controls */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              placeholder="Search case or person..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-300 focus:bg-white text-xs w-48"
-            />
-          </div>
+          {/* Mode Bar & Controls */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Search */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search case or person..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 pr-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-300 focus:bg-white text-xs w-48"
+                />
+              </div>
 
-          {/* Type Filter */}
-          <select
-            value={selectedNodeType}
-            onChange={(e) => setSelectedNodeType(e.target.value)}
-            className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs"
-          >
-            <option value="ALL">All Entity Types</option>
-            <option value="case">Cases Only</option>
-            <option value="person">Persons Only</option>
-            <option value="official">Officials Only</option>
-            <option value="barangay">Barangays Only</option>
-            <option value="agency">Agencies Only</option>
-          </select>
-
-          {/* Pathfinding Toggle */}
-          <button
-            onClick={() => {
-              setPathfindingMode(!pathfindingMode);
-              if (pathfindingMode) {
-                setComputedPath(null);
-                setStartNodeId('');
-                setEndNodeId('');
-              }
-            }}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
-              pathfindingMode
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <Route className="w-3.5 h-3.5" />
-            {pathfindingMode ? 'Trace Path Active' : 'Trace Relationship Path'}
-          </button>
-        </div>
-
-        {/* Canvas Controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-            <button
-              onClick={() => setZoomLevel((z) => Math.min(2, z + 0.15))}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setZoomLevel((z) => Math.max(0.4, z - 0.15))}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={resetView}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-              title="Reset View"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="text-[11px] text-slate-500 font-medium pl-2 border-l border-slate-200">
-            <strong>{filteredNodes.length}</strong> Nodes • <strong>{filteredEdges.length}</strong> Edges • <strong>{graphData.clusters.length}</strong> Clusters
-          </div>
-        </div>
-      </div>
-
-      {/* Pathfinding Selection Bar */}
-      {pathfindingMode && (
-        <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="font-bold text-amber-900 flex items-center gap-1.5">
-              <Route className="w-4 h-4 text-amber-600" />
-              BFS Shortest Path Algorithm:
-            </span>
-
-            <div className="flex items-center gap-2">
+              {/* Type Filter */}
               <select
-                value={startNodeId}
-                onChange={(e) => setStartNodeId(e.target.value)}
-                className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
+                value={selectedNodeType}
+                onChange={(e) => setSelectedNodeType(e.target.value)}
+                className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs"
               >
-                <option value="">-- Select Origin Node --</option>
-                {graphData.nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.label} ({n.type})
-                  </option>
-                ))}
+                <option value="ALL">All Entity Types</option>
+                <option value="agency">MDRRMO</option>
+                <option value="case">Resident Cases</option>
+                <option value="person">Resident Reporters</option>
               </select>
 
-              <ArrowRight className="w-4 h-4 text-amber-600" />
-
-              <select
-                value={endNodeId}
-                onChange={(e) => setEndNodeId(e.target.value)}
-                className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
+              {/* Pathfinding Toggle */}
+              <button
+                onClick={() => {
+                  setPathfindingMode(!pathfindingMode);
+                  if (pathfindingMode) {
+                    setComputedPath(null);
+                    setStartNodeId('');
+                    setEndNodeId('');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${pathfindingMode
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
               >
-                <option value="">-- Select Target Node --</option>
-                {graphData.nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.label} ({n.type})
-                  </option>
-                ))}
-              </select>
+                <Route className="w-3.5 h-3.5" />
+                {pathfindingMode ? 'Trace Path Active' : 'Trace Relationship Path'}
+              </button>
             </div>
-          </div>
 
-          {computedPath ? (
-            <div className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Path Discovered: {computedPath.totalDistance} degrees of separation ({computedPath.nodeIds.length} hops)
-            </div>
-          ) : (startNodeId && endNodeId) ? (
-            <div className="text-xs text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
-              No connected path found between selected entities
-            </div>
-          ) : (
-            <span className="text-[11px] text-amber-700">Click any 2 nodes or choose from dropdowns</span>
-          )}
-        </div>
-      )}
-
-      {/* Main Grid: SVG Canvas + Inspector Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* SVG Graph Canvas */}
-        <div 
-          className="lg:col-span-2 bg-slate-900 rounded-xl border border-slate-800 shadow-inner flex flex-col overflow-hidden relative min-h-[580px]"
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          {/* Top Canvas Bar */}
-          <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-950/60 backdrop-blur-xs z-10">
-            <h4 className="font-bold text-xs text-slate-200 uppercase tracking-tight flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              Interactive Entity Relationship Network
-            </h4>
+            {/* Canvas Controls */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] px-2 py-0.5 bg-blue-950 text-blue-300 font-semibold rounded border border-blue-800 flex items-center gap-1">
-                <Move className="w-3 h-3" /> Drag Nodes to Reposition
-              </span>
+              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+                <button
+                  onClick={() => setZoomLevel((z) => Math.min(2, z + 0.15))}
+                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setZoomLevel((z) => Math.max(0.4, z - 0.15))}
+                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={resetView}
+                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
+                  title="Reset View"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="text-[11px] text-slate-500 font-medium pl-2 border-l border-slate-200">
+                <strong>{filteredNodes.length}</strong> Nodes • <strong>{filteredEdges.length}</strong> Edges • <strong>{graphData.clusters.length}</strong> Clusters
+              </div>
             </div>
           </div>
 
-          {/* SVG Canvas Area */}
-          <div className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing" onMouseDown={handleStartPan}>
-            {/* Dark Grid Background */}
-            <div 
-              id="graph-canvas-bg"
-              className="absolute inset-0 opacity-20 pointer-events-auto"
-              style={{
-                backgroundImage: 'radial-gradient(circle, #475569 1px, transparent 1px)',
-                backgroundSize: '24px 24px'
-              }}
-            />
-
-            <svg 
-              ref={svgRef}
-              id="bconnect-graph-svg"
-              viewBox="0 0 800 600" 
-              className="w-full h-full min-h-[520px] select-none relative z-10"
-            >
-              <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomLevel})`}>
-                {/* Edges Layer */}
-                <g className="edges">
-                  {filteredEdges.map((edge) => {
-                    const pos1 = nodePositions.get(edge.source);
-                    const pos2 = nodePositions.get(edge.target);
-                    if (!pos1 || !pos2) return null;
-
-                    const isPathEdge = computedPath?.hops.some(
-                      (h) => (h.fromNodeId === edge.source && h.toNodeId === edge.target) ||
-                             (h.fromNodeId === edge.target && h.toNodeId === edge.source)
-                    );
-
-                    const isClusterEdge = selectedCluster && 
-                      clusterNodeSet.has(edge.source) && 
-                      clusterNodeSet.has(edge.target);
-
-                    const isConnectedToSelected = selectedNode && 
-                      (selectedNode.id === edge.source || selectedNode.id === edge.target);
-
-                    let strokeColor = '#334155'; // Default dark slate
-                    let strokeWidth = 1.2;
-                    let strokeOpacity = 0.45;
-
-                    if (isPathEdge) {
-                      strokeColor = '#fbbf24'; // Amber Gold
-                      strokeWidth = 3.5;
-                      strokeOpacity = 1;
-                    } else if (isClusterEdge) {
-                      strokeColor = '#818cf8'; // Indigo
-                      strokeWidth = 2.5;
-                      strokeOpacity = 0.95;
-                    } else if (isConnectedToSelected) {
-                      strokeColor = '#60a5fa'; // Blue
-                      strokeWidth = 2.5;
-                      strokeOpacity = 0.9;
-                    }
-
-                    return (
-                      <g key={edge.id}>
-                        <line
-                          x1={pos1.x}
-                          y1={pos1.y}
-                          x2={pos2.x}
-                          y2={pos2.y}
-                          stroke={strokeColor}
-                          strokeWidth={strokeWidth}
-                          strokeDasharray={edge.type === 'REFERRED_TO' || edge.type === 'MONITORED_BY' ? '4 3' : undefined}
-                          opacity={strokeOpacity}
-                        />
-                        {(isPathEdge || isConnectedToSelected) && (
-                          <text
-                            x={(pos1.x + pos2.x) / 2}
-                            y={(pos1.y + pos2.y) / 2 - 4}
-                            textAnchor="middle"
-                            className="text-[8px] fill-amber-300 font-bold bg-slate-900 select-none"
-                          >
-                            {edge.label}
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </g>
-
-                {/* Nodes Layer */}
-                <g className="nodes">
-                  {filteredNodes.map((node) => {
-                    const pos = nodePositions.get(node.id);
-                    if (!pos) return null;
-
-                    const isSelected = selectedNode?.id === node.id;
-                    const isInPath = pathNodeSet.has(node.id);
-                    const isInCluster = clusterNodeSet.has(node.id);
-                    const isNeighbor = neighborNodeSet.has(node.id);
-
-                    const isDimmed = (selectedNode && !isNeighbor && !isSelected) ||
-                                     (selectedCluster && !isInCluster) ||
-                                     (computedPath && !isInPath);
-
-                    const nodeSize = node.type === 'agency' ? 22 : node.type === 'case' ? 16 : node.type === 'barangay' ? 14 : 12;
-                    const fill = getNodeColor(node);
-
-                    return (
-                      <g
-                        key={node.id}
-                        transform={`translate(${pos.x}, ${pos.y})`}
-                        onClick={() => handleNodeClick(node)}
-                        onMouseDown={(e) => handleMouseDownNode(e, node.id)}
-                        className="cursor-pointer group"
-                        opacity={isDimmed ? 0.25 : 1}
-                      >
-                        {/* Glowing Ring for Selected or Path Node */}
-                        {(isSelected || isInPath) && (
-                          <circle
-                            r={nodeSize + 7}
-                            fill="none"
-                            stroke={isInPath ? '#fbbf24' : '#3b82f6'}
-                            strokeWidth="2"
-                            className="animate-pulse"
-                          />
-                        )}
-
-                        {/* Node Body */}
-                        <circle
-                          r={nodeSize}
-                          fill={fill}
-                          stroke={isSelected ? '#ffffff' : '#1e293b'}
-                          strokeWidth={isSelected ? 2.5 : 1.5}
-                          className="transition-transform group-hover:scale-125 shadow-lg"
-                        />
-
-                        {/* Node Center Icon / Mark */}
-                        {node.type === 'agency' && (
-                          <text y={4} textAnchor="middle" className="text-[9px] fill-white font-bold pointer-events-none select-none">
-                            ★
-                          </text>
-                        )}
-
-                        {/* Node Text Label */}
-                        <text
-                          y={nodeSize + 13}
-                          textAnchor="middle"
-                          className={`text-[10px] select-none font-bold ${
-                            isSelected || isInPath 
-                              ? 'fill-amber-300 font-extrabold drop-shadow-md' 
-                              : 'fill-slate-200'
-                          }`}
-                        >
-                          {node.label.length > 22 ? node.label.substring(0, 20) + '...' : node.label}
-                        </text>
-
-                        {node.subLabel && (
-                          <text
-                            y={nodeSize + 23}
-                            textAnchor="middle"
-                            className="text-[8px] fill-slate-400 select-none font-medium"
-                          >
-                            {node.subLabel}
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </g>
-              </g>
-            </svg>
-
-            {/* Floating Guide at Bottom Left */}
-            <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-xs border border-slate-800 p-2.5 rounded-lg text-[10px] space-y-1 shadow-lg z-20 text-slate-300">
-              <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Case Incident</div>
-              <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-orange-500"></span> Citizen / Party</div>
-              <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Official Involved</div>
-              <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Public Agency</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Path Tracer & Inspector & Clusters */}
-        <div className="space-y-4">
-          {/* Path Trace Explanation Card */}
-          {computedPath && (
-            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs text-amber-900 uppercase flex items-center gap-1.5">
+          {/* Pathfinding Selection Bar */}
+          {pathfindingMode && (
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-bold text-amber-900 flex items-center gap-1.5">
                   <Route className="w-4 h-4 text-amber-600" />
-                  Relationship Path Trace Result
-                </h4>
-                <button
-                  onClick={() => setComputedPath(null)}
-                  className="text-amber-700 hover:text-amber-900 text-xs"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                  BFS Shortest Path Algorithm:
+                </span>
 
-              <div className="space-y-2">
-                {computedPath.hops.map((hop, idx) => {
-                  const fromNode = graphData.nodes.find(n => n.id === hop.fromNodeId);
-                  const toNode = graphData.nodes.find(n => n.id === hop.toNodeId);
-                  return (
-                    <div key={idx} className="p-2.5 bg-white rounded-lg border border-amber-200 text-xs space-y-1">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
-                        <span>Hop {idx + 1}: {fromNode?.label || hop.fromNodeId}</span>
-                        <ArrowRight className="w-3 h-3 text-amber-600" />
-                        <span>{toNode?.label || hop.toNodeId}</span>
-                      </div>
-                      <div className="text-[10px] text-amber-800 font-mono bg-amber-100/50 px-1.5 py-0.5 rounded inline-block">
-                        Relationship: {hop.edgeLabel} ({hop.edgeType})
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Selected Node Inspector */}
-          {selectedNode ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div className="flex items-center space-x-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: getNodeColor(selectedNode) }}
-                  />
-                  <span className="font-bold text-xs uppercase text-slate-500">
-                    {selectedNode.type} Entity
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelectedNode(null)}
-                  className="text-slate-400 hover:text-slate-600 text-xs font-semibold"
-                >
-                  Clear Selection
-                </button>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-sm text-slate-900">{selectedNode.label}</h3>
-                {selectedNode.subLabel && (
-                  <p className="text-xs text-slate-500 mt-0.5">{selectedNode.subLabel}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Connections</span>
-                  <span className="font-mono font-bold text-slate-800">{selectedNode.degree || 0} links</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Classification</span>
-                  <span className="font-medium text-slate-700 capitalize">{selectedNode.type}</span>
-                </div>
-              </div>
-
-              {selectedNode.rawCase && (
-                <div className="pt-1 space-y-2">
-                  <button
-                    onClick={() => setSelectedCaseId(selectedNode.rawCase!.id)}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow transition"
+                <div className="flex items-center gap-2">
+                  <select
+                    value={startNodeId}
+                    onChange={(e) => setStartNodeId(e.target.value)}
+                    className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Open Full Incident Dossier ({selectedNode.rawCase.id})
-                  </button>
+                    <option value="">-- Select Origin Node --</option>
+                    {graphData.nodes.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.label} ({n.type})
+                      </option>
+                    ))}
+                  </select>
+
+                  <ArrowRight className="w-4 h-4 text-amber-600" />
+
+                  <select
+                    value={endNodeId}
+                    onChange={(e) => setEndNodeId(e.target.value)}
+                    className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
+                  >
+                    <option value="">-- Select Target Node --</option>
+                    {graphData.nodes.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.label} ({n.type})
+                      </option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+
+              {computedPath ? (
+                <div className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Path Discovered: {computedPath.totalDistance} degrees of separation ({computedPath.nodeIds.length} hops)
+                </div>
+              ) : (startNodeId && endNodeId) ? (
+                <div className="text-xs text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+                  No connected path found between selected entities
+                </div>
+              ) : (
+                <span className="text-[11px] text-amber-700">Click any 2 nodes or choose from dropdowns</span>
               )}
             </div>
-          ) : (
-            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center text-xs text-slate-500">
-              Select any node in the graph to inspect connections, degrees, and linked case dossiers.
-            </div>
           )}
 
-          {/* Identified Multi-Case Clusters */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-indigo-600" />
-                Multi-Case Clusters & Linked Parties
-              </h3>
-              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-                {graphData.clusters.length} Found
-              </span>
+          {/* Main Grid: SVG Canvas + Inspector Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* SVG Graph Canvas */}
+            <div
+              className="lg:col-span-2 bg-slate-900 rounded-xl border border-slate-800 shadow-inner flex flex-col overflow-hidden relative min-h-[580px]"
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {/* Top Canvas Bar */}
+              <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-950/60 backdrop-blur-xs z-10">
+                <h4 className="font-bold text-xs text-slate-200 uppercase tracking-tight flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                  Interactive Entity Relationship Network
+                </h4>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] px-2 py-0.5 bg-blue-950 text-blue-300 font-semibold rounded border border-blue-800 flex items-center gap-1">
+                    <Move className="w-3 h-3" /> Drag Nodes to Reposition
+                  </span>
+                </div>
+              </div>
+
+              {/* SVG Canvas Area */}
+              <div className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing" onMouseDown={handleStartPan}>
+                {/* Dark Grid Background */}
+                <div
+                  id="graph-canvas-bg"
+                  className="absolute inset-0 opacity-20 pointer-events-auto"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle, #475569 1px, transparent 1px)',
+                    backgroundSize: '24px 24px'
+                  }}
+                />
+
+                <svg
+                  ref={svgRef}
+                  id="bconnect-graph-svg"
+                  viewBox="0 0 800 600"
+                  className="w-full h-full min-h-[520px] select-none relative z-10"
+                >
+                  <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomLevel})`}>
+                    {/* Edges Layer */}
+                    <g className="edges">
+                      {filteredEdges.map((edge) => {
+                        const pos1 = nodePositions.get(edge.source);
+                        const pos2 = nodePositions.get(edge.target);
+                        if (!pos1 || !pos2) return null;
+
+                        const isPathEdge = computedPath?.hops.some(
+                          (h) => (h.fromNodeId === edge.source && h.toNodeId === edge.target) ||
+                            (h.fromNodeId === edge.target && h.toNodeId === edge.source)
+                        );
+
+                        const isClusterEdge = selectedCluster &&
+                          clusterNodeSet.has(edge.source) &&
+                          clusterNodeSet.has(edge.target);
+
+                        const isConnectedToSelected = selectedNode &&
+                          (selectedNode.id === edge.source || selectedNode.id === edge.target);
+
+                        let strokeColor = '#334155'; // Default dark slate
+                        let strokeWidth = 1.2;
+                        let strokeOpacity = 0.45;
+
+                        if (isPathEdge) {
+                          strokeColor = '#fbbf24'; // Amber Gold
+                          strokeWidth = 3.5;
+                          strokeOpacity = 1;
+                        } else if (isClusterEdge) {
+                          strokeColor = '#818cf8'; // Indigo
+                          strokeWidth = 2.5;
+                          strokeOpacity = 0.95;
+                        } else if (isConnectedToSelected) {
+                          strokeColor = '#60a5fa'; // Blue
+                          strokeWidth = 2.5;
+                          strokeOpacity = 0.9;
+                        }
+
+                        return (
+                          <g key={edge.id}>
+                            <line
+                              x1={pos1.x}
+                              y1={pos1.y}
+                              x2={pos2.x}
+                              y2={pos2.y}
+                              stroke={strokeColor}
+                              strokeWidth={strokeWidth}
+                              strokeDasharray={edge.type === 'REFERRED_TO' || edge.type === 'MONITORED_BY' ? '4 3' : undefined}
+                              opacity={strokeOpacity}
+                            />
+                            {(isPathEdge || isConnectedToSelected) && (
+                              <text
+                                x={(pos1.x + pos2.x) / 2}
+                                y={(pos1.y + pos2.y) / 2 - 4}
+                                textAnchor="middle"
+                                className="text-[8px] fill-amber-300 font-bold bg-slate-900 select-none"
+                              >
+                                {edge.label}
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                    </g>
+
+                    {/* Nodes Layer */}
+                    <g className="nodes">
+                      {filteredNodes.map((node) => {
+                        const pos = nodePositions.get(node.id);
+                        if (!pos) return null;
+
+                        const isSelected = selectedNode?.id === node.id;
+                        const isInPath = pathNodeSet.has(node.id);
+                        const isInCluster = clusterNodeSet.has(node.id);
+                        const isNeighbor = neighborNodeSet.has(node.id);
+
+                        const isDimmed = (selectedNode && !isNeighbor && !isSelected) ||
+                          (selectedCluster && !isInCluster) ||
+                          (computedPath && !isInPath);
+
+                        const nodeSize = node.type === 'agency' ? 22 : node.type === 'case' ? 16 : node.type === 'barangay' ? 14 : 12;
+                        const fill = getNodeColor(node);
+
+                        return (
+                          <g
+                            key={node.id}
+                            transform={`translate(${pos.x}, ${pos.y})`}
+                            onClick={() => handleNodeClick(node)}
+                            onMouseDown={(e) => handleMouseDownNode(e, node.id)}
+                            className="cursor-pointer group"
+                            opacity={isDimmed ? 0.25 : 1}
+                          >
+                            {/* Glowing Ring for Selected or Path Node */}
+                            {(isSelected || isInPath) && (
+                              <circle
+                                r={nodeSize + 7}
+                                fill="none"
+                                stroke={isInPath ? '#fbbf24' : '#3b82f6'}
+                                strokeWidth="2"
+                                className="animate-pulse"
+                              />
+                            )}
+
+                            {/* Node Body */}
+                            <circle
+                              r={nodeSize}
+                              fill={fill}
+                              stroke={isSelected ? '#ffffff' : '#1e293b'}
+                              strokeWidth={isSelected ? 2.5 : 1.5}
+                              className="transition-transform group-hover:scale-125 shadow-lg"
+                            />
+
+                            {/* Node Center Icon / Mark */}
+                            {node.type === 'agency' && (
+                              <text y={4} textAnchor="middle" className="text-[9px] fill-white font-bold pointer-events-none select-none">
+                                ★
+                              </text>
+                            )}
+
+                            {/* Node Text Label */}
+                            <text
+                              y={nodeSize + 13}
+                              textAnchor="middle"
+                              className={`text-[10px] select-none font-bold ${isSelected || isInPath
+                                  ? 'fill-amber-300 font-extrabold drop-shadow-md'
+                                  : 'fill-slate-200'
+                                }`}
+                            >
+                              {node.label.length > 22 ? node.label.substring(0, 20) + '...' : node.label}
+                            </text>
+
+                            {node.subLabel && (
+                              <text
+                                y={nodeSize + 23}
+                                textAnchor="middle"
+                                className="text-[8px] fill-slate-400 select-none font-medium"
+                              >
+                                {node.subLabel}
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                    </g>
+                  </g>
+                </svg>
+
+                {/* Floating Guide at Bottom Left */}
+                <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-xs border border-slate-800 p-2.5 rounded-lg text-[10px] space-y-1 shadow-lg z-20 text-slate-300">
+                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-orange-600"></span> MDRRMO</div>
+                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Case Incident</div>
+                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Resident Reporter</div>
+                </div>
+              </div>
             </div>
 
-            <p className="text-xs text-slate-500">
-              Graph algorithm identified repeat individuals, shared incidents, and correlated dispute patterns across Roxas.
-            </p>
+            {/* Right Column: Path Tracer & Inspector & Clusters */}
+            <div className="space-y-4">
+              {/* Path Trace Explanation Card */}
+              {computedPath && (
+                <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs text-amber-900 uppercase flex items-center gap-1.5">
+                      <Route className="w-4 h-4 text-amber-600" />
+                      Relationship Path Trace Result
+                    </h4>
+                    <button
+                      onClick={() => setComputedPath(null)}
+                      className="text-amber-700 hover:text-amber-900 text-xs"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-            <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-              {graphData.clusters.map((cluster) => {
-                const isSelectedCluster = selectedCluster?.id === cluster.id;
-                return (
-                  <div
-                    key={cluster.id}
-                    onClick={() => {
-                      setSelectedCluster(isSelectedCluster ? null : cluster);
-                      setSelectedNode(null);
-                    }}
-                    className={`p-3 rounded-lg border transition cursor-pointer space-y-1.5 ${
-                      isSelectedCluster
-                        ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-200'
-                        : 'bg-slate-50 hover:bg-indigo-50/40 border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-indigo-950">{cluster.title || cluster.label}</span>
-                      <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold">
-                        {cluster.caseIds?.length || cluster.nodeIds.length} Linked
+                  <div className="space-y-2">
+                    {computedPath.hops.map((hop, idx) => {
+                      const fromNode = graphData.nodes.find(n => n.id === hop.fromNodeId);
+                      const toNode = graphData.nodes.find(n => n.id === hop.toNodeId);
+                      return (
+                        <div key={idx} className="p-2.5 bg-white rounded-lg border border-amber-200 text-xs space-y-1">
+                          <div className="flex items-center justify-between font-bold text-slate-800">
+                            <span>Hop {idx + 1}: {fromNode?.label || hop.fromNodeId}</span>
+                            <ArrowRight className="w-3 h-3 text-amber-600" />
+                            <span>{toNode?.label || hop.toNodeId}</span>
+                          </div>
+                          <div className="text-[10px] text-amber-800 font-mono bg-amber-100/50 px-1.5 py-0.5 rounded inline-block">
+                            Relationship: {hop.edgeLabel} ({hop.edgeType})
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Node Inspector */}
+              {selectedNode ? (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: getNodeColor(selectedNode) }}
+                      />
+                      <span className="font-bold text-xs uppercase text-slate-500">
+                        {selectedNode.type} Entity
                       </span>
                     </div>
+                    <button
+                      onClick={() => setSelectedNode(null)}
+                      className="text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                    >
+                      Clear Selection
+                    </button>
+                  </div>
 
-                    <p className="text-[11px] text-slate-600 leading-snug">
-                      {cluster.description}
-                    </p>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">{selectedNode.label}</h3>
+                    {selectedNode.subLabel && (
+                      <p className="text-xs text-slate-500 mt-0.5">{selectedNode.subLabel}</p>
+                    )}
+                  </div>
 
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {(cluster.caseIds || []).map((caseId) => (
-                        <button
-                          key={caseId}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCaseId(caseId);
-                          }}
-                          className="text-[10px] font-mono font-bold bg-white text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 cursor-pointer shadow-2xs"
-                        >
-                          {caseId}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-semibold">Connections</span>
+                      <span className="font-mono font-bold text-slate-800">{selectedNode.degree || 0} links</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-semibold">Classification</span>
+                      <span className="font-medium text-slate-700 capitalize">{selectedNode.type}</span>
                     </div>
                   </div>
-                );
-              })}
+
+                  {selectedNode.rawCase && (
+                    <div className="pt-1 space-y-2">
+                      <button
+                        onClick={() => setSelectedCaseId(selectedNode.rawCase!.id)}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow transition"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Open Full Incident Dossier ({selectedNode.rawCase.id})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center text-xs text-slate-500">
+                  Select any node in the graph to inspect connections, degrees, and linked case dossiers.
+                </div>
+              )}
+
+              {/* Identified Multi-Case Clusters */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-indigo-600" />
+                    Multi-Case Clusters & Linked Parties
+                  </h3>
+                  <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
+                    {graphData.clusters.length} Found
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Graph algorithm identified repeat individuals, shared incidents, and correlated dispute patterns across Roxas.
+                </p>
+
+                <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                  {graphData.clusters.map((cluster) => {
+                    const isSelectedCluster = selectedCluster?.id === cluster.id;
+                    return (
+                      <div
+                        key={cluster.id}
+                        onClick={() => {
+                          setSelectedCluster(isSelectedCluster ? null : cluster);
+                          setSelectedNode(null);
+                        }}
+                        className={`p-3 rounded-lg border transition cursor-pointer space-y-1.5 ${isSelectedCluster
+                            ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-200'
+                            : 'bg-slate-50 hover:bg-indigo-50/40 border-slate-200'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-indigo-950">{cluster.title || cluster.label}</span>
+                          <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold">
+                            {cluster.caseIds?.length || cluster.nodeIds.length} Linked
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          {cluster.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {(cluster.caseIds || []).map((caseId) => (
+                            <button
+                              key={caseId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCaseId(caseId);
+                              }}
+                              className="text-[10px] font-mono font-bold bg-white text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 cursor-pointer shadow-2xs"
+                            >
+                              {caseId}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      </>
+        </>
       )}
     </div>
   );

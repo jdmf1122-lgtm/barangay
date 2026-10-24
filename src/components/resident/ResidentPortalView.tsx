@@ -183,20 +183,18 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       complainants: [complainantPerson],
       respondents: respondentPersons,
       witnesses: witnessPersons,
-      priority: isAccidentReport || isUrgent ? 'Urgent' : 'Medium',
-      isAccidentEmergency: isAccidentReport,
-      accidentVehicleDetails: isAccidentReport ? 'Road/Vehicular Accident Reported by Resident' : undefined,
+      priority: 'Urgent',
+      isAccidentEmergency: true,
+      accidentVehicleDetails: isAccidentReport ? 'Road/Vehicular Accident Reported by Resident' : 'Incident Reported by Resident',
       isAccidentProneArea: isAccidentReport,
-      originatingAgency: `Barangay ${reportBarangay} Resident Portal`,
-      currentHandlingAgency: `Barangay ${reportBarangay} LGU`,
+      originatingAgency: `Resident Citizen (Brgy. ${reportBarangay})`,
+      currentHandlingAgency: 'MDRRMO Roxas Operations & Emergency Command Center',
       status: 'Received',
       isCitizenReport: true,
       residentReporterId: currentUser.id,
-      isRemainedAtBarangay: true,
-      barangayRetentionReason: isAccidentReport ? 'Emergency first responder dispatch & Lupon desk blotter' : 'Ongoing mediation / Lupon conciliation',
-      barangayRetentionNotes: isAccidentReport
-        ? '🚨 ROAD ACCIDENT REPORT: Dispatched urgent alert to Punong Barangay and Tanod First Responders.'
-        : 'Citizen report received via B-CONNECT Resident Portal. Queued for Barangay Secretary / Lupon Tagapamayapa review.',
+      isRemainedAtBarangay: false,
+      barangayRetentionReason: 'Direct emergency incident transmission to MDRRMO Operations Center',
+      barangayRetentionNotes: 'Citizen report received via B-CONNECT Resident Portal and dispatched directly to MDRRMO.',
       isConfidential: false,
       imageUrls: uploadedImageUrls
     });
@@ -211,12 +209,12 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     setSelectedFiles([]);
 
     triggerNotification(
-      'Incident Report Submitted Successfully!',
-      `Your report #${newCaseId} has been officially logged with Barangay ${reportBarangay}. You may track its progress anytime.`,
+      'Incident Report Transmitted to MDRRMO!',
+      `Your report #${newCaseId} has been transmitted to the MDRRMO Command Center. Emergency SMS dispatch alert sent.`,
       'system',
       newCaseId,
       'RESIDENT',
-      'normal',
+      'urgent',
       {
         targetAgencyTypes: ['RESIDENT'],
         targetRoles: ['RESIDENT'],

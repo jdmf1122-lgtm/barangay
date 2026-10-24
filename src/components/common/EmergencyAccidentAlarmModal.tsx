@@ -98,15 +98,15 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     // Must strictly be an actual report filed by a resident citizen (never seed cases or internal blotters)
     const unacknowledgedCase = cases.find((c) => {
       if (!c) return false;
-      // Exclude seed / demo cases
-      if (c.id?.startsWith('BC-2026-00')) return false;
+      // Exclude seed / demo cases (strictly BC-2026-001 to BC-2026-008)
+      if (c.id && /^BC-2026-00[1-8]$/.test(c.id)) return false;
 
       // Must be an actual report submitted by a resident
       const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
       if (!isResidentReport) return false;
 
-      const isTargetedBarangay = !userBarangay || c.barangay === userBarangay || !c.barangay;
-      const isEmergency = c.isAccidentEmergency || c.priority === 'Urgent' || (c.category && c.category.toLowerCase().includes('accident'));
+      const isTargetedBarangay = isMdrrmoOfficer || !userBarangay || c.barangay === userBarangay || !c.barangay;
+      const isEmergency = c.isAccidentEmergency || c.priority === 'Urgent' || (c.category && c.category.toLowerCase().includes('accident')) || isResidentReport;
       const isNotResolved = c.status !== 'Resolved' && c.status !== 'Closed';
       const isNotAcknowledged = !c.emergencyAlarmAcknowledged && !acknowledgedIds.includes(c.id);
 
@@ -120,9 +120,9 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
       if (n.id?.startsWith('NOTIF-RES-') || n.id?.startsWith('NOTIF-BGY-') || n.id?.startsWith('NOTIF-LGU-') || n.id?.startsWith('NOTIF-SYS-')) return false;
       if (acknowledgedIds.includes(n.id)) return false;
       if (n.caseId && acknowledgedIds.includes(n.caseId)) return false;
-      if (n.caseId?.startsWith('BC-2026-00')) return false;
+      if (n.caseId && /^BC-2026-00[1-8]$/.test(n.caseId)) return false;
 
-      const isTargetedBarangay = !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
+      const isTargetedBarangay = isMdrrmoOfficer || !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
       const titleLower = (n.title || '').toLowerCase();
       const msgLower = (n.message || '').toLowerCase();
       const isEmergencyIncident =
@@ -144,7 +144,7 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
       const related = n.caseId ? cases.find((c) => c.id === n.caseId) : null;
       const isCaseAcknowledged = related ? (!!related.emergencyAlarmAcknowledged || acknowledgedIds.includes(related.id)) : false;
 
-      return isTargetedBarangay && isEmergencyIncident && isUrgent && !isCaseAcknowledged;
+      return isTargetedBarangay && (isEmergencyIncident || isUrgent) && !isCaseAcknowledged;
     });
 
     const target = unacknowledgedCase

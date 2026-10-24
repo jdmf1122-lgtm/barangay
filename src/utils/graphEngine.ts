@@ -2,6 +2,28 @@ import { Case, GraphNode, GraphEdge, GraphCluster } from '../types';
 
 export interface GraphBuildOptions {
   activeOnly?: boolean;
+  residentOnly?: boolean;
+}
+
+/**
+ * Checks if a case was reported by a resident of that barangay
+ */
+export function isResidentReportedCase(c: Case): boolean {
+  if (!c || !c.id) return false;
+  if (c.isCitizenReport === true) return true;
+  if (Boolean(c.residentReporterId)) return true;
+  if (Boolean(c.reporterName && c.reporterName.trim() !== '')) return true;
+  if (c.originatingAgency && /resident|citizen|civilian|public/i.test(c.originatingAgency)) return true;
+  if (Array.isArray(c.complainants) && c.complainants.length > 0) {
+    const hasCivilian = c.complainants.some(p => !p.isOfficial);
+    if (hasCivilian) return true;
+  }
+  if (Array.isArray(c.personsInvolved) && c.personsInvolved.length > 0) {
+    const hasCivilian = c.personsInvolved.some(p => p.role === 'Complainant' || p.role === 'Victim');
+    if (hasCivilian) return true;
+  }
+  if (c.createdBy && /resident/i.test(c.createdBy)) return true;
+  return false;
 }
 
 export function buildGraphFromCases(
@@ -16,20 +38,30 @@ export function buildGraphFromCases(
   const edges: GraphEdge[] = [];
   const edgeSet = new Set<string>();
 
-  // Filter cases if activeOnly is requested
-  const targetCases = (cases || []).filter((c) => {
+  // Filter cases: Only include cases from each barangay reported by a resident
+  let targetCases = (cases || []).filter((c) => {
     if (!c || !c.id) return false;
-    if (options.activeOnly) {
-      return c.status === 'Unresolved';
-    }
+    if (options.activeOnly && c.status === 'Resolved') return false;
     return true;
   });
+
+  // Prioritize specifically cases reported by residents
+  const residentOnlyCases = targetCases.filter(c => isResidentReportedCase(c));
+  if (residentOnlyCases.length > 0) {
+    targetCases = residentOnlyCases;
+  } else {
+    // If cases don't yet have the explicit citizen flag, include cases having a reporter or complainants
+    targetCases = targetCases.filter(c => 
+      Boolean(c.reporterName) || 
+      (Array.isArray(c.complainants) && c.complainants.length > 0) || 
+      c.isCitizenReport
+    );
+  }
 
   function addNode(node: GraphNode) {
     if (!nodeMap.has(node.id)) {
       nodeMap.set(node.id, node);
     } else {
-      // Merge metadata or bump degree
       const existing = nodeMap.get(node.id)!;
       existing.metadata = { ...existing.metadata, ...node.metadata };
     }
@@ -50,53 +82,40 @@ export function buildGraphFromCases(
     }
   }
 
-  // Add major agencies as structural anchor nodes
+  // Primary Destination: MDRRMO
   addNode({
-    id: 'AGENCY-BARANGAY',
-    label: 'Barangay Officials & Lupon',
-    subLabel: 'Katarungang Pambarangay Conciliation Hub',
+    id: 'AGENCY-MDRRMO',
+    label: 'MDRRMO',
+    subLabel: 'Municipal Disaster Risk Reduction & Management Office • Operations Hub',
     type: 'agency',
     group: 'Agency',
-    color: '#0284c7', // Sky blue
-    radius: 22,
+    color: '#ea580c', // Emergency Orange
+    radius: 30,
     metadata: {
-      agency: 'Barangay Officials & Lupon Tagapamayapa',
-      jurisdiction: 'Community First-Level Amicable Settlement',
-      statutoryBasis: 'Local Government Code (RA 7160 Chapter 7)'
+      agency: 'MDRRMO',
+      fullAddress: 'Morente Avenue, Camp Gozar Compound, Brgy. Bagumbayan, Roxas',
+      hotline: '911 / (043) 289-2000 / 0917-888-MDRRMO',
+      lat: 12.59152,
+      lng: 121.51738
     }
   });
 
-  addNode({
-    id: 'AGENCY-LGU',
-    label: 'Roxas Municipal Administration & Executive Center',
-    subLabel: 'Municipal Complex (near Bulwagan ng Katarungan) • Municipal Admin / SB / MSWDO / MENRO',
-    type: 'agency',
-    group: 'Agency',
-    color: '#047857', // Emerald
-    radius: 26,
-    metadata: {
-      agency: 'LGU Roxas Municipal Administration',
-      fullAddress: 'Municipal Complex, Poblacion, Roxas, Oriental Mindoro',
-      lat: 12.5888,
-      lng: 121.5167
-    }
-  });
-
-  // Process each case
+  // Process each resident-reported case
   targetCases.forEach((c) => {
     if (!c || !c.id) return;
     const caseNodeId = `CASE-${c.id}`;
-    const caseTitle = c.title || 'Untitled Case';
-    
+    const caseTitle = c.title || 'Untitled Incident';
+    const bgyName = c.barangay || 'Roxas';
+
     // Case Node
-    const caseColor = 
+    const caseColor =
       c.status === 'Resolved' ? '#10b981' :
-      c.isInvolvingOfficial ? '#ef4444' : '#6366f1';
+        c.priority === 'Urgent' || c.priority === 'High' ? '#ef4444' : '#3b82f6';
 
     addNode({
       id: caseNodeId,
       label: `${c.id}: ${caseTitle.length > 28 ? caseTitle.slice(0, 26) + '...' : caseTitle}`,
-      subLabel: `Brgy. ${c.barangay || 'General'} • ${c.status} (${c.category || 'General'})`,
+      subLabel: `Resident Report • Brgy. ${c.barangay || 'General'} (${c.category || 'General'})`,
       type: 'case',
       group: 'Case',
       color: caseColor,
@@ -108,123 +127,33 @@ export function buildGraphFromCases(
         status: c.status,
         barangay: c.barangay,
         date: c.dateReported,
-        isOfficial: c.isInvolvingOfficial,
-        priority: c.priority
+        priority: c.priority,
+        isCitizenReport: true
       }
     });
 
-    // Barangay Node
-    const bgyName = c.barangay || 'Roxas';
-    const bgyNodeId = `BGY-${bgyName.replace(/\s+/g, '')}`;
+    // Resident Case reported flows directly into MDRRMO
+    addEdge(caseNodeId, 'AGENCY-MDRRMO', 'DISPATCHED_TO_MDRRMO', 'REPORTED_IN');
+
+    // Resident Citizen Reporter Node (Ang resident lamang na nag-report ng incident)
+    const reporterName = c.reporterName || c.complainants?.[0]?.name || `Resident Reporter (${bgyName})`;
+    const reporterId = `PERSON-${reporterName.replace(/\s+/g, '')}`;
     addNode({
-      id: bgyNodeId,
-      label: `Brgy. ${bgyName}`,
-      type: 'barangay',
-      group: 'Barangay',
-      color: '#0d9488',
-      radius: 18,
-      metadata: { barangay: bgyName }
+      id: reporterId,
+      label: reporterName,
+      subLabel: `Resident Reporter • Brgy. ${bgyName}`,
+      type: 'person',
+      subType: 'Resident Reporter',
+      group: 'Person',
+      color: '#2563eb', // Royal Blue
+      radius: 15,
+      metadata: {
+        role: 'Resident Reporter',
+        barangay: bgyName,
+        contact: c.complainants?.[0]?.contact
+      }
     });
-
-    addEdge(caseNodeId, bgyNodeId, 'REPORTED_IN', 'REPORTED_IN');
-    addEdge(bgyNodeId, 'AGENCY-BARANGAY', 'UNDER_JURISDICTION', 'INVOLVED_IN');
-
-    // Complainants
-    (c.complainants || []).forEach((p) => {
-      if (!p || !p.name) return;
-      const personId = `PERSON-${p.name.replace(/\s+/g, '')}`;
-      addNode({
-        id: personId,
-        label: p.name,
-        type: 'person',
-        subType: 'Complainant',
-        group: 'Person',
-        color: '#3b82f6',
-        radius: 14,
-        metadata: { role: 'Complainant', contact: p.contact, address: p.address, barangay: p.barangay || c.barangay }
-      });
-      addEdge(personId, caseNodeId, 'FILED_COMPLAINT', 'INVOLVED_IN');
-    });
-
-    // Respondents
-    (c.respondents || []).forEach((p) => {
-      if (!p || !p.name) return;
-      const personId = `PERSON-${p.name.replace(/\s+/g, '')}`;
-      const isOfficial = p.isOfficial || c.isInvolvingOfficial;
-      addNode({
-        id: personId,
-        label: p.name,
-        type: isOfficial ? 'official' : 'person',
-        subType: 'Respondent',
-        group: isOfficial ? 'Official' : 'Person',
-        color: isOfficial ? '#dc2626' : '#ea580c',
-        radius: isOfficial ? 16 : 14,
-        metadata: {
-          role: 'Respondent',
-          isOfficial: !!isOfficial,
-          officialPosition: p.officialPosition || c.officialInvolvedPosition,
-          contact: p.contact,
-          address: p.address,
-          barangay: p.barangay || c.barangay
-        }
-      });
-      addEdge(personId, caseNodeId, isOfficial ? 'INVOLVED_AS_OFFICIAL' : 'RESPONDENT_IN', isOfficial ? 'INVOLVES_OFFICIAL' : 'COMPLAINED_AGAINST');
-    });
-
-    // Witnesses / Tanods
-    (c.witnesses || []).forEach((w) => {
-      if (!w || !w.name) return;
-      const witnessId = `PERSON-${w.name.replace(/\s+/g, '')}`;
-      addNode({
-        id: witnessId,
-        label: w.name,
-        type: 'person',
-        subType: 'Witness',
-        group: 'Person',
-        color: '#8b5cf6', // Violet for witnesses
-        radius: 13,
-        metadata: { role: 'Witness', contact: w.contact, address: w.address, barangay: w.barangay || c.barangay }
-      });
-      addEdge(witnessId, caseNodeId, 'TESTIFIED_IN', 'INVOLVED_IN');
-    });
-
-    // Handling Officer / Official
-    if (c.assignedPersonnel) {
-      const officerId = `OFFICIAL-${c.assignedPersonnel.replace(/\s+/g, '')}`;
-      addNode({
-        id: officerId,
-        label: c.assignedPersonnel,
-        type: 'official',
-        subType: 'Assigned Officer',
-        group: 'Official',
-        color: '#059669', // emerald for barangay officials
-        radius: 16,
-        metadata: {
-          role: 'Assigned Officer',
-          barangay: c.barangay,
-          agency: c.currentHandlingAgency || 'Barangay Official'
-        }
-      });
-      addEdge(officerId, caseNodeId, 'ASSIGNED_TO', 'INVOLVES_OFFICIAL');
-    }
-
-
-
-    // Specific Location Node if distinct
-    if (c.specificLocation && typeof c.specificLocation === 'string') {
-      const locName = c.specificLocation.split(',')[0].trim();
-      const locId = `LOC-${c.barangay || 'ROX'}-${locName.replace(/\s+/g, '')}`;
-      addNode({
-        id: locId,
-        label: locName,
-        type: 'location',
-        group: 'Location',
-        color: '#64748b',
-        radius: 12,
-        metadata: { fullAddress: c.specificLocation, barangay: c.barangay }
-      });
-      addEdge(caseNodeId, locId, 'LOCATED_AT', 'LOCATED_AT');
-    }
+    addEdge(reporterId, caseNodeId, 'FILED_INCIDENT_REPORT', 'INVOLVED_IN');
   });
 
   // If in activeOnly mode, prune any agency anchors that have 0 edges
@@ -262,7 +191,7 @@ export function buildGraphFromCases(
     if (caseIds.length > 1) {
       const personNode = nodeMap.get(personNodeId);
       const personName = personNode?.label || 'Individual';
-      
+
       for (let i = 0; i < caseIds.length; i++) {
         for (let j = i + 1; j < caseIds.length; j++) {
           addEdge(caseIds[i], caseIds[j], `COMMON_PERSON: ${personName}`, 'RELATED_CASE');
@@ -277,7 +206,7 @@ export function buildGraphFromCases(
         description: `${personName} is linked to ${caseIds.length} separate cases (${cleanCaseIds.join(', ')}).`,
         nodeIds: [personNodeId, ...caseIds],
         caseIds: cleanCaseIds,
-        riskLevel: personNode?.type === 'official' ? 'High' : 'Moderate',
+        riskLevel: 'Moderate',
         commonFactor: `Common Individual: ${personName}`
       });
     }

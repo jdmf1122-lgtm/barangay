@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { Case, GraphNode, GraphEdge, GraphCluster, ROXAS_BARANGAYS } from '../../types';
-import { SYSTEM_BARANGAYS_GEO, MUNICIPAL_AGENCY_HUBS } from './GeographicBarangayMap';
+import { SYSTEM_BARANGAYS_GEO, MUNICIPAL_AGENCY_HUBS } from '../../data/barangayGeoData';
 import { findDetailedPath, DetailedPath } from '../../utils/graphEngine';
 
 // Tile provider options
@@ -142,18 +142,11 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
   const nodeGeoPositions = useMemo(() => {
     const geoMap = new Map<string, { lat: number; lng: number }>();
 
-    // 1. Place Agency Hubs
-    MUNICIPAL_AGENCY_HUBS.forEach((hub) => {
-      if (hub.type === 'LGU') geoMap.set('AGENCY-LGU', { lat: hub.lat, lng: hub.lng });
-      if (hub.type === 'DILG') geoMap.set('AGENCY-DILG', { lat: hub.lat, lng: hub.lng });
-    });
-    // Default Barangay Agency anchor near Bagumbayan center
-    geoMap.set('AGENCY-BARANGAY', { lat: 12.5925, lng: 121.5150 });
-
-    // 2. Place Barangay Hubs
-    SYSTEM_BARANGAYS_GEO.forEach((b) => {
-      const bgyNodeId = `BGY-${b.name.replace(/\s+/g, '')}`;
-      geoMap.set(bgyNodeId, { lat: b.lat, lng: b.lng });
+    // 1. Place Agency Destination Hub: MDRRMO Operations & Command Center
+    const mdrrmoHub = MUNICIPAL_AGENCY_HUBS.find((h) => h.type === 'MDRRMO');
+    geoMap.set('AGENCY-MDRRMO', {
+      lat: mdrrmoHub?.lat || 12.59152,
+      lng: mdrrmoHub?.lng || 121.51738
     });
 
     // 3. Place Case Incidents in their respective barangays with structured radial offsets
@@ -175,65 +168,15 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
       const caseNodeId = `CASE-${c.id}`;
       geoMap.set(caseNodeId, { lat: caseLat, lng: caseLng });
 
-      // Specific Location node
-      if (c.specificLocation && typeof c.specificLocation === 'string') {
-        const locName = c.specificLocation.split(',')[0].trim();
-        const locId = `LOC-${c.barangay || 'ROX'}-${locName.replace(/\s+/g, '')}`;
-        geoMap.set(locId, {
-          lat: caseLat - 0.0010,
-          lng: caseLng + 0.0011
+      // Place Resident Reporter slightly adjacent to the case
+      const reporterName = c.reporterName || c.complainants?.[0]?.name || `Resident Reporter (${bName})`;
+      const reporterId = `PERSON-${reporterName.replace(/\s+/g, '')}`;
+      if (!geoMap.has(reporterId)) {
+        geoMap.set(reporterId, {
+          lat: caseLat + 0.0012,
+          lng: caseLng + 0.0014
         });
       }
-
-      // Assigned Official / Officer
-      if (c.assignedPersonnel) {
-        const offId = `OFFICIAL-${c.assignedPersonnel.replace(/\s+/g, '')}`;
-        if (!geoMap.has(offId)) {
-          geoMap.set(offId, {
-            lat: bGeo.lat + 0.0008,
-            lng: bGeo.lng - 0.0010
-          });
-        }
-      }
-
-      // Place associated persons (complainants) slightly adjacent to the case
-      (c.complainants || []).forEach((p, pIdx) => {
-        if (!p?.name) return;
-        const pId = `PERSON-${p.name.replace(/\s+/g, '')}`;
-        if (!geoMap.has(pId)) {
-          const pAngle = angle + (pIdx + 1) * 0.6;
-          geoMap.set(pId, {
-            lat: caseLat + Math.sin(pAngle) * 0.0012,
-            lng: caseLng + Math.cos(pAngle) * 0.0014
-          });
-        }
-      });
-
-      // Respondents
-      (c.respondents || []).forEach((p, pIdx) => {
-        if (!p?.name) return;
-        const pId = `PERSON-${p.name.replace(/\s+/g, '')}`;
-        if (!geoMap.has(pId)) {
-          const pAngle = angle + Math.PI + (pIdx + 1) * 0.6;
-          geoMap.set(pId, {
-            lat: caseLat + Math.sin(pAngle) * 0.0012,
-            lng: caseLng + Math.cos(pAngle) * 0.0014
-          });
-        }
-      });
-
-      // Witnesses
-      (c.witnesses || []).forEach((w, wIdx) => {
-        if (!w?.name) return;
-        const wId = `PERSON-${w.name.replace(/\s+/g, '')}`;
-        if (!geoMap.has(wId)) {
-          const pAngle = angle + (wIdx + 2) * 0.8;
-          geoMap.set(wId, {
-            lat: caseLat + Math.sin(pAngle) * 0.0014,
-            lng: caseLng + Math.cos(pAngle) * 0.0016
-          });
-        }
-      });
     });
 
     return geoMap;
@@ -247,7 +190,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
     }
     if (filterBarangay !== 'ALL') {
       nodes = nodes.filter((n) => {
-        if (n.type === 'barangay') return n.label.includes(filterBarangay);
+        if (n.id === 'AGENCY-MDRRMO') return true;
         if (n.rawCase) return n.rawCase.barangay === filterBarangay;
         if (n.metadata?.barangay) return n.metadata.barangay === filterBarangay;
         return true;
@@ -325,20 +268,6 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
     currentTileLayerRef.current = newLayer;
     newLayer.bringToBack();
   }, [activeTile]);
-
-  // Auto-focus on Active Case when in ACTIVE_ONLY scope
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    if (scopeFilter === 'ACTIVE_ONLY') {
-      const activeCaseNode = graphData.nodes.find((n) => n.type === 'case');
-      if (activeCaseNode) {
-        const pos = nodeGeoPositions.get(activeCaseNode.id);
-        if (pos) {
-          mapInstanceRef.current.flyTo([pos.lat, pos.lng], 15, { duration: 1 });
-        }
-      }
-    }
-  }, [scopeFilter, graphData.nodes, nodeGeoPositions]);
 
   // Trigger BFS Path Calculation
   useEffect(() => {
@@ -501,57 +430,34 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
         let markerSize = 28;
 
         if (node.type === 'agency') {
-          markerSize = 36;
-          const bg = node.id === 'AGENCY-LGU' ? '#047857' : node.id === 'AGENCY-DILG' ? '#b45309' : '#0284c7';
-          const iconText = node.id === 'AGENCY-LGU' ? '🏛️' : node.id === 'AGENCY-DILG' ? '⚖️' : '🏢';
+          markerSize = 38;
           iconHtml = `
             <div style="
               width: ${markerSize}px;
               height: ${markerSize}px;
               border-radius: 50%;
-              background: ${bg};
+              background: linear-gradient(135deg, #ea580c, #c2410c);
               border: 3px solid #ffffff;
-              box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+              box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45);
               display: flex;
               align-items: center;
               justify-content: center;
               color: white;
-              font-size: 15px;
+              font-size: 17px;
               font-weight: bold;
               ${isSelected || isInPath ? 'transform: scale(1.25); box-shadow: 0 0 0 5px #fbbf24, 0 8px 20px rgba(0,0,0,0.5);' : ''}
             ">
-              ${iconText}
-            </div>
-          `;
-        } else if (node.type === 'barangay') {
-          markerSize = 32;
-          iconHtml = `
-            <div style="
-              width: ${markerSize}px;
-              height: ${markerSize}px;
-              border-radius: 8px;
-              background: #0d9488;
-              border: 2.5px solid #ffffff;
-              box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 11px;
-              font-weight: 800;
-              ${isSelected || isInPath ? 'box-shadow: 0 0 0 4px #fbbf24;' : ''}
-            ">
-              🏛️
+              🚨
             </div>
           `;
         } else if (node.type === 'case') {
           markerSize = 24;
           const caseStatus = node.rawCase?.status;
-          const isOfficial = node.rawCase?.isInvolvingOfficial;
           const isPending = node.rawCase?.isPending;
+          const isHighPriority = node.rawCase?.priority === 'Urgent' || node.rawCase?.priority === 'High';
 
           let color = '#3b82f6';
-          if (isOfficial) color = '#ef4444';
+          if (isHighPriority) color = '#ef4444';
           else if (isPending) color = '#f59e0b';
           else if (caseStatus === 'Resolved' || caseStatus === 'Closed') color = '#10b981';
 
@@ -572,27 +478,6 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
               ${isSelected || isInPath ? 'transform: scale(1.3); box-shadow: 0 0 0 4px #f59e0b;' : ''}
             ">
               📄
-            </div>
-          `;
-        } else if (node.type === 'official') {
-          markerSize = 22;
-          iconHtml = `
-            <div style="
-              width: ${markerSize}px;
-              height: ${markerSize}px;
-              border-radius: 50%;
-              background: #dc2626;
-              border: 2px solid #ffffff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 9px;
-              font-weight: bold;
-              ${isSelected || isInPath ? 'transform: scale(1.3); box-shadow: 0 0 0 3px #f59e0b;' : ''}
-            ">
-              ⚖️
             </div>
           `;
         } else {
@@ -745,7 +630,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
             onChange={(e) => setFilterBarangay(e.target.value)}
             className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs text-slate-800"
           >
-            <option value="ALL">All 6 Roxas Barangays</option>
+            <option value="ALL">All 20 Roxas Barangays</option>
             {SYSTEM_BARANGAYS_GEO.map((b) => (
               <option key={b.name} value={b.name}>
                 Brgy. {b.name} ({b.zoneType})
@@ -759,12 +644,10 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
             onChange={(e) => setFilterType(e.target.value)}
             className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs text-slate-800"
           >
-            <option value="ALL">All Node Types</option>
-            <option value="case">Cases Only</option>
-            <option value="person">Citizens & Parties</option>
-            <option value="official">Officials Involved</option>
-            <option value="barangay">Barangay Centers</option>
-            <option value="agency">Agency Hubs</option>
+            <option value="ALL">All Entity Types</option>
+            <option value="agency">MDRRMO</option>
+            <option value="case">Resident Cases</option>
+            <option value="person">Resident Reporters</option>
           </select>
 
 
@@ -912,22 +795,16 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
           <div ref={mapContainerRef} className="w-full h-full min-h-[580px] z-10" />
 
           {/* Floating Map Legend at Bottom Left */}
-          <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs border border-slate-200 p-2.5 rounded-lg text-[11px] space-y-1 shadow-sm text-slate-700">
-            <div className="font-bold text-[10px] uppercase text-slate-400 pb-0.5">Graph Entity Overlay</div>
+          <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs border border-slate-200 p-2.5 rounded-lg text-[11px] space-y-1.5 shadow-md text-slate-700">
+            <div className="font-bold text-[10px] uppercase text-slate-400 pb-0.5 tracking-wider">GRAPH ENTITY OVERLAY</div>
+            <div className="flex items-center gap-2 font-medium">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-600" /> MDRRMO
+            </div>
             <div className="flex items-center gap-2 font-medium">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Case Incident Node
             </div>
             <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> Involved Citizen / Party
-            </div>
-            <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Official Involved
-            </div>
-            <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-teal-600" /> Barangay Administrative Center
-            </div>
-            <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-700" /> Municipal Agency Hub (LGU / DILG)
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" /> Resident Reporter
             </div>
           </div>
         </div>

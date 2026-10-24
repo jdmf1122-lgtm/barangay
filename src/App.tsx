@@ -14,7 +14,7 @@ import { CaseDetailModal } from './components/cases/CaseDetailModal';
 import { NewCaseModal } from './components/cases/NewCaseModal';
 import { CreateAccountModal } from './components/auth/CreateAccountModal';
 import { EditAccountModal } from './components/auth/EditAccountModal';
-import { GeographicBarangayMap } from './components/graph/GeographicBarangayMap';
+import { GraphNetworkView } from './components/graph/GraphNetworkView';
 import { AnnualNarrativeReport } from './components/reports/AnnualNarrativeReport';
 import { StandardReportsView } from './components/reports/StandardReportsView';
 import { AuditTrailView } from './components/audit/AuditTrailView';
@@ -81,8 +81,14 @@ const AppContent: React.FC = () => {
         }
       case 'cases':
         return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <CaseList />;
-      case 'gis_map':
-        return currentUser?.agencyType === 'LGU' ? <LguDashboard /> : <GeographicBarangayMap />;
+      case 'incident_graph':
+        return currentUser?.agencyType === 'MDRRMO'
+          ? <GraphNetworkView />
+          : currentUser?.agencyType === 'LGU'
+            ? <LguDashboard />
+            : currentUser?.agencyType === 'ADMIN'
+              ? <SystemAdminView />
+              : <ResidentPortalView initialTab="overview" />;
       case 'transparency':
         return <TransparencyDashboard />;
       case 'annual_narrative':
@@ -103,13 +109,12 @@ const AppContent: React.FC = () => {
 
   return (
     <div
-      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col font-sans text-slate-900 overflow-hidden antialiased ${
-        isMdrrmo
+      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col font-sans text-slate-900 overflow-hidden antialiased ${isMdrrmo
           ? 'bg-[#fcfaf8] selection:bg-orange-600 selection:text-white'
           : isLgu
-          ? 'bg-[#f5fbf7] selection:bg-[#0f532a] selection:text-white'
-          : 'bg-[#f5fbf7] selection:bg-emerald-600 selection:text-white'
-      }`}
+            ? 'bg-[#f5fbf7] selection:bg-[#0f532a] selection:text-white'
+            : 'bg-[#f5fbf7] selection:bg-emerald-600 selection:text-white'
+        }`}
       style={{ backgroundColor: isMdrrmo ? '#fcfaf8' : '#f5fbf7' }}
     >
       {/* Top Header */}
@@ -130,13 +135,12 @@ const AppContent: React.FC = () => {
 
           {/* System Footer (Hidden on small phone screens, shown on tablet/laptop) */}
           <footer
-            className={`hidden sm:flex h-9 lg:h-10 bg-white/90 border-t px-4 sm:px-6 lg:px-8 items-center justify-between text-[10px] font-medium select-none flex-shrink-0 backdrop-blur-xs transition-colors ${
-              isMdrrmo
+            className={`hidden sm:flex h-9 lg:h-10 bg-white/90 border-t px-4 sm:px-6 lg:px-8 items-center justify-between text-[10px] font-medium select-none flex-shrink-0 backdrop-blur-xs transition-colors ${isMdrrmo
                 ? 'border-orange-100 text-orange-900/70'
                 : isLgu
-                ? 'border-emerald-200/90 text-emerald-900/80'
-                : 'border-emerald-100 text-emerald-800/70'
-            }`}
+                  ? 'border-emerald-200/90 text-emerald-900/80'
+                  : 'border-emerald-100 text-emerald-800/70'
+              }`}
           >
             <div className="flex items-center gap-2 sm:gap-4">
               <span className="hidden md:inline">Last System Audit: 4 mins ago</span>
@@ -150,13 +154,12 @@ const AppContent: React.FC = () => {
                 Roxas Municipal Info Office
               </span>
               <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  isMdrrmo
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${isMdrrmo
                     ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
                     : isLgu
-                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'
-                    : 'bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-                }`}
+                      ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+                      : 'bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                  }`}
               />
               <span className={`font-semibold ${isMdrrmo ? 'text-orange-700' : isLgu ? 'text-[#0f532a]' : 'text-emerald-700'}`}>
                 System Fully Encrypted
