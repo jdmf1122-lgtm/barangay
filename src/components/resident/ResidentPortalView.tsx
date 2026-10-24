@@ -210,7 +210,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
     triggerNotification(
       'Incident Report Transmitted to MDRRMO!',
-      `Your report #${newCaseId} has been transmitted to the MDRRMO Command Center. Emergency SMS dispatch alert sent.`,
+      `Your report #${newCaseId} has been transmitted to the MDRRMO Command Center. In-system emergency dispatch alert logged.`,
       'system',
       newCaseId,
       'RESIDENT',

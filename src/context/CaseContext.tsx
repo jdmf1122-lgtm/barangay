@@ -10,9 +10,6 @@ export const sanitizeCaseBarangay = (rawCase: any): Case => {
     b = 'San Aquilino';
   }
 
-  // Seed cases (BC-2026-001 to BC-2026-008) are historical demo records, never unacknowledged resident alerts
-  const isSeedCase = Boolean(rawCase.id && /^BC-2026-00[1-8]/.test(rawCase.id));
-
   let derivedTime = rawCase.incidentTime;
   if (!derivedTime && rawCase.dateReported) {
     try {
@@ -25,8 +22,8 @@ export const sanitizeCaseBarangay = (rawCase: any): Case => {
 
   return {
     ...rawCase,
-    emergencyAlarmAcknowledged: isSeedCase ? true : (rawCase.emergencyAlarmAcknowledged ?? false),
-    isCitizenReport: isSeedCase ? false : Boolean(rawCase.isCitizenReport),
+    emergencyAlarmAcknowledged: Boolean(rawCase.emergencyAlarmAcknowledged),
+    isCitizenReport: rawCase.isCitizenReport !== undefined ? Boolean(rawCase.isCitizenReport) : true,
     barangay: b,
     incidentTime: derivedTime,
     personsInvolved: Array.isArray(rawCase.personsInvolved) ? rawCase.personsInvolved.map((p: any) => ({

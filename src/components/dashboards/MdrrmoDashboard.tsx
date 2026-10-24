@@ -151,10 +151,10 @@ export const MdrrmoDashboard: React.FC = () => {
             id="btn-mdrrmo-test-alarm"
             onClick={handleTestAccidentAlarm}
             className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl text-xs font-black shadow-md border border-red-400/60 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            title="Simulate incoming accident report to test automated SMS broadcast and dispatch popup"
+            title="Simulate incoming accident report to test automated in-system SMS-style dispatch popup"
           >
             <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>🚨 Test SMS</span>
+            <span>🚨 Test SMS Alert</span>
           </button>
           <button
             id="btn-mdrrmo-view-annual"

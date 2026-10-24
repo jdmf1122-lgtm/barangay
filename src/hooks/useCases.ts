@@ -177,6 +177,7 @@ export const useCases = () => {
       isAccidentProneArea: data.isAccidentProneArea ?? isAccident,
       residentReporterId: data.residentReporterId || (currentUser.agencyType === 'RESIDENT' ? currentUser.id : undefined),
       isCitizenReport: !!data.isCitizenReport || currentUser.agencyType === 'RESIDENT',
+      emergencyAlarmAcknowledged: false,
       status: (data.status as CaseStatus) || 'Unresolved',
       isInvolvingOfficial: !!data.isInvolvingOfficial,
       officialInvolvedType: data.officialInvolvedType || 'None',

@@ -49,7 +49,11 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
   };
 
-  const isMdrrmoOfficer = currentUser?.agencyType === 'MDRRMO';
+  const isMdrrmoOfficer =
+    currentUser?.agencyType === 'MDRRMO' ||
+    currentUser?.role === 'MDRRMO_ADMIN' ||
+    currentUser?.role === 'MDRRMO_OFFICER' ||
+    Boolean(currentUser?.agencyName && currentUser.agencyName.toLowerCase().includes('mdrrmo'));
 
   // Track recurring interval SMS resend ticks
   useEffect(() => {
@@ -95,18 +99,15 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
 
     // 1. Scan for any active incident in cases that has not yet been marked as seen/responded
-    // Triggers for any resident citizen report or urgent incident requiring MDRRMO dispatch
+    // Triggers for any active unresolved, unacknowledged incident in the system
     const unacknowledgedCase = cases.find((c) => {
       if (!c) return false;
       // If already resolved, closed, or acknowledged, ignore
       if (c.status === 'Resolved' || c.status === 'Closed' || (c.status as string) === 'Archived') return false;
-      if (c.emergencyAlarmAcknowledged || acknowledgedIds.includes(c.id)) return false;
+      if (c.emergencyAlarmAcknowledged) return false;
+      if (acknowledgedIds.includes(c.id)) return false;
 
-      // Must be a report submitted by a resident or an emergency incident
-      const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
-      const isEmergency = Boolean(c.isAccidentEmergency) || c.priority === 'Urgent' || Boolean(c.category && c.category.toLowerCase().includes('accident'));
-
-      return isResidentReport || isEmergency;
+      return true;
     });
 
     // 2. Scan for unacknowledged emergency notifications
@@ -315,30 +316,40 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
 
         {/* Content Body: MDRRMO (Timestamp) and Alert text */}
         <div className="text-slate-800 text-[14px] sm:text-[15px] leading-relaxed font-normal space-y-2 pt-1">
-          <div className="flex items-center gap-2">
-            <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain shadow-2xs border border-orange-200" />
-            <p className="font-bold text-slate-900 text-xs sm:text-sm">
-              MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
-            </p>
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+            <div className="flex items-center gap-2">
+              <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain shadow-2xs border border-orange-200" />
+              <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
+              </p>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">
+              IN-SYSTEM SMS ALERT
+            </span>
           </div>
-          <p className="text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+
+          <div className="bg-slate-50/80 rounded-md p-3 border border-slate-200/60 font-mono text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap selection:bg-orange-200">
             {smsMessage}
-          </p>
+          </div>
 
           {/* Active resend notice */}
           {resendStatus.isActive && (
             <div className="text-[11px] text-amber-900 bg-amber-50 rounded px-2.5 py-1.5 border border-amber-200/70 flex items-center justify-between mt-2">
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                <span>SMS alert actively resending</span>
+                <span>In-System Alert • Dispatch Broadcast Active</span>
               </span>
               {resendStatus.resendCount > 0 && (
                 <span className="font-mono text-amber-950 font-bold">
-                  Resent: {resendStatus.resendCount}x
+                  Cycle #{resendStatus.resendCount}
                 </span>
               )}
             </div>
           )}
+
+          <p className="text-[10px] text-slate-400 italic">
+            Automated in-system incident alert (SMS-style dispatch format for MDRRMO Command Center).
+          </p>
         </div>
 
         {/* Bottom Actions: Right-aligned OK button */}

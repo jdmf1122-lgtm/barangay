@@ -68,6 +68,7 @@ export const useAuth = () => {
     setIsAuthenticated(true);
     localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(userWithLogo));
     localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
+    try { sessionStorage.removeItem('acknowledged_accident_alarms'); } catch (e) {}
     logActivity('USER_LOGIN', undefined, `Officer ${userWithLogo.name} (${userWithLogo.position}, ${userWithLogo.agencyName}) logged in to B-CONNECT.`);
   };
 
@@ -218,6 +219,7 @@ export const useAuth = () => {
     }
     localStorage.removeItem('bconnect_roxas_user_v11');
     localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
+    try { sessionStorage.removeItem('acknowledged_accident_alarms'); } catch (e) {}
     setIsAuthenticated(false);
   };
 
