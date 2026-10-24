@@ -51,11 +51,8 @@ export const MdrrmoDashboard: React.FC = () => {
     : safeCases.filter((c) => c && c.barangay === barangayFilter);
 
   // Active unacknowledged resident reports & emergency alerts
-  // Must strictly be an actual report submitted by a resident citizen (never seed cases or internal blotters)
   const incomingResidentAlerts = safeCases.filter((c) => {
     if (!c) return false;
-    // Exclude seed / demo cases (strictly BC-2026-001 to BC-2026-008)
-    if (c.id && /^BC-2026-00[1-8]$/.test(c.id)) return false;
 
     // Must be reported by a resident citizen
     const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
