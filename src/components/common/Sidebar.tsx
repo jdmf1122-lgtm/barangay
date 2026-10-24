@@ -94,7 +94,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           id: 'cases',
-          label: 'Crash Blotter & Incident Queue',
+          label: 'Emergency Incident Queue',
           subtitle: isMdrrmoAdmin ? 'Dispatch & Triage Queue' : 'Incident Triage & Intake',
           icon: <FileSpreadsheet className="w-4 h-4" />,
           badge: mdrrmoCases.length

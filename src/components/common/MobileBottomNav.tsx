@@ -223,7 +223,7 @@ export const MobileBottomNav: React.FC = () => {
     );
   }
 
-  // MDRRMO Responders & Field Operations View (Dashboard, Blotter, Elevated New, GIS Map, Menu)
+  // MDRRMO Responders & Field Operations View (Dashboard, Incidents, Elevated New, GIS Map, Menu)
   return (
     <nav
       id="bconnect-mobile-bottom-nav"
@@ -265,7 +265,7 @@ export const MobileBottomNav: React.FC = () => {
         <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
       </button>
 
-      {/* 2. Blotter */}
+      {/* 2. Incidents */}
       <button
         id="mobile-nav-cases"
         type="button"
@@ -294,7 +294,7 @@ export const MobileBottomNav: React.FC = () => {
         >
           <FileSpreadsheet className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">Blotter</span>
+        <span className="text-[10px] mt-0.5 leading-tight">{isMdrrmo ? 'Incidents' : 'Cases'}</span>
       </button>
 
       {/* 3. Resident Cases Graph */}

@@ -139,7 +139,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             : 'LGU Departmental Action & Grievance Desk';
         }
       case 'cases':
-        if (currentUser.agencyType === 'MDRRMO') return 'Crash Blotter & Emergency Incident Queue';
+        if (currentUser.agencyType === 'MDRRMO') return 'Emergency Incident Queue & Dispatch';
         return 'Incident & Complaint Ledger';
       case 'incident_graph': return 'MDRRMO Resident Incident Reports Graph';
       case 'transparency': return 'Inter-Agency Transparency & Oversight';

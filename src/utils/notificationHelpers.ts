@@ -314,7 +314,7 @@ export function getRoleNotificationMeta(agencyType: AgencyType, barangay?: strin
       return {
         centerTitle: 'MDRRMO Emergency & Rescue Alerts',
         badgeLabel: barangay ? `MDRRMO • Sector ${barangay}` : 'MDRRMO Roxas Operations',
-        subHeader: 'Incoming vehicular accidents, rescue ambulance dispatches, and crash blotter triage',
+        subHeader: 'Incoming vehicular accidents, rescue ambulance dispatches, and emergency incident triage',
         themeColor: 'bg-orange-700 text-white',
         borderBadge: 'border-orange-300 bg-orange-50 text-orange-900',
         emptyMessage: 'No active emergency dispatch alerts.',
