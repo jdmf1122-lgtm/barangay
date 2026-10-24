@@ -175,7 +175,7 @@ export const CaseList: React.FC = () => {
                 onChange={(e) => setFilterBarangay(e.target.value)}
                 className="w-full py-1.5 px-2 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="ALL">All Barangays (6)</option>
+                <option value="ALL">All Barangays ({ROXAS_BARANGAYS.length})</option>
                 {ROXAS_BARANGAYS.map((b) => (
                   <option key={b} value={b}>Brgy. {b}</option>
                 ))}
