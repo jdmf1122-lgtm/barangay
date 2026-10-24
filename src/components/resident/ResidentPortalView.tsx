@@ -477,9 +477,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                         setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
                       }}
                       className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
-                      title="I-set sa kasalukuyang oras ng device"
+                      title="Set to current device time"
                     >
-                      Oras Ngayon
+                      Current Time
                     </button>
                   </div>
                   <input

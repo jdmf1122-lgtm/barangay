@@ -18,7 +18,11 @@ import {
   Landmark,
   Layers,
   Sparkles,
-  Trash2
+  Trash2,
+  MapPin,
+  User,
+  Car,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -391,6 +395,140 @@ export const CaseDetailModal: React.FC = () => {
                 </div>
               )}
 
+
+
+              {/* PRIMARY ACCIDENT & CASE OVERVIEW CARD */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                      <FileText className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight">
+                        {selectedCase.title}
+                      </h3>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                        <span className="font-semibold text-slate-700">{selectedCase.category || 'Accident Incident'}</span>
+                        <span>•</span>
+                        <span className="font-mono text-blue-700 font-semibold">{selectedCase.id}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={selectedCase.status} />
+                    <PriorityBadge priority={selectedCase.priority} />
+                  </div>
+                </div>
+
+                {/* Key Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <span>Incident Location</span>
+                    </div>
+                    <div className="font-bold text-slate-800 text-xs">
+                      {selectedCase.sitio ? `Sitio ${selectedCase.sitio}, ` : ''}Brgy. {selectedCase.barangay}
+                    </div>
+                    {selectedCase.specificLocation && (
+                      <div className="text-[11px] text-slate-500 truncate" title={selectedCase.specificLocation}>
+                        {selectedCase.specificLocation}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span>Date of Accident</span>
+                    </div>
+                    <div className="font-bold text-slate-800 text-xs">
+                      {selectedCase.incidentDate || formatDate(selectedCase.dateReported)}
+                    </div>
+                    <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      <span>{selectedCase.incidentTime || 'No specified time'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>Reported By</span>
+                    </div>
+                    <div className="font-bold text-slate-800 text-xs">
+                      {selectedCase.reporterName || 'Resident Citizen (Roxas)'}
+                    </div>
+                    <div className="text-[11px] text-emerald-700 font-medium">
+                      {selectedCase.isCitizenReport ? 'Citizen Portal Report' : 'Verified Resident'}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>MDRRMO Response</span>
+                    </div>
+                    <div className="font-bold text-xs">
+                      {selectedCase.emergencyFirstRespondersDispatched ? (
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Responders Dispatched
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {selectedCase.status === 'Resolved' ? 'Completed' : 'Standby / For Dispatch'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {selectedCase.respondingAmbulanceUnit || 'MDRRMO Roxas Command'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Narrative / Description */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    Incident Narrative / Summary
+                  </h4>
+                  <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">
+                    {selectedCase.initialNarrative || selectedCase.description || 'No additional narrative recorded.'}
+                  </div>
+                </div>
+
+                {/* Additional Accident Specifics (Vehicles / Hospital) */}
+                {(selectedCase.accidentVehicleDetails || selectedCase.hospitalTransported) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                    {selectedCase.accidentVehicleDetails && (
+                      <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-1">
+                        <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Car className="w-3.5 h-3.5 text-blue-600" />
+                          Vehicles Involved
+                        </span>
+                        <p className="text-xs text-blue-950 font-medium">
+                          {selectedCase.accidentVehicleDetails}
+                        </p>
+                      </div>
+                    )}
+                    {selectedCase.hospitalTransported && (
+                      <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-100 space-y-1">
+                        <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-purple-600" />
+                          Hospital / Transport Facility
+                        </span>
+                        <p className="text-xs text-purple-950 font-medium">
+                          {selectedCase.hospitalTransported}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Evidence & Attached Photos */}
               {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (

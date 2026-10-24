@@ -625,7 +625,7 @@ export const AuthPage: React.FC = () => {
                 <User className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
                 <input
                   type="text"
-                  placeholder="Official Full Name (Pangalan)"
+                  placeholder="Official Full Name"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"

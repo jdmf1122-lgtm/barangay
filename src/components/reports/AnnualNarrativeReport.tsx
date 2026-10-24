@@ -242,18 +242,18 @@ export const AnnualNarrativeReport: React.FC = () => {
         {/* Section 6: Official Signatories */}
         <div className="pt-8 border-t-2 border-slate-300 grid grid-cols-2 gap-8 text-xs text-center">
           <div className="space-y-6">
-            <div>Prepared & Verified by:</div>
+            <div className="font-medium text-slate-600">Prepared & Verified by:</div>
             <div>
-              <div className="font-bold uppercase text-slate-900">HON. MARIA SANTOS</div>
-              <div className="text-[11px] text-slate-600">President, Liga ng mga Barangay - Roxas</div>
+              <div className="font-bold text-sm uppercase text-slate-900 tracking-wider">MDRRMO</div>
+              <div className="text-[11px] text-slate-600">Municipal Disaster Risk Reduction & Management Office</div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <div>Reviewed & Monitored by:</div>
+            <div className="font-medium text-slate-600">Reviewed & Monitored by:</div>
             <div>
-              <div className="font-bold uppercase text-slate-900">DIR. EDUARDO DEL ROSARIO, DPA</div>
-              <div className="text-[11px] text-slate-600">Municipal Local Government Operations Officer (MLGOO)</div>
+              <div className="font-bold text-sm uppercase text-slate-900 tracking-wider">LGU</div>
+              <div className="text-[11px] text-slate-600">Roxas Municipality</div>
             </div>
           </div>
         </div>
