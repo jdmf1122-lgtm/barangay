@@ -262,10 +262,7 @@ export const CaseDetailModal: React.FC = () => {
                 <div id="case-escalated-lgu-callout" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 text-rose-900 font-extrabold text-sm">
-                      <span className="flex h-3 w-3 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
-                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
                       <span>🚨 ESCALATED TO LGU: MDRRMO Non-Response Timeout Exceeded</span>
                     </div>
                     <span className="px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded-full uppercase">

@@ -255,7 +255,7 @@ export const useAuth = () => {
       console.warn('Supabase remote sign up notice:', authErr);
     }
 
-    const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${String((users?.length || 0) + 1).padStart(2, '0')}`;
+    const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const fallbackLogo =
       newUserData.agencyType === 'MDRRMO'

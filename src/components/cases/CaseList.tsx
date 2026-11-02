@@ -52,7 +52,7 @@ export const CaseList: React.FC = () => {
         return false;
       }
     } else if (currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT') {
-      if (c.barangay !== (currentUser?.barangay || 'San Aquilino') && c.residentReporterId !== currentUser?.id) {
+      if (!currentUser?.id || c.residentReporterId !== currentUser.id) {
         return false;
       }
     } else if (filterBarangay !== 'ALL' && c.barangay !== filterBarangay) {

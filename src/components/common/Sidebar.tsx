@@ -46,12 +46,8 @@ export const Sidebar: React.FC = () => {
     // 0. RESIDENT CITIZEN VIEW (Clean, accessible, incident reporting & case tracker)
     if (isResident) {
       const brgyName = currentUser?.barangay || 'San Aquilino';
-      const userName = (currentUser?.name || '').toLowerCase();
       const myReports = safeCases.filter(c =>
-        c.residentReporterId === currentUser?.id ||
-        (c.createdBy && c.createdBy.toLowerCase().includes(userName)) ||
-        (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === userName)) ||
-        (c.barangay === brgyName && c.isCitizenReport)
+        Boolean(currentUser?.id && c.residentReporterId === currentUser.id)
       );
 
       return [
@@ -460,8 +456,9 @@ export const Sidebar: React.FC = () => {
               {/* Badges */}
               <div className="flex items-center space-x-1 flex-shrink-0">
                 {item.urgentAlert && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500 text-white animate-pulse">
-                    {item.urgentAlert}
+                  <span className="inline-flex items-center gap-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-600 text-white shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+                    <span>{item.urgentAlert}</span>
                   </span>
                 )}
                 {item.badge !== undefined && !item.urgentAlert && (

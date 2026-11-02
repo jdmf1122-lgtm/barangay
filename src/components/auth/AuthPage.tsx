@@ -722,52 +722,6 @@ export const AuthPage: React.FC = () => {
             </form>
           )}
 
-          {/* =====================================================================
-              Divider: OR CONTINUE WITH
-              ===================================================================== */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="h-[1px] bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1" />
-            <span className="text-[10px] sm:text-[11px] font-extrabold tracking-widest text-slate-400 uppercase select-none">
-              Or Continue With
-            </span>
-            <div className="h-[1px] bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1" />
-          </div>
-
-          {/* =====================================================================
-              Google Sign In Button
-              ===================================================================== */}
-          <div className="flex items-center justify-center">
-            {/* Google Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setQuickActionNotice('One-click sign in as Resident Citizen...');
-                setTimeout(() => handleQuickRoleAccess('RESIDENT'), 400);
-              }}
-              title="Sign in with Google (Resident Citizen Portal)"
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] neo-squircle-btn flex items-center justify-center cursor-pointer group"
-            >
-              {/* Google G Logo in Full Colors */}
-              <svg className="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-            </button>
-          </div>
 
           {/* =====================================================================
               Footer Slogan: COMMUNITY • SERVICE • PROGRESS

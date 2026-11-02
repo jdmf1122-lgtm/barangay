@@ -38,6 +38,7 @@ import {
 } from '../../types';
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
+import { classifyIncidentFromText } from '../../utils/incidentClassifier';
 
 
 
@@ -76,7 +77,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   // Incident submission form state - Vehicular Accidents
   const [reportTitle, setReportTitle] = useState('');
-  const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
+  const detectedClassification = React.useMemo(() => {
+    return classifyIncidentFromText(reportTitle);
+  }, [reportTitle]);
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
   const [reportDate, setReportDate] = useState(() => {
@@ -98,17 +101,10 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   // Search in My Reports
   const [reportSearch, setReportSearch] = useState('');
 
-  // Filter reports submitted by or involving this resident/barangay
-  const currentResidentName = (currentUser?.name || '').toLowerCase();
-  const myReports = (cases || []).filter(c => {
-    const isReporter = c.residentReporterId === currentUser?.id ||
-      (c.createdBy && c.createdBy.toLowerCase().includes(currentResidentName)) ||
-      (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
-      (c.witnesses && c.witnesses.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
-      (c.personsInvolved && c.personsInvolved.some(p => (p.name || '').toLowerCase() === currentResidentName));
-    const isSameBarangay = c.barangay === (currentUser?.barangay || 'San Aquilino');
-    return isReporter || (currentUser?.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
-  });
+  // Filter reports submitted strictly by this resident account
+  const myReports = (cases || []).filter(c =>
+    Boolean(currentUser?.id && c.residentReporterId === currentUser.id)
+  );
 
   const filteredMyReports = myReports.filter(c => {
     if (!reportSearch.trim()) return true;
@@ -170,7 +166,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     const witnessPersons: PersonInvolved[] = [];
 
     const isAccidentReport =
-      reportCategory === 'Traffic / Vehicular Incident' ||
       reportTitle.toLowerCase().includes('accident') ||
       reportTitle.toLowerCase().includes('banggaan') ||
       reportTitle.toLowerCase().includes('vehicular') ||
@@ -181,9 +176,12 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     const finalSitio = reportSitio.trim();
     const finalLocation = `${finalSitio ? `${finalSitio}, ` : ''}Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
 
+    const classified = classifyIncidentFromText(reportTitle);
+    const finalCategory = classified.category;
+
     const newCaseId = createCase({
       title: reportTitle.trim(),
-      category: reportCategory,
+      category: finalCategory,
       description: reportTitle.trim(),
       initialNarrative: reportTitle.trim(),
       dateReported: new Date().toISOString(),
@@ -406,6 +404,18 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   onChange={(e) => setReportTitle(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
+
+                {reportTitle.trim().length >= 3 && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2 px-3 py-1.5 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-950 transition-all animate-in fade-in duration-200">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="text-[11px] font-semibold text-emerald-800">
+                      Auto-Detected Incident Category:
+                    </span>
+                    <span className="font-extrabold text-[11px] text-emerald-950 bg-white px-2 py-0.5 rounded-md border border-emerald-300 shadow-2xs">
+                      {detectedClassification.category}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 2. Location & Date/Time */}
@@ -809,7 +819,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-emerald-600" />
-                  <span>Recent Incident Reports in Barangay {currentUser.barangay || 'San Aquilino'}</span>
+                  <span>My Recent Incident Reports</span>
                 </h3>
               </div>
 
@@ -824,7 +834,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
             {myReports.length === 0 ? (
               <div className="text-center py-8 text-xs text-slate-500">
-                No active incident reports at this time. Community peace and order is stable.
+                You have not submitted any incident reports yet.
               </div>
             ) : (
               <div className="divide-y divide-slate-100">

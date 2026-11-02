@@ -97,28 +97,10 @@ export function isNotificationForUser(
       }
     }
 
-    // C. Check if related to a case filed by or directly involving this resident
-    if (relatedCase) {
-      // Must be in resident's barangay
-      if (userBarangay && relatedCase.barangay && relatedCase.barangay !== userBarangay) {
-        return false;
-      }
-
-      const isReporter =
-        (relatedCase.residentReporterId && relatedCase.residentReporterId === userId) ||
-        (relatedCase.createdBy && relatedCase.createdBy.toLowerCase().includes(userName)) ||
-        (relatedCase.complainants && relatedCase.complainants.some((c) => (c.name && c.name.toLowerCase() === userName) || c.id === userId));
-
-      const isPersonInvolved =
-        Boolean(relatedCase.personsInvolved &&
-        relatedCase.personsInvolved.some((p) => (p.name && p.name.toLowerCase() === userName) || p.id === userId));
-
-      if (isReporter || isPersonInvolved) {
-        return true;
-      }
-
-      // If not reporter or person involved, residents don't see another resident's private case updates
-      return false;
+    // C. Check if related to a case filed strictly by this resident account
+    if (notif.caseId) {
+      if (!relatedCase) return false;
+      return Boolean(userId && relatedCase.residentReporterId === userId);
     }
 
     // D. Community advisory for resident's barangay (or municipal-wide 'ALL' / untargeted)

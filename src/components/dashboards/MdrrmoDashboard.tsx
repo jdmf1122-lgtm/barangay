@@ -172,10 +172,7 @@ export const MdrrmoDashboard: React.FC = () => {
         <div id="mdrrmo-live-incoming-alerts" className="bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
-              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
               <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
                 🚨 Live Resident Reports Received ({incomingResidentAlerts.length})
               </h3>
@@ -218,7 +215,7 @@ export const MdrrmoDashboard: React.FC = () => {
                     <div className={`mt-2.5 p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1.5 ${c.isEscalatedToLgu
                         ? 'bg-rose-100/90 border-rose-300 text-rose-950 font-bold'
                         : isOverdue
-                          ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold animate-pulse'
+                          ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
                           : remainingMins <= 30
                             ? 'bg-amber-50 border-amber-300 text-amber-900 font-medium'
                             : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -227,9 +224,15 @@ export const MdrrmoDashboard: React.FC = () => {
                         <Timer className={`w-3.5 h-3.5 shrink-0 ${c.isEscalatedToLgu || isOverdue ? 'text-rose-600' : 'text-amber-600'}`} />
                         <span className="truncate">
                           {c.isEscalatedToLgu ? (
-                            <span>🚨 Escalated to LGU ({elapsed.displayStr} elapsed)</span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
+                              <span>🚨 Escalated to LGU ({elapsed.displayStr} elapsed)</span>
+                            </span>
                           ) : isOverdue ? (
-                            <span>⚠️ Deadline reached ({elapsed.displayStr} elapsed) • Escalating to LGU</span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
+                              <span>⚠️ Deadline reached ({elapsed.displayStr} elapsed) • Escalating to LGU</span>
+                            </span>
                           ) : (
                             <span>Timer: <strong>{elapsed.displayStr}</strong> • Escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins / 60)}h ${remainingMins % 60}m` : `${remainingMins}m`}</span>
                           )}
@@ -377,8 +380,9 @@ export const MdrrmoDashboard: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span>{c.caseNumber || c.id}</span>
                       {c.isEscalatedToLgu && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white animate-pulse" title="Automatically escalated to LGU due to MDRRMO non-response timeout">
-                          LGU Escalated
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white shadow-xs" title="Automatically escalated to LGU due to MDRRMO non-response timeout">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+                          <span>LGU Escalated</span>
                         </span>
                       )}
                     </div>
