@@ -452,7 +452,7 @@ export function mergeDuplicateIntoPrimary(
 
   if (duplicateReport.reporterName && !existingPersonNames.has(normalizeText(duplicateReport.reporterName))) {
     const secondaryWitness: PersonInvolved = {
-      id: `P-DUP-${Date.now()}`,
+      id: duplicateReport.residentReporterId || `P-DUP-${Date.now()}`,
       name: duplicateReport.reporterName,
       role: 'Witness',
       barangay: duplicateReport.barangay || primaryCase.barangay,

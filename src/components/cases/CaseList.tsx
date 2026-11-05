@@ -18,6 +18,7 @@ import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge, OfficialBadge } from '../common/StatusBadge';
 import { ROXAS_BARANGAYS, IncidentCategory } from '../../types';
 import { formatDateShort, exportToCsv } from '../../utils/reportGenerators';
+import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 export const CaseList: React.FC = () => {
   const { currentUser } = useAuth();
@@ -290,6 +291,11 @@ export const CaseList: React.FC = () => {
                         Official
                       </span>
                     )}
+                    {isConsolidatedCase(c) && (
+                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        ✓ Unified
+                      </span>
+                    )}
                   </div>
 
                   <button
@@ -348,6 +354,11 @@ export const CaseList: React.FC = () => {
                     <td className="py-3 px-3 align-top max-w-xs">
                       <div className="font-semibold text-slate-900 line-clamp-1 flex items-center gap-1.5">
                         <span>{c.title}</span>
+                        {isConsolidatedCase(c) && (
+                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded shrink-0">
+                            ✓ Unified
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                         <span className="bg-slate-100 px-1.5 py-0.2 rounded text-[10px]">{c.category}</span>

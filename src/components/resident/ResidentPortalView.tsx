@@ -39,6 +39,7 @@ import {
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { classifyIncidentFromText } from '../../utils/incidentClassifier';
+import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 
 
@@ -77,9 +78,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   // Incident submission form state - Vehicular Accidents
   const [reportTitle, setReportTitle] = useState('');
-  const detectedClassification = React.useMemo(() => {
-    return classifyIncidentFromText(reportTitle);
-  }, [reportTitle]);
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
   const [reportDate, setReportDate] = useState(() => {
@@ -101,9 +99,14 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   // Search in My Reports
   const [reportSearch, setReportSearch] = useState('');
 
-  // Filter reports submitted strictly by this resident account
+  // Filter reports submitted strictly by this resident account (including consolidated duplicate reports by user ID)
   const myReports = (cases || []).filter(c =>
-    Boolean(currentUser?.id && c.residentReporterId === currentUser.id)
+    Boolean(
+      currentUser?.id && (
+        c.residentReporterId === currentUser.id ||
+        (c.witnesses && c.witnesses.some(w => w.id === currentUser.id))
+      )
+    )
   );
 
   const filteredMyReports = myReports.filter(c => {
@@ -340,6 +343,24 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
                   </div>
 
+                  {(() => {
+                    const matchedCase = cases.find((c) => c.id === submittedSuccessCaseId);
+                    if (matchedCase && isConsolidatedCase(matchedCase)) {
+                      return (
+                        <div className="mt-3 p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-emerald-950 text-xs flex items-start gap-2 shadow-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block font-bold">Awtomatikong Pinag-isang Ulat (Auto-Consolidated)</strong>
+                            <span className="text-[11px] leading-relaxed block mt-0.5">
+                              Napansin ng system na may nauna nang katulad na ulat ukol sa insidenteng ito. Matagumpay na pinag-isa ang iyong report sa nag-iisang aktibong docket na ito upang maiwasan ang duplicate report at dobleng dispatch ng mga responders.
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
 
                 </div>
               </div>
@@ -405,17 +426,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
 
-                {reportTitle.trim().length >= 3 && (
-                  <div className="flex flex-wrap items-center gap-2 mt-2 px-3 py-1.5 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-950 transition-all animate-in fade-in duration-200">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="text-[11px] font-semibold text-emerald-800">
-                      Auto-Detected Incident Category:
-                    </span>
-                    <span className="font-extrabold text-[11px] text-emerald-950 bg-white px-2 py-0.5 rounded-md border border-emerald-300 shadow-2xs">
-                      {detectedClassification.category}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* 2. Location & Date/Time */}
@@ -686,6 +696,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                           </span>
                           <StatusBadge status={c.status} />
                           <PriorityBadge priority={c.priority} />
+                          {isConsolidatedCase(c) && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ✓ Pinag-isang Ulat (Unified)
+                            </span>
+                          )}
                         </div>
 
                         <span className="text-[11px] text-slate-500 flex items-center gap-1">
