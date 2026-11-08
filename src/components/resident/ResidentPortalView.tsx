@@ -38,6 +38,8 @@ import {
 } from '../../types';
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
+import { classifyIncidentFromText } from '../../utils/incidentClassifier';
+import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 
 
@@ -52,6 +54,11 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   React.useEffect(() => {
     setPortalTab(initialTab);
     setSubmittedSuccessCaseId(null);
+    if (initialTab === 'submit') {
+      const now = new Date();
+      setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      setReportDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
+    }
   }, [initialTab]);
 
   const handleSwitchTab = (tab: 'overview' | 'submit' | 'my_reports') => {
@@ -59,6 +66,9 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     setSubmittedSuccessCaseId(null);
     if (tab === 'submit') {
       setActiveTab('submit_report');
+      const now = new Date();
+      setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      setReportDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
     } else if (tab === 'my_reports') {
       setActiveTab('my_reports');
     } else {
@@ -68,11 +78,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   // Incident submission form state - Vehicular Accidents
   const [reportTitle, setReportTitle] = useState('');
-  const [reportCategory, setReportCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
   const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
   const [reportSitio, setReportSitio] = useState('');
-  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
-  const [reportTime, setReportTime] = useState('14:00');
+  const [reportDate, setReportDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
+  const [reportTime, setReportTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
   const [isUrgent, setIsUrgent] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,17 +99,15 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
   // Search in My Reports
   const [reportSearch, setReportSearch] = useState('');
 
-  // Filter reports submitted by or involving this resident/barangay
-  const currentResidentName = (currentUser?.name || '').toLowerCase();
-  const myReports = (cases || []).filter(c => {
-    const isReporter = c.residentReporterId === currentUser?.id ||
-      (c.createdBy && c.createdBy.toLowerCase().includes(currentResidentName)) ||
-      (c.complainants && c.complainants.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
-      (c.witnesses && c.witnesses.some(p => (p.name || '').toLowerCase() === currentResidentName)) ||
-      (c.personsInvolved && c.personsInvolved.some(p => (p.name || '').toLowerCase() === currentResidentName));
-    const isSameBarangay = c.barangay === (currentUser?.barangay || 'San Aquilino');
-    return isReporter || (currentUser?.role === 'RESIDENT' && isSameBarangay && c.isCitizenReport);
-  });
+  // Filter reports submitted strictly by this resident account (including consolidated duplicate reports by user ID)
+  const myReports = (cases || []).filter(c =>
+    Boolean(
+      currentUser?.id && (
+        c.residentReporterId === currentUser.id ||
+        (c.witnesses && c.witnesses.some(w => w.id === currentUser.id))
+      )
+    )
+  );
 
   const filteredMyReports = myReports.filter(c => {
     if (!reportSearch.trim()) return true;
@@ -156,7 +169,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     const witnessPersons: PersonInvolved[] = [];
 
     const isAccidentReport =
-      reportCategory === 'Traffic / Vehicular Incident' ||
       reportTitle.toLowerCase().includes('accident') ||
       reportTitle.toLowerCase().includes('banggaan') ||
       reportTitle.toLowerCase().includes('vehicular') ||
@@ -167,11 +179,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     const finalSitio = reportSitio.trim();
     const finalLocation = `${finalSitio ? `${finalSitio}, ` : ''}Barangay ${reportBarangay}, Roxas, Oriental Mindoro`;
 
+    const classified = classifyIncidentFromText(reportTitle);
+    const finalCategory = classified.category;
+
     const newCaseId = createCase({
       title: reportTitle.trim(),
-      category: reportCategory,
+      category: finalCategory,
       description: reportTitle.trim(),
       initialNarrative: reportTitle.trim(),
+      dateReported: new Date().toISOString(),
+      dateCreated: new Date().toISOString(),
       incidentDate: reportDate,
       incidentTime: reportTime,
       barangay: reportBarangay,
@@ -181,20 +198,18 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       complainants: [complainantPerson],
       respondents: respondentPersons,
       witnesses: witnessPersons,
-      priority: isAccidentReport || isUrgent ? 'Urgent' : 'Medium',
-      isAccidentEmergency: isAccidentReport,
-      accidentVehicleDetails: isAccidentReport ? 'Road/Vehicular Accident Reported by Resident' : undefined,
+      priority: 'Urgent',
+      isAccidentEmergency: true,
+      accidentVehicleDetails: isAccidentReport ? 'Road/Vehicular Accident Reported by Resident' : 'Incident Reported by Resident',
       isAccidentProneArea: isAccidentReport,
-      originatingAgency: `Barangay ${reportBarangay} Resident Portal`,
-      currentHandlingAgency: `Barangay ${reportBarangay} LGU`,
+      originatingAgency: `Resident Citizen (Brgy. ${reportBarangay})`,
+      currentHandlingAgency: 'MDRRMO Roxas Operations & Emergency Command Center',
       status: 'Received',
       isCitizenReport: true,
       residentReporterId: currentUser.id,
-      isRemainedAtBarangay: true,
-      barangayRetentionReason: isAccidentReport ? 'Emergency first responder dispatch & Lupon desk blotter' : 'Ongoing mediation / Lupon conciliation',
-      barangayRetentionNotes: isAccidentReport
-        ? '🚨 ROAD ACCIDENT REPORT: Dispatched urgent alert to Punong Barangay and Tanod First Responders.'
-        : 'Citizen report received via B-CONNECT Resident Portal. Queued for Barangay Secretary / Lupon Tagapamayapa review.',
+      isRemainedAtBarangay: false,
+      barangayRetentionReason: 'Direct emergency incident transmission to MDRRMO Operations Center',
+      barangayRetentionNotes: 'Citizen report received via B-CONNECT Resident Portal and dispatched directly to MDRRMO.',
       isConfidential: false,
       imageUrls: uploadedImageUrls
     });
@@ -209,12 +224,12 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     setSelectedFiles([]);
 
     triggerNotification(
-      'Incident Report Submitted Successfully!',
-      `Your report #${newCaseId} has been officially logged with Barangay ${reportBarangay}. You may track its progress anytime.`,
+      'Incident Report Transmitted to MDRRMO!',
+      `Your report #${newCaseId} has been transmitted to the MDRRMO Command Center. In-system emergency dispatch alert logged.`,
       'system',
       newCaseId,
       'RESIDENT',
-      'normal',
+      'urgent',
       {
         targetAgencyTypes: ['RESIDENT'],
         targetRoles: ['RESIDENT'],
@@ -233,16 +248,32 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
         <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute left-1/3 bottom-0 -mb-12 w-60 h-60 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
-            </div>
+        {/* Subtle background watermark */}
+        <img
+          src="/bconnect_logo_transparent.png"
+          alt=""
+          className="absolute -right-8 -bottom-8 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110"
+        />
 
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-              Welcome, {currentUser.name}!
-            </h1>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1 shadow-md border-2 border-emerald-400 ring-2 ring-emerald-700/40 flex-shrink-0 flex items-center justify-center">
+              <img
+                src="/bconnect_logo_transparent.png"
+                alt="B-CONNECT Official Logo"
+                className="w-full h-full object-contain rounded-xl"
+              />
+            </div>
+            <div className="space-y-1 sm:space-y-1.5">
+              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
+              </div>
+
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white leading-tight">
+                Welcome, {currentUser.name}!
+              </h1>
+            </div>
           </div>
 
           {/* Quick Action Navigation Buttons */}
@@ -312,6 +343,24 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
                   </div>
 
+                  {(() => {
+                    const matchedCase = cases.find((c) => c.id === submittedSuccessCaseId);
+                    if (matchedCase && isConsolidatedCase(matchedCase)) {
+                      return (
+                        <div className="mt-3 p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-emerald-950 text-xs flex items-start gap-2 shadow-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block font-bold">Awtomatikong Pinag-isang Ulat (Auto-Consolidated)</strong>
+                            <span className="text-[11px] leading-relaxed block mt-0.5">
+                              Napansin ng system na may nauna nang katulad na ulat ukol sa insidenteng ito. Matagumpay na pinag-isa ang iyong report sa nag-iisang aktibong docket na ito upang maiwasan ang duplicate report at dobleng dispatch ng mga responders.
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
 
                 </div>
               </div>
@@ -363,46 +412,20 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
             <form onSubmit={handleSubmitReport} className="space-y-6">
 
-              {/* 1. Category & Title */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-5 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Accident / Crash Category <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    id="select-incident-category"
-                    value={reportCategory}
-                    onChange={(e) => setReportCategory(e.target.value as IncidentCategory)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Motorcycle vs Motorcycle Collision">Motorcycle vs Motorcycle Collision</option>
-                    <option value="Motorcycle vs Car / SUV Collision">Motorcycle vs Car / SUV Collision</option>
-                    <option value="Motorcycle vs Tricycle Collision">Motorcycle vs Tricycle Collision</option>
-                    <option value="Car / 4-Wheeled Vehicle Collision">Car / 4-Wheeled Vehicle Collision</option>
-                    <option value="Tricycle Collision / Rollover">Tricycle Collision / Rollover</option>
-                    <option value="Truck / Bus / Heavy Vehicle Crash">Truck / Bus / Heavy Vehicle Crash</option>
-                    <option value="PUV / Jeepney / Multicab Accident">PUV / Jeepney / Multicab Accident</option>
-                    <option value="Pedestrian Hit by Vehicle / Motorcycle">Pedestrian Hit by Vehicle / Motorcycle</option>
-                    <option value="Bicycle / E-Bike / E-Trike Crash">Bicycle / E-Bike / E-Trike Crash</option>
-                    <option value="Single-Vehicle Road Skid / Fixed Object Crash">Single-Vehicle Road Skid / Fixed Object Crash</option>
-                    <option value="Multi-Vehicle Pileup Collision">Multi-Vehicle Pileup Collision</option>
-                    <option value="Hit-and-Run Vehicular Crash">Hit-and-Run Vehicular Crash</option>
-                  </select>
-                </div>
+              {/* 1. Incident Title / Summary */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800">
+                  Accident Title / Summary <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="input-report-title"
+                  type="text"
+                  required
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
 
-                <div className="md:col-span-7 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Accident Title / Summary <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    id="input-report-title"
-                    type="text"
-                    required
-                    value={reportTitle}
-                    onChange={(e) => setReportTitle(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
               </div>
 
               {/* 2. Location & Date/Time */}
@@ -462,15 +485,28 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Estimated Time</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Estimated Time</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+                      }}
+                      className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
+                      title="Set to current device time"
+                    >
+                      Current Time
+                    </button>
+                  </div>
                   <input
                     type="time"
                     value={reportTime}
                     onChange={(e) => setReportTime(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                   />
                 </div>
 
@@ -660,11 +696,16 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                           </span>
                           <StatusBadge status={c.status} />
                           <PriorityBadge priority={c.priority} />
+                          {isConsolidatedCase(c) && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ✓ Pinag-isang Ulat (Unified)
+                            </span>
+                          )}
                         </div>
 
                         <span className="text-[11px] text-slate-500 flex items-center gap-1">
                           <Calendar className="w-3 h-3 text-slate-400" />
-                          <span>Reported on {formatDateShort(c.dateReported)}</span>
+                          <span>Reported on {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}</span>
                         </span>
                       </div>
 
@@ -793,7 +834,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-emerald-600" />
-                  <span>Recent Incident Reports in Barangay {currentUser.barangay || 'San Aquilino'}</span>
+                  <span>My Recent Incident Reports</span>
                 </h3>
               </div>
 
@@ -808,7 +849,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
             {myReports.length === 0 ? (
               <div className="text-center py-8 text-xs text-slate-500">
-                No active incident reports at this time. Community peace and order is stable.
+                You have not submitted any incident reports yet.
               </div>
             ) : (
               <div className="divide-y divide-slate-100">

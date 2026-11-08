@@ -48,20 +48,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (savedUserStr) {
       try {
         const parsed = JSON.parse(savedUserStr);
-        if (parsed?.id) return parsed;
+        if (parsed?.id) {
+          if (!parsed.avatarUrl) {
+            if (parsed.agencyType === 'MDRRMO') parsed.avatarUrl = '/mdrrmo_logo.png';
+            else if (parsed.agencyType === 'LGU') parsed.avatarUrl = '/lgu_logo.png';
+          }
+          return parsed;
+        }
       } catch (e) { }
     }
     return SEED_USERS[0] || DEFAULT_BLANK_USER;
   });
   const [users, setUsers] = useState<User[]>(() => {
+    const userMap = new Map<string, User>();
+    SEED_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), u));
+
     const savedUsersStr = localStorage.getItem('bconnect_roxas_users_v11');
     if (savedUsersStr) {
       try {
         const parsed = JSON.parse(savedUsersStr);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach((u: User) => {
+            if (u?.email) {
+              const emailKey = u.email.toLowerCase();
+              userMap.set(emailKey, {
+                ...(userMap.get(emailKey) || {}),
+                ...u,
+                avatarUrl: u.avatarUrl || (u.agencyType === 'MDRRMO' ? '/mdrrmo_logo.png' : u.agencyType === 'LGU' ? '/lgu_logo.png' : undefined)
+              });
+            }
+          });
+        }
       } catch (e) { }
     }
-    return SEED_USERS;
+
+    // Initialize default passcodes in vault for fixed accounts
+    try {
+      const vault = JSON.parse(localStorage.getItem('bconnect_passcodes_vault') || '{}');
+      let changed = false;
+      if (!vault['mdrrmoroxas@gmail.com']) {
+        vault['mdrrmoroxas@gmail.com'] = 'mdrrmo2026';
+        vault['mdrrmoroxas'] = 'mdrrmo2026';
+        changed = true;
+      }
+      if (!vault['lguroxas@gmail.com']) {
+        vault['lguroxas@gmail.com'] = 'lguroxas2026';
+        vault['lguroxas'] = 'lguroxas2026';
+        changed = true;
+      }
+      if (changed) {
+        localStorage.setItem('bconnect_passcodes_vault', JSON.stringify(vault));
+      }
+    } catch (e) {}
+
+    return Array.from(userMap.values());
   });
 
   useEffect(() => {
@@ -78,9 +118,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .single();
 
           if (profile) {
-            setCurrentUserState(profile as User);
+            const profileUser = profile as User;
+            if (!profileUser.avatarUrl) {
+              if (profileUser.agencyType === 'MDRRMO') profileUser.avatarUrl = '/mdrrmo_logo.png';
+              else if (profileUser.agencyType === 'LGU') profileUser.avatarUrl = '/lgu_logo.png';
+            }
+            setCurrentUserState(profileUser);
             setIsAuthenticated(true);
-            localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profile));
+            localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(profileUser));
             localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
           }
         } else {
@@ -90,6 +135,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
               const parsed = JSON.parse(savedUserStr);
               if (parsed?.id) {
+                if (!parsed.avatarUrl) {
+                  if (parsed.agencyType === 'MDRRMO') parsed.avatarUrl = '/mdrrmo_logo.png';
+                  else if (parsed.agencyType === 'LGU') parsed.avatarUrl = '/lgu_logo.png';
+                }
                 setCurrentUserState(parsed);
                 setIsAuthenticated(true);
               }

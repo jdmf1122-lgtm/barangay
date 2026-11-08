@@ -88,9 +88,9 @@ export const StandardReportsView: React.FC = () => {
       {/* Report Switcher Tabs */}
       <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 text-xs font-semibold">
         {[
-          { id: 'DAILY', label: 'Daily Incident Blotter Report' },
-          { id: 'QUARTERLY_KP', label: 'Quarterly Katarungang Pambarangay Compliance' },
-          { id: 'MONTHLY', label: 'Monthly 16-Barangay Comparative Summary' }
+          { id: 'DAILY', label: 'Daily Incident Report' },
+          { id: 'QUARTERLY_KP', label: 'Quarterly Barangay Justice Compliance' },
+          { id: 'MONTHLY', label: `Monthly ${ROXAS_BARANGAYS.length}-Barangay Comparative Summary` }
         ].map((t) => (
           <button
             key={t.id}
@@ -110,7 +110,7 @@ export const StandardReportsView: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
         {reportType === 'DAILY' && (
           <div>
-            <h3 className="font-bold text-sm text-slate-900 mb-1">Daily Master Incident Blotter</h3>
+            <h3 className="font-bold text-sm text-slate-900 mb-1">Daily Master Incident Report</h3>
             <p className="text-xs text-slate-500 mb-3">All records logged in sequence across Roxas</p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs divide-y divide-slate-200">
@@ -148,9 +148,9 @@ export const StandardReportsView: React.FC = () => {
         {reportType === 'QUARTERLY_KP' && (
           <div>
             <h3 className="font-bold text-sm text-slate-900 mb-1">
-              Quarterly Katarungang Pambarangay Performance Matrix (RA 7160)
+              Quarterly Barangay Justice Performance Matrix (RA 7160)
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Conciliation and mediation output across the 5 Barangays</p>
+            <p className="text-xs text-slate-500 mb-3">Conciliation and mediation output across all {ROXAS_BARANGAYS.length} Barangays</p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs divide-y divide-slate-200">
                 <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
@@ -191,7 +191,7 @@ export const StandardReportsView: React.FC = () => {
         {reportType === 'MONTHLY' && (
           <div>
             <h3 className="font-bold text-sm text-slate-900 mb-1">
-              Monthly 16-Barangay Incident Distribution
+              Monthly {ROXAS_BARANGAYS.length}-Barangay Incident Distribution
             </h3>
             <p className="text-xs text-slate-500 mb-3">Cross-barangay incident metrics for executive planning</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

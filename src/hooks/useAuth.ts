@@ -53,11 +53,23 @@ export const useAuth = () => {
   };
 
   const login = (user: User) => {
-    setCurrentUserState(user);
+    const fallbackLogo =
+      user.agencyType === 'MDRRMO'
+        ? '/mdrrmo_logo.png'
+        : user.agencyType === 'LGU'
+        ? '/lgu_logo.png'
+        : user.avatarUrl;
+
+    const userWithLogo: User = {
+      ...user,
+      avatarUrl: user.avatarUrl || fallbackLogo
+    };
+    setCurrentUserState(userWithLogo);
     setIsAuthenticated(true);
-    localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(user));
+    localStorage.setItem('bconnect_roxas_user_v11', JSON.stringify(userWithLogo));
     localStorage.setItem('bconnect_roxas_auth_status_v11', 'true');
-    logActivity('USER_LOGIN', undefined, `Officer ${user.name} (${user.position}, ${user.agencyName}) logged in to B-CONNECT.`);
+    try { sessionStorage.removeItem('acknowledged_accident_alarms'); } catch (e) {}
+    logActivity('USER_LOGIN', undefined, `Officer ${userWithLogo.name} (${userWithLogo.position}, ${userWithLogo.agencyName}) logged in to B-CONNECT.`);
   };
 
   const loginWithCredentials = async (emailOrId: string, passcode?: string): Promise<{ success: boolean; message?: string }> => {
@@ -163,10 +175,10 @@ export const useAuth = () => {
         const userPass = (matchedUser as any).passcode;
         const vaultPass = vault[matchedUser.email?.toLowerCase()] || vault[matchedUser.id?.toLowerCase()];
         const isMasterPass =
-          cleanPasscode === 'jarinyes' ||
           cleanPasscode === '123456' ||
           cleanPasscode === 'password123' ||
-          cleanPasscode === 'mdrrmo2026';
+          cleanPasscode === 'mdrrmo2026' ||
+          cleanPasscode === 'lguroxas2026';
 
         const isExactMatch =
           (userPass && userPass === cleanPasscode) ||
@@ -186,7 +198,7 @@ export const useAuth = () => {
 
         return {
           success: false,
-          message: 'Incorrect password / passcode for this account. You may also use the master passcode: jarinyes'
+          message: 'Incorrect password / passcode for this account. Please verify your credentials or contact the administrator.'
         };
       }
 
@@ -208,44 +220,55 @@ export const useAuth = () => {
     }
     localStorage.removeItem('bconnect_roxas_user_v11');
     localStorage.setItem('bconnect_roxas_auth_status_v11', 'false');
+    try { sessionStorage.removeItem('acknowledged_accident_alarms'); } catch (e) {}
     setIsAuthenticated(false);
   };
 
   const registerUser = async (newUserData: Omit<User, 'id'> & { id?: string; passcode?: string }): Promise<User> => {
     let authUserId: string | undefined;
+    const cleanPass = newUserData.passcode?.trim() || '';
 
     // 1. Sign up user in Supabase Auth with complete metadata (graceful on network failure)
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserData.email || '',
-        password: newUserData.passcode && newUserData.passcode.length >= 6 ? newUserData.passcode : 'jarinyes',
-        options: {
-          data: {
-            name: newUserData.name,
-            role: newUserData.role,
-            agencyType: newUserData.agencyType,
-            agencyName: newUserData.agencyName,
-            position: newUserData.position,
-            badgeOrIdNumber: newUserData.badgeOrIdNumber,
-            barangay: newUserData.barangay
+      if (newUserData.email && cleanPass) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newUserData.email,
+          password: cleanPass,
+          options: {
+            data: {
+              name: newUserData.name,
+              role: newUserData.role,
+              agencyType: newUserData.agencyType,
+              agencyName: newUserData.agencyName,
+              position: newUserData.position,
+              badgeOrIdNumber: newUserData.badgeOrIdNumber,
+              barangay: newUserData.barangay
+            }
           }
-        }
-      });
+        });
 
-      if (!authError || authError.message.includes('already registered')) {
-        authUserId = authData?.user?.id;
+        if (!authError || authError.message.includes('already registered')) {
+          authUserId = authData?.user?.id;
+        }
       }
     } catch (authErr) {
       console.warn('Supabase remote sign up notice:', authErr);
     }
 
-    const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${String((users?.length || 0) + 1).padStart(2, '0')}`;
-    const cleanPass = newUserData.passcode?.trim() || 'jarinyes';
+    const userId = authUserId || newUserData.id || `USR-${newUserData.agencyType.slice(0, 3)}-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const fallbackLogo =
+      newUserData.agencyType === 'MDRRMO'
+        ? '/mdrrmo_logo.png'
+        : newUserData.agencyType === 'LGU'
+        ? '/lgu_logo.png'
+        : newUserData.avatarUrl;
 
     const newUser: User = {
       ...newUserData,
       id: userId,
-      passcode: cleanPass
+      passcode: cleanPass,
+      avatarUrl: newUserData.avatarUrl || fallbackLogo
     };
 
     // 2. Save to local passcode vault
@@ -334,7 +357,20 @@ export const useAuth = () => {
     setUsers((prev) => {
       const updated = (prev || []).map((u) => {
         if (u.id === userId) {
-          resultUser = { ...u, ...updatedData, id: u.id };
+          const mergedAgency = updatedData.agencyType || u.agencyType;
+          const fallbackLogo =
+            mergedAgency === 'MDRRMO'
+              ? '/mdrrmo_logo.png'
+              : mergedAgency === 'LGU'
+              ? '/lgu_logo.png'
+              : undefined;
+
+          resultUser = {
+            ...u,
+            ...updatedData,
+            id: u.id,
+            avatarUrl: updatedData.avatarUrl || u.avatarUrl || fallbackLogo
+          };
           return resultUser;
         }
         return u;

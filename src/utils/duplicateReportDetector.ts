@@ -452,7 +452,7 @@ export function mergeDuplicateIntoPrimary(
 
   if (duplicateReport.reporterName && !existingPersonNames.has(normalizeText(duplicateReport.reporterName))) {
     const secondaryWitness: PersonInvolved = {
-      id: `P-DUP-${Date.now()}`,
+      id: duplicateReport.residentReporterId || `P-DUP-${Date.now()}`,
       name: duplicateReport.reporterName,
       role: 'Witness',
       barangay: duplicateReport.barangay || primaryCase.barangay,
@@ -528,8 +528,8 @@ export function deduplicateCaseList(allCases: Case[]): {
     const current = sorted[i];
     if (duplicateIds.has(current.id)) continue;
 
-    // Do not deduplicate seed cases against each other
-    const isSeed = Boolean(current.id?.startsWith('BC-2026-00'));
+    // Do not deduplicate seed cases against each other (strictly BC-2026-001 to BC-2026-008)
+    const isSeed = Boolean(current.id && /^BC-2026-00[1-8]$/.test(current.id));
 
     let matchedPrimary: Case | null = null;
     let matchRes: DuplicateCheckResult | null = null;

@@ -5,13 +5,17 @@ import { NotificationContext } from '../context/NotificationContext';
 import { supabase } from '../utils/supabaseClient';
 import { Case, CaseStatus, TimelineEvent, AgencyType, UserRole, ROXAS_BARANGAYS } from '../types';
 import { sendAutomatedResponderSMS, startSmsResendInterval, stopSmsResendInterval } from '../utils/smsService';
-import { 
-  getEscalationConfig, 
-  sendLguEscalationSms, 
-  formatElapsedTime, 
-  isCaseEligibleForEscalation 
+import {
+  getEscalationConfig,
+  sendLguEscalationSms,
+  formatElapsedTime,
+  isCaseEligibleForEscalation
 } from '../utils/escalationService';
-const isConsolidatedCase = (_c?: any) => false;
+import {
+  findDuplicateInCases,
+  mergeDuplicateIntoPrimary,
+  isConsolidatedCase
+} from '../utils/duplicateReportDetector';
 
 export const SUPABASE_CASE_COLUMNS = new Set([
   'id', 'incidentId', 'complaintId', 'title', 'category', 'description',
@@ -81,7 +85,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_notifs_sync');
         bc.postMessage({ type: 'NEW_NOTIFICATION', payload: newNotif });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     // Remote network broadcast
     try {
@@ -90,11 +94,75 @@ export const useCases = () => {
         event: 'notif_event',
         payload: { type: 'NEW_NOTIFICATION', data: newNotif }
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const createCase = (data: Partial<Case>): string => {
+    // Enforcement: Only verified resident citizens can submit incident reports
+    if (currentUser?.agencyType === 'LGU' || currentUser?.agencyType === 'MDRRMO') {
+      console.warn('[Access Control] Unauthorized: LGU and MDRRMO accounts cannot submit incident reports. Only residents are permitted.');
+      return '';
+    }
 
+    // 0. Auto-Deduplication check: Detect if this report is a duplicate of an existing active incident
+    const duplicateMatch = findDuplicateInCases(data, cases || []);
+    if (duplicateMatch) {
+      const { matchedCase, checkResult } = duplicateMatch;
+      const consolidatedCase = mergeDuplicateIntoPrimary(matchedCase, data);
+
+      // Update local state so only the single consolidated record is maintained
+      setCases((prev) => prev.map((c) => (c.id === consolidatedCase.id ? consolidatedCase : c)));
+
+      // Persist consolidated update to Supabase
+      const updatePayload: Record<string, any> = {};
+      for (const key of Object.keys(consolidatedCase)) {
+        if (SUPABASE_CASE_COLUMNS.has(key) && (consolidatedCase as any)[key] !== undefined) {
+          updatePayload[key] = (consolidatedCase as any)[key];
+        }
+      }
+      supabase.from('cases').update(updatePayload).eq('id', consolidatedCase.id).then(({ error }) => {
+        if (error) console.error('Error updating consolidated case in Supabase:', error);
+      });
+
+      // Broadcast update across tabs
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const bc = new BroadcastChannel('bconnect_cases_sync');
+          bc.postMessage({ type: 'UPDATE_CASE', payload: consolidatedCase });
+          bc.close();
+        } catch (e) {}
+      }
+      try {
+        supabase.channel('cases_realtime_sync').send({
+          type: 'broadcast',
+          event: 'case_event',
+          payload: { type: 'UPDATE_CASE', data: consolidatedCase }
+        });
+      } catch (e) {}
+
+      logActivity(
+        'DUPLICATE_REPORT_CONSOLIDATED',
+        consolidatedCase.id,
+        `Auto-Deduplication Engine detected duplicate report ("${data.title || ''}") matching Case #${consolidatedCase.id} (${checkResult.reasons.join(', ')}). Consolidated into primary record; duplicate eliminated.`
+      );
+
+      triggerNotification(
+        'Duplicate Report Auto-Consolidated',
+        `Napansin ng system na may nauna nang katulad na report para sa insidenteng ito. Matagumpay itong pinag-isa sa Case #${consolidatedCase.id} (Brgy. ${consolidatedCase.barangay}) upang isa lamang ang manatili at maiwasan ang duplicate dispatch.`,
+        'system',
+        consolidatedCase.id,
+        currentUser.agencyName,
+        'normal',
+        {
+          isDeduplicated: true,
+          targetBarangay: consolidatedCase.barangay,
+          targetUserId: currentUser.id,
+          targetAgencyTypes: ['RESIDENT', 'MDRRMO', 'ADMIN']
+        }
+      );
+
+      return consolidatedCase.id;
+    }
     const year = new Date().getFullYear();
     let maxNum = 0;
     (cases || []).forEach((c) => {
@@ -173,6 +241,7 @@ export const useCases = () => {
       isAccidentProneArea: data.isAccidentProneArea ?? isAccident,
       residentReporterId: data.residentReporterId || (currentUser.agencyType === 'RESIDENT' ? currentUser.id : undefined),
       isCitizenReport: !!data.isCitizenReport || currentUser.agencyType === 'RESIDENT',
+      emergencyAlarmAcknowledged: false,
       status: (data.status as CaseStatus) || 'Unresolved',
       isInvolvingOfficial: !!data.isInvolvingOfficial,
       officialInvolvedType: data.officialInvolvedType || 'None',
@@ -232,7 +301,7 @@ export const useCases = () => {
         }).catch((netErr) => {
           console.warn('Backend sync notice:', netErr);
         });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Instant local cross-tab broadcast (0ms latency)
@@ -241,7 +310,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_cases_sync');
         bc.postMessage({ type: 'NEW_CASE', payload: newCaseItem });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     // Remote network broadcast
     try {
@@ -250,7 +319,7 @@ export const useCases = () => {
         event: 'case_event',
         payload: { type: 'NEW_CASE', data: newCaseItem }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     logActivity('CASE_CREATED', caseId, `Registered new case ${caseId} (${newCaseItem.title}) at ${currentUser.agencyName}`);
 
@@ -362,7 +431,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -370,7 +439,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })
@@ -419,7 +488,7 @@ export const useCases = () => {
           const bc = new BroadcastChannel('bconnect_cases_sync');
           bc.postMessage({ type: 'DELETE_CASE', payload: { id: caseId } });
           bc.close();
-        } catch (e) {}
+        } catch (e) { }
       }
 
       try {
@@ -428,7 +497,7 @@ export const useCases = () => {
           event: 'case_event',
           payload: { type: 'DELETE_CASE', data: { id: caseId } }
         });
-      } catch (e) {}
+      } catch (e) { }
 
       return true;
     } catch (err) {
@@ -496,7 +565,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -504,7 +573,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })
@@ -518,8 +587,8 @@ export const useCases = () => {
   };
 
   const escalateIncidentToLgu = async (
-    caseId: string, 
-    elapsedStrOverride?: string, 
+    caseId: string,
+    elapsedStrOverride?: string,
     customReason?: string,
     fallbackCase?: Partial<Case>
   ) => {
@@ -554,7 +623,7 @@ export const useCases = () => {
 
     const now = new Date().toISOString();
     const eventTitle = '🚨 Emergency Case Escalated to LGU';
-    const eventDescription = customReason || 
+    const eventDescription = customReason ||
       `Statutory Escalation Triggered: MDRRMO did not respond or acknowledge the emergency within the required response threshold (${elapsedDisplay}). Automated emergency escalation SMS successfully delivered to ${config.designatedLguName} (${config.designatedLguPhone}). Recommended Action: LGU intervention/review required.`;
 
     const newEvent: TimelineEvent = {
@@ -619,7 +688,7 @@ export const useCases = () => {
         const bc = new BroadcastChannel('bconnect_cases_sync');
         bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCaseRef });
         bc.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     try {
       supabase.channel('cases_realtime_sync').send({
@@ -627,7 +696,7 @@ export const useCases = () => {
         event: 'case_event',
         payload: { type: 'UPDATE_CASE', data: updatedCaseRef }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     // 4. Show the escalation in the system's activity/audit logs
     logActivity(
@@ -663,12 +732,12 @@ export const useCases = () => {
     if (!targetCase) return;
 
     const now = new Date().toISOString();
-    const actionLabel = 
+    const actionLabel =
       actionType === 'MDRRMO Mobilized' ? '🚨 Executive Directive: Direct MDRRMO Immediate Mobilization' :
-      actionType === 'Municipal Team Dispatched' ? '🚒 Municipal Team Deployed & Dispatched' :
-      actionType === 'Resolved by LGU' ? '✅ Resolved by Municipal LGU Authority' :
-      actionType === 'Dismissed' ? '⚠️ Case Inquired & Dismissed' :
-      '📋 Under Formal LGU Executive Review';
+        actionType === 'Municipal Team Dispatched' ? '🚒 Municipal Team Deployed & Dispatched' :
+          actionType === 'Resolved by LGU' ? '✅ Resolved by Municipal LGU Authority' :
+            actionType === 'Dismissed' ? '⚠️ Case Inquired & Dismissed' :
+              '📋 Under Formal LGU Executive Review';
 
     const newEvent: TimelineEvent = {
       id: `TL-LGU-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -713,7 +782,7 @@ export const useCases = () => {
             const bc = new BroadcastChannel('bconnect_cases_sync');
             bc.postMessage({ type: 'UPDATE_CASE', payload: updatedCase });
             bc.close();
-          } catch (e) {}
+          } catch (e) { }
         }
         try {
           supabase.channel('cases_realtime_sync').send({
@@ -721,7 +790,7 @@ export const useCases = () => {
             event: 'case_event',
             payload: { type: 'UPDATE_CASE', data: updatedCase }
           });
-        } catch (e) {}
+        } catch (e) { }
 
         return updatedCase;
       })

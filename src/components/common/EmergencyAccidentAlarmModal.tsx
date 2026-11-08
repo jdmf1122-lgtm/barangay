@@ -8,8 +8,10 @@ import {
   getStoredSmsDispatches,
   SmsDispatchRecord,
   getActiveSmsResendStatus,
+  startSmsResendInterval,
   stopSmsResendInterval,
-  buildAlertSmsMessage
+  buildAlertSmsMessage,
+  ResponderSmsPayloadInput
 } from '../../utils/smsService';
 
 export const EmergencyAccidentAlarmModal: React.FC = () => {
@@ -47,8 +49,11 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
   };
 
-  const isMdrrmoOfficer = currentUser?.agencyType === 'MDRRMO';
-  const userBarangay = currentUser?.barangay;
+  const isMdrrmoOfficer =
+    currentUser?.agencyType === 'MDRRMO' ||
+    currentUser?.role === 'MDRRMO_ADMIN' ||
+    currentUser?.role === 'MDRRMO_OFFICER' ||
+    Boolean(currentUser?.agencyName && currentUser.agencyName.toLowerCase().includes('mdrrmo'));
 
   // Track recurring interval SMS resend ticks
   useEffect(() => {
@@ -82,7 +87,6 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
 
   // Listen for unacknowledged incident reports received by the MDRRMO monitoring system.
   // The notification will NOT stop until responders mark the incident as 'seen/responded'.
-  // No audible alert or alarm should be triggered — SMS text only.
   useEffect(() => {
     if (!isMdrrmoOfficer) {
       setActiveEmergencyNotif(null);
@@ -95,40 +99,34 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     }
 
     // 1. Scan for any active incident in cases that has not yet been marked as seen/responded
-    // Must strictly be an actual report filed by a resident citizen (never seed cases or internal blotters)
+    // Triggers for any active unresolved, unacknowledged incident in the system
     const unacknowledgedCase = cases.find((c) => {
       if (!c) return false;
-      // Exclude seed / demo cases
-      if (c.id?.startsWith('BC-2026-00')) return false;
+      // If already resolved, closed, or acknowledged, ignore
+      if (c.status === 'Resolved' || c.status === 'Closed' || (c.status as string) === 'Archived') return false;
+      if (c.emergencyAlarmAcknowledged) return false;
+      if (acknowledgedIds.includes(c.id)) return false;
 
-      // Must be an actual report submitted by a resident
-      const isResidentReport = Boolean(c.isCitizenReport) || Boolean(c.residentReporterId) || Boolean(c.originatingAgency?.includes('Resident'));
-      if (!isResidentReport) return false;
-
-      const isTargetedBarangay = !userBarangay || c.barangay === userBarangay || !c.barangay;
-      const isEmergency = c.isAccidentEmergency || c.priority === 'Urgent' || (c.category && c.category.toLowerCase().includes('accident'));
-      const isNotResolved = c.status !== 'Resolved' && c.status !== 'Closed';
-      const isNotAcknowledged = !c.emergencyAlarmAcknowledged && !acknowledgedIds.includes(c.id);
-
-      return isTargetedBarangay && isEmergency && isNotResolved && isNotAcknowledged;
+      return true;
     });
 
-    // 2. Scan for unacknowledged emergency notifications (ignoring seed notifications)
+    // 2. Scan for unacknowledged emergency notifications
     const unacknowledgedNotif = notifications.find((n) => {
       if (!n || n.isRead) return false;
-      // Exclude seed notifications
-      if (n.id?.startsWith('NOTIF-RES-') || n.id?.startsWith('NOTIF-BGY-') || n.id?.startsWith('NOTIF-LGU-') || n.id?.startsWith('NOTIF-SYS-')) return false;
       if (acknowledgedIds.includes(n.id)) return false;
       if (n.caseId && acknowledgedIds.includes(n.caseId)) return false;
-      if (n.caseId?.startsWith('BC-2026-00')) return false;
 
-      const isTargetedBarangay = !userBarangay || !n.targetBarangay || n.targetBarangay === userBarangay;
+      const related = n.caseId ? cases.find((c) => c.id === n.caseId) : null;
+      if (related && (related.emergencyAlarmAcknowledged || acknowledgedIds.includes(related.id))) return false;
+
       const titleLower = (n.title || '').toLowerCase();
       const msgLower = (n.message || '').toLowerCase();
       const isEmergencyIncident =
         n.isAccidentEmergency ||
         n.isMdrrmoEmergency ||
         n.isMdrrmoIncident ||
+        n.type === 'pending_alert' ||
+        n.type === 'case_registered' ||
         titleLower.includes('accident') ||
         titleLower.includes('emergency') ||
         titleLower.includes('banggaan') ||
@@ -140,11 +138,7 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
         msgLower.includes('banggaan') ||
         msgLower.includes('sms sent');
 
-      const isUrgent = n.priority === 'urgent' || n.type === 'pending_alert' || n.type === 'case_registered';
-      const related = n.caseId ? cases.find((c) => c.id === n.caseId) : null;
-      const isCaseAcknowledged = related ? (!!related.emergencyAlarmAcknowledged || acknowledgedIds.includes(related.id)) : false;
-
-      return isTargetedBarangay && isEmergencyIncident && isUrgent && !isCaseAcknowledged;
+      return isEmergencyIncident && (n.priority === 'urgent' || n.priority === 'high');
     });
 
     const target = unacknowledgedCase
@@ -153,7 +147,7 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
           title: `🚨 EMERGENCY INCIDENT REPORT: Brgy. ${unacknowledgedCase.barangay}`,
           message: `URGENT MDRRMO DISPATCH: ${unacknowledgedCase.title} reported at ${unacknowledgedCase.sitio ? `${unacknowledgedCase.sitio}, ` : ''}${unacknowledgedCase.barangay}. Case #${unacknowledgedCase.id}. Automated SMS dispatched to MDRRMO account!`,
           caseId: unacknowledgedCase.id,
-          timestamp: unacknowledgedCase.dateReported || new Date().toISOString(),
+          timestamp: unacknowledgedCase.dateReported || unacknowledgedCase.dateCreated || new Date().toISOString(),
           priority: 'urgent',
           targetBarangay: unacknowledgedCase.barangay
         }
@@ -166,37 +160,40 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
     if (target && !isTargetAcknowledged) {
       setActiveEmergencyNotif(target);
 
-      // Populate or generate automated SMS dispatch to MDRRMO account (SMS text only, no sound)
+      // Populate or generate automated SMS dispatch to MDRRMO account
       const related = target.caseId ? cases.find((c) => c.id === target.caseId) : null;
-      const stored = target.caseId ? getStoredSmsDispatches().filter((d) => d.caseId === target.caseId) : [];
+      const caseId = target.caseId || `EMG-${Date.now().toString().slice(-4)}`;
 
+      const smsPayload: ResponderSmsPayloadInput = {
+        id: caseId,
+        title: related?.title || target.title,
+        category: related?.category || 'Critical Emergency',
+        incidentType: related?.category || related?.title || target.title,
+        location: related?.specificLocation || (target.targetBarangay ? `Barangay ${target.targetBarangay}, Roxas` : 'Roxas Municipal Sector'),
+        barangay: related?.barangay || target.targetBarangay,
+        sitio: related?.sitio,
+        incidentDate: related?.incidentDate,
+        incidentTime: related?.incidentTime,
+        reporterName: related?.reporterName || related?.createdBy || 'Resident Citizen',
+        priority: 'URGENT'
+      };
+
+      // Always start the recurring interval resend for this active emergency
+      startSmsResendInterval(smsPayload, users, 30000);
+      setResendStatus({ isActive: true, resendCount: 1 });
+
+      const stored = target.caseId ? getStoredSmsDispatches().filter((d) => d.caseId === target.caseId) : [];
       if (stored.length > 0) {
         setSmsDispatches(stored);
       } else {
-        const caseId = target.caseId || `EMG-${Date.now().toString().slice(-4)}`;
-        sendAutomatedResponderSMS(
-          {
-            id: caseId,
-            title: related?.title || target.title,
-            category: related?.category || 'Critical Emergency',
-            incidentType: related?.category || related?.title || target.title,
-            location: related?.specificLocation || (target.targetBarangay ? `Barangay ${target.targetBarangay}, Roxas` : 'Roxas Municipal Sector'),
-            barangay: related?.barangay || target.targetBarangay,
-            sitio: related?.sitio,
-            incidentDate: related?.incidentDate,
-            incidentTime: related?.incidentTime,
-            reporterName: related?.reporterName || related?.createdBy || 'Resident Citizen',
-            priority: 'URGENT'
-          },
-          users
-        ).then((records) => {
+        sendAutomatedResponderSMS(smsPayload, users).then((records) => {
           setSmsDispatches(records);
         });
       }
     } else {
       setActiveEmergencyNotif(null);
     }
-  }, [notifications, cases, isMdrrmoOfficer, userBarangay, users, acknowledgedIds, isSeenAndResponded]);
+  }, [notifications, cases, isMdrrmoOfficer, users, acknowledgedIds, isSeenAndResponded]);
 
   if (!activeEmergencyNotif || !isMdrrmoOfficer) {
     return null;
@@ -319,27 +316,40 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
 
         {/* Content Body: MDRRMO (Timestamp) and Alert text */}
         <div className="text-slate-800 text-[14px] sm:text-[15px] leading-relaxed font-normal space-y-2 pt-1">
-          <p className="font-semibold text-slate-900 text-xs sm:text-sm">
-            MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
-          </p>
-          <p className="text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+            <div className="flex items-center gap-2">
+              <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain shadow-2xs border border-orange-200" />
+              <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
+              </p>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">
+              IN-SYSTEM SMS ALERT
+            </span>
+          </div>
+
+          <div className="bg-slate-50/80 rounded-md p-3 border border-slate-200/60 font-mono text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap selection:bg-orange-200">
             {smsMessage}
-          </p>
+          </div>
 
           {/* Active resend notice */}
           {resendStatus.isActive && (
             <div className="text-[11px] text-amber-900 bg-amber-50 rounded px-2.5 py-1.5 border border-amber-200/70 flex items-center justify-between mt-2">
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                <span>SMS alert actively resending</span>
+                <span>In-System Alert • Dispatch Broadcast Active</span>
               </span>
               {resendStatus.resendCount > 0 && (
                 <span className="font-mono text-amber-950 font-bold">
-                  Resent: {resendStatus.resendCount}x
+                  Cycle #{resendStatus.resendCount}
                 </span>
               )}
             </div>
           )}
+
+          <p className="text-[10px] text-slate-400 italic">
+            Automated in-system incident alert (SMS-style dispatch format for MDRRMO Command Center).
+          </p>
         </div>
 
         {/* Bottom Actions: Right-aligned OK button */}

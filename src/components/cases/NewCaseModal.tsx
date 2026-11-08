@@ -83,7 +83,7 @@ export const NewCaseModal: React.FC = () => {
   // Routing
   const [routingType, setRoutingType] = useState<'MDRRMO' | 'LGU'>('MDRRMO');
 
-  if (!isNewCaseModalOpen) return null;
+  if (!isNewCaseModalOpen || currentUser?.agencyType === 'LGU' || currentUser?.agencyType === 'MDRRMO') return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

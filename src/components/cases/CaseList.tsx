@@ -3,7 +3,6 @@ import {
   FileSpreadsheet, 
   Search, 
   Filter, 
-  PlusCircle, 
   Download, 
   Eye, 
   Clock, 
@@ -24,7 +23,7 @@ import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 export const CaseList: React.FC = () => {
   const { currentUser } = useAuth();
   const { cases, setSelectedCaseId } = useCases();
-  const { setIsNewCaseModalOpen, searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
+  const { searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
 
   const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
   const userBarangay = currentUser?.barangay;
@@ -54,7 +53,7 @@ export const CaseList: React.FC = () => {
         return false;
       }
     } else if (currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT') {
-      if (c.barangay !== (currentUser?.barangay || 'San Aquilino') && c.residentReporterId !== currentUser?.id) {
+      if (!currentUser?.id || c.residentReporterId !== currentUser.id) {
         return false;
       }
     } else if (filterBarangay !== 'ALL' && c.barangay !== filterBarangay) {
@@ -138,14 +137,6 @@ export const CaseList: React.FC = () => {
             <Download className="w-3.5 h-3.5" />
             Export CSV
           </button>
-          <button
-            id="btn-case-list-new-case"
-            onClick={() => setIsNewCaseModalOpen(true)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            New Incident / Case
-          </button>
         </div>
       </div>
 
@@ -185,7 +176,7 @@ export const CaseList: React.FC = () => {
                 onChange={(e) => setFilterBarangay(e.target.value)}
                 className="w-full py-1.5 px-2 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="ALL">All Barangays (6)</option>
+                <option value="ALL">All Barangays ({ROXAS_BARANGAYS.length})</option>
                 {ROXAS_BARANGAYS.map((b) => (
                   <option key={b} value={b}>Brgy. {b}</option>
                 ))}
@@ -271,7 +262,7 @@ export const CaseList: React.FC = () => {
                       {c.id}
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      {formatDateShort(c.dateReported)}
+                      {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}
                     </span>
                   </div>
                   <StatusBadge status={c.status} size="sm" />
@@ -356,7 +347,7 @@ export const CaseList: React.FC = () => {
                     <td className="py-3 px-3 align-top font-mono font-bold text-blue-700 whitespace-nowrap">
                       {c.id}
                       <div className="text-[10px] text-slate-400 font-normal">
-                        {formatDateShort(c.dateReported)}
+                        {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}
                       </div>
                     </td>
 

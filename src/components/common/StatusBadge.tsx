@@ -42,7 +42,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md', i
       case 'Received':
         return 'bg-cyan-100 text-cyan-900 border-cyan-300';
       case 'Overdue':
-        return 'bg-rose-100 text-rose-900 border-rose-300 animate-pulse';
+        return 'bg-rose-100 text-rose-900 border-rose-300';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-200';
     }

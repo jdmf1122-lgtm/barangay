@@ -25,7 +25,6 @@ export const LguDashboard: React.FC = () => {
 
   const safeCases = cases || [];
   const totalCases = safeCases.length;
-  const lguReferredCases = safeCases.filter((c) => c.isReferredToLgu || (c.currentHandlingAgency && c.currentHandlingAgency.includes('Municipal')));
   const resolvedCases = safeCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
   const pendingCases = safeCases.filter((c) => c.isPending || c.status === 'Pending').length;
 
@@ -44,32 +43,45 @@ export const LguDashboard: React.FC = () => {
 
   return (
     <div id="lgu-dashboard-view" className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-100 text-xs font-semibold">
-              <Landmark className="w-3.5 h-3.5" />
-              <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-800/60 text-emerald-200 text-[10px] font-mono font-bold border border-emerald-700/50">
-              POV: {isAdministrator ? 'LGU Administrator' : 'Department Desk Officer'}
-            </span>
+      {/* Top Banner with Official LGU Roxas Seal */}
+      <div className="bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 border-amber-400/80 ring-1 ring-amber-300/30 relative overflow-hidden">
+        {/* Subtle background seal watermark */}
+        <img
+          src="/lgu_logo.png"
+          alt=""
+          className="absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]"
+        />
+
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 border-amber-400 ring-2 ring-[#0f532a]/60 flex-shrink-0 flex items-center justify-center">
+            <img
+              src="/lgu_logo.png"
+              alt="Municipal Government of Roxas Official Seal"
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-            {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
-          </h2>
-          <p className="text-xs text-emerald-100 mt-1 max-w-2xl leading-relaxed">
-            Coordinating municipal departments (MENRO, Market Operations, Municipal Legal, Engineering, MSWDO) across the 5 Barangays of Roxas, Oriental Mindoro.
-          </p>
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#062612]/90 text-amber-300 text-xs font-bold border border-amber-400/60 shadow-xs">
+                <Landmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
+              </div>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
+              {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
+            </h2>
+            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
+              <span className="text-amber-300 font-bold tracking-wide">MUNICIPALITY OF ROXAS &bull; ORIENTAL MINDORO (EST. 1948)</span> &bull; <span className="text-emerald-100/90">Coordinating municipal departments across all barangays.</span>
+            </p>
+          </div>
         </div>
 
-        <div className="flex w-full md:w-auto">
+        <div className="flex w-full md:w-auto z-10">
           <button
             onClick={() => setActiveTab('standard_reports')}
-            className="w-full sm:w-auto justify-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] rounded-xl text-xs font-black shadow-md border border-amber-200 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-[#082e16]" />
             <span>Municipal Report</span>
           </button>
         </div>
@@ -80,10 +92,7 @@ export const LguDashboard: React.FC = () => {
         <div id="lgu-escalated-incidents-section" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500/80 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 animate-in fade-in duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-3.5 w-3.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600"></span>
-              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
               <div>
                 <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide flex items-center gap-2">
                   <span>🚨 Incidents Escalated to LGU ({escalatedToLguCases.length})</span>
@@ -112,8 +121,9 @@ export const LguDashboard: React.FC = () => {
                     <span className="font-mono text-xs font-black px-2 py-0.5 bg-rose-100 text-rose-900 rounded border border-rose-200">
                       #{c.id}
                     </span>
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
-                      Escalated to LGU
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+                      <span>Escalated to LGU</span>
                     </span>
                   </div>
 
@@ -189,7 +199,7 @@ export const LguDashboard: React.FC = () => {
           <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Municipality Total</p>
           <h3 className="text-3xl font-bold mt-1 text-slate-900">{totalCases}</h3>
           <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-bold">
-            <span>Across 5 Barangays</span>
+            <span>Across 20 Barangays</span>
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
         </div>
@@ -201,12 +211,21 @@ export const LguDashboard: React.FC = () => {
         }`}>
           <p className="text-xs text-rose-700 uppercase font-black tracking-tight flex items-center justify-between">
             <span>Escalated to LGU</span>
-            {escalatedToLguCases.length > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
+            {escalatedToLguCases.length > 0 && <span className="w-2 h-2 rounded-full bg-rose-500"></span>}
           </p>
           <h3 className="text-3xl font-black mt-1 text-rose-700">{escalatedToLguCases.length}</h3>
           <div className="flex items-center gap-2 mt-2 text-[10px] text-rose-700 font-bold">
             <span>{escalatedToLguCases.length > 0 ? 'MDRRMO Timeout Exceeded' : 'Zero Escalations'}</span>
             <div className="h-px flex-1 bg-rose-200"></div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Active Monitoring</p>
+          <h3 className="text-3xl font-bold mt-1 text-amber-600">{pendingCases}</h3>
+          <div className="flex items-center gap-2 mt-2 text-[10px] text-amber-600 font-bold">
+            <span>Pending / In Progress</span>
+            <div className="h-px flex-1 bg-slate-100"></div>
           </div>
         </div>
 
@@ -218,71 +237,59 @@ export const LguDashboard: React.FC = () => {
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">LGU Endorsements</p>
-          <h3 className="text-3xl font-bold mt-1 text-blue-600">{lguReferredCases.length}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-blue-600 font-bold">
-            <span>MENRO / Legal / Market</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
-          </div>
-        </div>
       </div>
 
-      {/* Two columns: LGU Endorsements & Barangay Comparison */}
+      {/* Two columns: Municipal Case Monitoring & Barangay Comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: LGU Endorsed Cases */}
+        {/* Left 2 Cols: Municipal Incident & Case Monitoring */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-bold text-sm text-slate-800">
-                LGU Department Action Queue (MENRO / Legal / Market)
+              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-emerald-700" />
+                <span>Municipal Incident & Case Monitoring</span>
               </h3>
-              <p className="text-xs text-slate-500">Matters referred to the Municipal Government</p>
+              <p className="text-xs text-slate-500">Cross-barangay incident oversight across 20 barangays</p>
             </div>
-            <button
-              onClick={() => setActiveTab('referrals')}
-              className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>View Referrals</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
+            <span className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full font-bold border border-emerald-200">
+              {safeCases.length} Total Monitored
+            </span>
           </div>
 
           <div className="mt-3 divide-y divide-slate-100">
-            {lguReferredCases.length === 0 ? (
+            {safeCases.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400">
-                No active cases currently referred to LGU departments.
+                No incident records currently logged in the municipality.
               </div>
             ) : (
-              lguReferredCases.map((c) => (
+              safeCases.slice(0, 8).map((c) => (
                 <div
                   key={c.id}
                   onClick={() => setSelectedCaseId(c.id)}
-                  className="py-3 px-2 hover:bg-slate-50 rounded-lg cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="py-3 px-2 hover:bg-emerald-50/40 rounded-lg cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-mono text-xs font-bold text-emerald-800">{c.id}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-emerald-800">{c.caseNumber || c.id}</span>
                       <StatusBadge status={c.status} size="sm" />
                       <PriorityBadge priority={c.priority} />
-                      <span className="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-slate-400" />
                         Brgy. {c.barangay}
                       </span>
                     </div>
-                    <div className="text-xs font-semibold text-slate-800">{c.title}</div>
+                    <div className="text-xs font-bold text-slate-800">{c.title}</div>
                     <div className="text-[11px] text-slate-500 line-clamp-1">{c.description}</div>
                   </div>
 
-                  <div className="text-right flex sm:flex-col items-center sm:items-end justify-between text-xs">
-                    <span className="text-[11px] font-medium text-emerald-800">
-                      {c.assignedPersonnel || c.currentHandlingAgency}
+                  <div className="text-right flex sm:flex-col items-center sm:items-end justify-between text-xs shrink-0">
+                    <span className="text-[10px] text-slate-400">
+                      {c.dateReported || c.dateCreated ? new Date(c.dateReported || c.dateCreated!).toLocaleDateString() : 'Recent'}
                     </span>
-                    {c.isPending && (
-                      <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium mt-1">
-                        Pending: {c.pendingReason}
-                      </span>
-                    )}
+                    <span className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 mt-1 flex items-center gap-0.5">
+                      <span>View Details</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </span>
                   </div>
                 </div>
               ))
@@ -290,11 +297,11 @@ export const LguDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Col: 5 Barangays Distribution */}
+        {/* Right Col: 20 Barangays Distribution */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <h3 className="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-emerald-700" />
-            5 Barangays Incident Distribution
+            20 Barangays Incident Distribution
           </h3>
           <p className="text-xs text-slate-500 mb-3">Case load across Roxas, Oriental Mindoro</p>
 
