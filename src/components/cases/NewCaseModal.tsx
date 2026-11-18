@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  PlusCircle, 
-  User, 
   MapPin, 
   FileText, 
-  ShieldAlert, 
-  Building2, 
   CheckCircle2, 
-  AlertTriangle,
   Layers,
   Car,
   Bike,
-  Activity,
-  Ambulance
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -37,7 +31,7 @@ export const NewCaseModal: React.FC = () => {
   // Form State - Accident Core
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<IncidentCategory>('Motorcycle vs Motorcycle Collision');
-  const [barangay, setBarangay] = useState(currentUser.barangay || ROXAS_BARANGAYS[0]);
+  const [barangay, setBarangay] = useState(currentUser?.barangay || ROXAS_BARANGAYS[0]);
   const [specificLocation, setSpecificLocation] = useState('');
   const [priority, setPriority] = useState<PriorityLevel>('Medium');
   const [initialNarrative, setInitialNarrative] = useState('');
@@ -48,7 +42,6 @@ export const NewCaseModal: React.FC = () => {
   const [roadSurfaceCondition, setRoadSurfaceCondition] = useState('Dry & Clear');
   const [weatherCondition, setWeatherCondition] = useState('Clear & Sunny');
   const [injuriesCount, setInjuriesCount] = useState<number>(0);
-  const [casualtiesCount, setCasualtiesCount] = useState<number>(0);
   const [isHitAndRun, setIsHitAndRun] = useState(false);
   const [respondingAmbulanceUnit, setRespondingAmbulanceUnit] = useState('MDRRMO Rescue Ambulance');
   const [hospitalTransported, setHospitalTransported] = useState('');
@@ -59,10 +52,10 @@ export const NewCaseModal: React.FC = () => {
   const [v1Plate, setV1Plate] = useState('');
   const [v1DriverName, setV1DriverName] = useState('');
   const [v1DriverContact, setV1DriverContact] = useState('');
-  const [v1DriverAddress, setV1DriverAddress] = useState('');
+  const [v1DriverAddress] = useState('');
   const [v1DriverCondition, setV1DriverCondition] = useState<'Uninjured' | 'Minor Scratches/Bruises' | 'Hospitalized' | 'Fatal'>('Minor Scratches/Bruises');
   const [v1Damage, setV1Damage] = useState<'Minor Dent/Scratch' | 'Moderate Functional Damage' | 'Severe / Total Wreck'>('Moderate Functional Damage');
-  const [v1Helmet, setV1Helmet] = useState(true);
+  const [v1Helmet] = useState(true);
 
   // Secondary Vehicle / Party 2 (Respondent / Driver 2 / Pedestrian)
   const [hasParty2, setHasParty2] = useState(true);
@@ -160,7 +153,7 @@ export const NewCaseModal: React.FC = () => {
 
     const isReferredToLgu = routingType === 'LGU';
     const isRemainedAtBarangay = routingType === 'MDRRMO';
-    let initialStatus: CaseStatus = 'Unresolved';
+    const initialStatus: CaseStatus = 'Unresolved';
 
     createCase({
       title: title.trim(),
@@ -181,7 +174,7 @@ export const NewCaseModal: React.FC = () => {
       roadSurfaceCondition,
       weatherCondition,
       injuriesCount,
-      casualtiesCount,
+      casualtiesCount: 0,
       isHitAndRun,
       respondingAmbulanceUnit: injuriesCount > 0 ? respondingAmbulanceUnit : undefined,
       hospitalTransported: hospitalTransported.trim() || undefined,
@@ -204,33 +197,34 @@ export const NewCaseModal: React.FC = () => {
   return (
     <div 
       id="new-case-modal-backdrop"
-      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-ink/75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
     >
       <div 
         id="new-case-modal-card"
-        className="bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]"
+        className="bg-paper text-ink w-full max-w-4xl rounded-xl shadow-xs border border-rule overflow-hidden flex flex-col max-h-[92dvh]"
       >
         {/* Header */}
-        <div className="bg-slate-900 text-white px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
+        <div className="bg-paper-2 text-ink px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between border-b border-rule flex-shrink-0">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <div className="p-1.5 sm:p-2 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30 flex-shrink-0">
-              <Car className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="p-1.5 sm:p-2 bg-paper text-accent rounded-lg border border-rule flex-shrink-0">
+              <Car className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
-                <span className="truncate">Record Vehicular Accident</span>
-                <span className="hidden sm:inline-block text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30 font-semibold flex-shrink-0">
-                  Crash Desk
+              <h2 className="font-bold text-xs sm:text-sm md:text-base text-ink tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="truncate">Record vehicular accident</span>
+                <span className="hidden sm:inline-block text-[10px] bg-paper text-muted px-2 py-0.5 rounded-full border border-rule font-medium flex-shrink-0">
+                  Crash desk
                 </span>
               </h2>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
-                Official Incident Docketing • Roxas, Oriental Mindoro
+              <p className="text-xs text-muted truncate">
+                Official incident docketing · Roxas, Oriental Mindoro
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsNewCaseModalOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer flex-shrink-0 ml-2"
+            className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 active:bg-paper rounded-lg transition-colors cursor-pointer flex-shrink-0 ml-2 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -240,16 +234,16 @@ export const NewCaseModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-5 text-xs space-y-4 sm:space-y-5">
           
           {/* Section 1: Accident Core & Classification */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-            <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              1. Accident Identification, Category & Location
+          <div className="bg-paper-2 p-4 rounded-xl border border-rule space-y-3">
+            <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5 border-b border-rule pb-2">
+              <FileText className="w-4 h-4 text-accent" />
+              <span>1. Accident identification, category, and location</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="sm:col-span-2 lg:col-span-3">
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Accident / Crash Title <span className="text-rose-500">*</span>
+                <label className="text-xs font-semibold text-ink block mb-1">
+                  Accident or crash title <span className="text-error">*</span>
                 </label>
                 <input
                   type="text"
@@ -257,18 +251,18 @@ export const NewCaseModal: React.FC = () => {
                   placeholder="e.g., Motorcycle vs Tricycle Collision along Morente Ave / Strong Republic Nautical Highway"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-900"
+                  className="w-full p-2.5 text-xs bg-paper rounded-lg border border-rule focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden font-medium text-ink disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Accident Category <span className="text-rose-500">*</span>
+                <label className="text-xs font-semibold text-ink block mb-1">
+                  Accident category <span className="text-error">*</span>
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as IncidentCategory)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-semibold text-blue-900"
+                  className="w-full p-2 text-xs bg-paper rounded-lg border border-rule font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                 >
                   <option value="Motorcycle vs Motorcycle Collision">Motorcycle vs Motorcycle Collision</option>
                   <option value="Motorcycle vs Car / SUV Collision">Motorcycle vs Car / SUV Collision</option>
@@ -286,21 +280,21 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Barangay Jurisdiction <span className="text-rose-500">*</span>
+                <label className="text-xs font-semibold text-ink block mb-1">
+                  Barangay jurisdiction <span className="text-error">*</span>
                 </label>
                 {isBarangayOfficer ? (
-                  <div className="w-full p-2 text-xs bg-emerald-50 text-emerald-950 rounded-lg border border-emerald-300 font-bold flex items-center justify-between">
+                  <div className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium flex items-center justify-between">
                     <span>Brgy. {currentUser.barangay}</span>
-                    <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-semibold border border-emerald-200">
-                      Jurisdiction Locked
+                    <span className="text-[10px] text-muted bg-paper-2 px-2 py-0.5 rounded font-medium border border-rule">
+                      Locked
                     </span>
                   </div>
                 ) : (
                   <select
                     value={barangay}
                     onChange={(e) => setBarangay(e.target.value)}
-                    className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-medium"
+                    className="w-full p-2 text-xs bg-paper rounded-lg border border-rule font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                   >
                     {ROXAS_BARANGAYS.map((b) => (
                       <option key={b} value={b}>Brgy. {b}</option>
@@ -310,63 +304,63 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Date of Accident <span className="text-rose-500">*</span></label>
+                <label className="text-xs font-semibold text-ink block mb-1">Date of accident <span className="text-error">*</span></label>
                 <input
                   type="date"
                   required
                   value={dateReported}
                   onChange={(e) => setDateReported(e.target.value)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 num"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Specific Location (Purok / Highway / Landmark) <span className="text-rose-500">*</span>
+                <label className="text-xs font-semibold text-ink block mb-1">
+                  Specific location (Purok, highway, or landmark) <span className="text-error">*</span>
                 </label>
                 <div className="relative">
-                  <MapPin className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                  <MapPin className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted" />
                   <input
                     type="text"
                     required
                     placeholder="e.g., Corner Morente Ave & Nautical Highway / Sitio Riverside Curve"
                     value={specificLocation}
                     onChange={(e) => setSpecificLocation(e.target.value)}
-                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-white rounded-lg border border-slate-300"
+                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-paper text-ink rounded-lg border border-rule focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Urgency Priority</label>
+                <label className="text-xs font-semibold text-ink block mb-1">Urgency priority</label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as PriorityLevel)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-semibold"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                 >
-                  <option value="Low">Low (Minor Fender Bender / Scratch)</option>
-                  <option value="Medium">Medium (Moderate Damage / Clear Road)</option>
-                  <option value="High">High (Road Blocked / Medical Attention)</option>
-                  <option value="Urgent">Urgent (Hospitalization / Hit-and-Run / Major Highway Block)</option>
+                  <option value="Low">Low (Minor fender bender or scratch)</option>
+                  <option value="Medium">Medium (Moderate damage, clear road)</option>
+                  <option value="High">High (Road blocked, medical attention)</option>
+                  <option value="Urgent">Urgent (Hospitalization, hit-and-run, major highway block)</option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* Section 2: Crash Dynamics & Environmental Conditions */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-            <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
-              <Activity className="w-4 h-4 text-amber-600" />
-              2. Crash Dynamics, Road Environment & Medical Casualties
+          <div className="bg-paper-2 p-4 rounded-xl border border-rule space-y-3">
+            <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5 border-b border-rule pb-2">
+              <Activity className="w-4 h-4 text-warning" />
+              <span>2. Crash dynamics, road environment, and medical casualties</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Collision Impact Type</label>
+                <label className="text-xs font-semibold text-ink block mb-1">Collision impact type</label>
                 <select
                   value={collisionImpactType}
                   onChange={(e) => setCollisionImpactType(e.target.value)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-medium"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                 >
                   <option value="Intersection Collision">Intersection Collision</option>
                   <option value="Head-On Collision">Head-On Collision</option>
@@ -381,11 +375,11 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Road Surface Condition</label>
+                <label className="text-xs font-semibold text-ink block mb-1">Road surface condition</label>
                 <select
                   value={roadSurfaceCondition}
                   onChange={(e) => setRoadSurfaceCondition(e.target.value)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-medium"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                 >
                   <option value="Dry & Clear">Dry & Clear Asphalt/Concrete</option>
                   <option value="Wet / Slippery">Wet / Slippery Tarmac</option>
@@ -396,11 +390,11 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Weather Condition</label>
+                <label className="text-xs font-semibold text-ink block mb-1">Weather condition</label>
                 <select
                   value={weatherCondition}
                   onChange={(e) => setWeatherCondition(e.target.value)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-medium"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                 >
                   <option value="Clear & Sunny">Clear & Sunny</option>
                   <option value="Heavy Rain / Storm">Heavy Rain / Downpour</option>
@@ -410,49 +404,49 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Injured Persons Count</label>
+                <label className="text-xs font-semibold text-ink block mb-1">Injured persons count</label>
                 <input
                   type="number"
                   min="0"
                   max="50"
                   value={injuriesCount}
                   onChange={(e) => setInjuriesCount(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300 font-bold text-rose-700"
+                  className="w-full p-2 text-xs bg-paper text-ink rounded-lg border border-rule font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 num"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="flex items-center space-x-2 text-xs font-bold text-rose-800 cursor-pointer pt-2">
+                <label className="flex items-center space-x-2 text-xs font-medium text-ink cursor-pointer pt-2">
                   <input
                     type="checkbox"
                     checked={isHitAndRun}
                     onChange={(e) => setIsHitAndRun(e.target.checked)}
-                    className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
+                    className="rounded border-rule text-accent focus-visible:ring-2 focus-visible:ring-focus w-4 h-4"
                   />
                   <span>Suspect vehicle fled the scene (Hit-and-Run)</span>
                 </label>
               </div>
 
               {injuriesCount > 0 && (
-                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 bg-rose-50 rounded-lg border border-rose-200">
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 bg-paper rounded-lg border border-rule">
                   <div>
-                    <label className="text-[10px] font-bold text-rose-900 block">Responding Ambulance / First Aid Unit</label>
+                    <label className="text-xs font-medium text-ink block mb-1">Responding ambulance or first aid unit</label>
                     <input
                       type="text"
                       value={respondingAmbulanceUnit}
                       onChange={(e) => setRespondingAmbulanceUnit(e.target.value)}
                       placeholder="e.g., MDRRMO Alpha-1 / Barangay Tanod Responder"
-                      className="w-full p-1.5 text-xs bg-white rounded border border-rose-300 font-medium"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-rose-900 block">Hospital Transported To (if any)</label>
+                    <label className="text-xs font-medium text-ink block mb-1">Hospital transported to (if any)</label>
                     <input
                       type="text"
                       value={hospitalTransported}
                       onChange={(e) => setHospitalTransported(e.target.value)}
                       placeholder="e.g., Oriental Mindoro Southern District Hospital"
-                      className="w-full p-1.5 text-xs bg-white rounded border border-rose-300 font-medium"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -461,30 +455,30 @@ export const NewCaseModal: React.FC = () => {
           </div>
 
           {/* Section 3: Vehicles & Drivers Involved */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-            <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
-              <Car className="w-4 h-4 text-indigo-600" />
-              3. Involved Vehicles & Driver Profiles
+          <div className="bg-paper-2 p-4 rounded-xl border border-rule space-y-3">
+            <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5 border-b border-rule pb-2">
+              <Car className="w-4 h-4 text-accent" />
+              <span>3. Involved vehicles and driver profiles</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Vehicle 1 Card */}
-              <div className="p-3.5 bg-white rounded-xl border border-blue-200 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-blue-100 pb-1.5">
-                  <span className="font-bold text-blue-900 text-xs flex items-center gap-1">
-                    <Bike className="w-3.5 h-3.5 text-blue-600" />
-                    Vehicle 1 / Primary Reporting Driver
+              <div className="p-3.5 bg-paper rounded-xl border border-rule shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-rule pb-1.5">
+                  <span className="font-semibold text-ink text-xs flex items-center gap-1">
+                    <Bike className="w-3.5 h-3.5 text-accent" />
+                    <span>Vehicle 1 (Primary reporting driver)</span>
                   </span>
-                  <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">Party 1</span>
+                  <span className="text-[10px] bg-paper-2 border border-rule text-muted px-2 py-0.5 rounded font-medium">Party 1</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Vehicle Classification</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Vehicle classification</label>
                     <select
                       value={v1Type}
                       onChange={(e) => setV1Type(e.target.value)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                     >
                       <option value="Motorcycle">Motorcycle (Underbone / Scooter)</option>
                       <option value="Tricycle">Tricycle (Passenger TODA)</option>
@@ -497,34 +491,34 @@ export const NewCaseModal: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Make & Model</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Make and model</label>
                     <input
                       type="text"
                       placeholder="e.g. Honda Click 125i"
                       value={v1MakeModel}
                       onChange={(e) => setV1MakeModel(e.target.value)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Plate / MV File No.</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Plate or MV file number</label>
                     <input
                       type="text"
                       placeholder="e.g. 8912-MC"
                       value={v1Plate}
                       onChange={(e) => setV1Plate(e.target.value)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-mono"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule font-mono text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 num"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Driver Condition</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Driver condition</label>
                     <select
                       value={v1DriverCondition}
-                      onChange={(e) => setV1DriverCondition(e.target.value as any)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                      onChange={(e) => setV1DriverCondition(e.target.value as 'Uninjured' | 'Minor Scratches/Bruises' | 'Hospitalized' | 'Fatal')}
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                     >
                       <option value="Uninjured">Uninjured</option>
                       <option value="Minor Scratches/Bruises">Minor Scratches / First Aid</option>
@@ -535,34 +529,34 @@ export const NewCaseModal: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-semibold text-slate-600 block">Driver Full Name <span className="text-rose-500">*</span></label>
+                  <label className="text-[10px] font-medium text-muted block mb-0.5">Driver full name <span className="text-error">*</span></label>
                   <input
                     type="text"
                     required
                     placeholder="e.g., Carlos Dalisay"
                     value={v1DriverName}
                     onChange={(e) => setV1DriverName(e.target.value)}
-                    className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                    className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Contact Phone</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Contact phone</label>
                     <input
                       type="text"
                       placeholder="0917-xxx-xxxx"
                       value={v1DriverContact}
                       onChange={(e) => setV1DriverContact(e.target.value)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300"
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 num"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-slate-600 block">Damage Severity</label>
+                    <label className="text-[10px] font-medium text-muted block mb-0.5">Damage severity</label>
                     <select
                       value={v1Damage}
-                      onChange={(e) => setV1Damage(e.target.value as any)}
-                      className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                      onChange={(e) => setV1Damage(e.target.value as 'Minor Dent/Scratch' | 'Moderate Functional Damage' | 'Severe / Total Wreck')}
+                      className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                     >
                       <option value="Minor Dent/Scratch">Minor Dent / Scratches</option>
                       <option value="Moderate Functional Damage">Moderate Functional Damage</option>
@@ -573,20 +567,20 @@ export const NewCaseModal: React.FC = () => {
               </div>
 
               {/* Vehicle 2 / Pedestrian Card */}
-              <div className="p-3.5 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-rose-100 pb-1.5">
-                  <span className="font-bold text-rose-900 text-xs flex items-center gap-1">
-                    <Car className="w-3.5 h-3.5 text-rose-600" />
-                    Vehicle 2 / Second Party / Pedestrian
+              <div className="p-3.5 bg-paper rounded-xl border border-rule shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-rule pb-1.5">
+                  <span className="font-semibold text-ink text-xs flex items-center gap-1">
+                    <Car className="w-3.5 h-3.5 text-muted" />
+                    <span>Vehicle 2 (Second party or pedestrian)</span>
                   </span>
-                  <label className="flex items-center space-x-1 text-[10px] text-slate-600 font-bold cursor-pointer">
+                  <label className="flex items-center space-x-1 text-[10px] text-muted font-medium cursor-pointer">
                     <input
                       type="checkbox"
                       checked={hasParty2}
                       onChange={(e) => setHasParty2(e.target.checked)}
-                      className="rounded text-blue-600"
+                      className="rounded border-rule text-accent focus-visible:ring-2 focus-visible:ring-focus"
                     />
-                    <span>Include Party 2</span>
+                    <span>Include party 2</span>
                   </label>
                 </div>
 
@@ -594,11 +588,11 @@ export const NewCaseModal: React.FC = () => {
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block">Classification</label>
+                        <label className="text-[10px] font-medium text-muted block mb-0.5">Classification</label>
                         <select
                           value={v2Type}
                           onChange={(e) => setV2Type(e.target.value)}
-                          className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                          className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                         >
                           <option value="Tricycle">Tricycle (Passenger TODA)</option>
                           <option value="Motorcycle">Motorcycle (Underbone / Scooter)</option>
@@ -612,34 +606,34 @@ export const NewCaseModal: React.FC = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block">Make & Model</label>
+                        <label className="text-[10px] font-medium text-muted block mb-0.5">Make and model</label>
                         <input
                           type="text"
                           placeholder="e.g. Bajaj RE / Toyota Vios"
                           value={v2MakeModel}
                           onChange={(e) => setV2MakeModel(e.target.value)}
-                          className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300"
+                          className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block">Plate Number</label>
+                        <label className="text-[10px] font-medium text-muted block mb-0.5">Plate number</label>
                         <input
                           type="text"
                           placeholder="e.g. 4821-TG"
                           value={v2Plate}
                           onChange={(e) => setV2Plate(e.target.value)}
-                          className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-mono"
+                          className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule font-mono text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 num"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block">Driver Condition</label>
+                        <label className="text-[10px] font-medium text-muted block mb-0.5">Driver condition</label>
                         <select
                           value={v2DriverCondition}
-                          onChange={(e) => setV2DriverCondition(e.target.value as any)}
-                          className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                          onChange={(e) => setV2DriverCondition(e.target.value as 'Uninjured' | 'Minor Scratches/Bruises' | 'Hospitalized' | 'Fatal')}
+                          className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                         >
                           <option value="Uninjured">Uninjured</option>
                           <option value="Minor Scratches/Bruises">Minor Scratches / First Aid</option>
@@ -650,48 +644,48 @@ export const NewCaseModal: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-semibold text-slate-600 block">Driver / Party 2 Full Name</label>
+                      <label className="text-[10px] font-medium text-muted block mb-0.5">Driver or party 2 full name</label>
                       <input
                         type="text"
                         placeholder="e.g., Danilo Hernandez"
                         value={v2DriverName}
                         onChange={(e) => setV2DriverName(e.target.value)}
-                        className="w-full p-1.5 text-xs bg-slate-50 rounded border border-slate-300 font-medium"
+                        className="w-full p-1.5 text-xs bg-paper-2 rounded border border-rule font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                       />
                     </div>
 
                     {/* Official Involvement Toggle */}
                     <div className="pt-1">
-                      <label className="flex items-center space-x-2 text-[11px] font-bold text-rose-800 cursor-pointer">
+                      <label className="flex items-center space-x-2 text-xs font-medium text-ink cursor-pointer">
                         <input
                           type="checkbox"
                           checked={isRespondentOfficial}
                           onChange={(e) => setIsRespondentOfficial(e.target.checked)}
-                          className="rounded text-rose-600"
+                          className="rounded border-rule text-accent focus-visible:ring-2 focus-visible:ring-focus"
                         />
-                        <span>Party 2 is an Official / Government Service Vehicle</span>
+                        <span>Party 2 is an official or government service vehicle</span>
                       </label>
 
                       {isRespondentOfficial && (
-                        <div className="mt-2 p-2 bg-rose-50 rounded border border-rose-200 space-y-1.5">
+                        <div className="mt-2 p-2.5 bg-paper-2 rounded-lg border border-rule space-y-1.5">
                           <div>
-                            <label className="text-[10px] font-semibold text-rose-900 block">Official Position / Role</label>
+                            <label className="text-[10px] font-medium text-muted block mb-0.5">Official position or role</label>
                             <input
                               type="text"
                               value={officialPosition}
                               onChange={(e) => setOfficialPosition(e.target.value)}
                               placeholder="e.g. Municipal Driver, Barangay Kagawad"
-                              className="w-full p-1 text-xs bg-white rounded border border-rose-300"
+                              className="w-full p-1.5 text-xs bg-paper rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-semibold text-rose-900 block">Agency / Unit</label>
+                            <label className="text-[10px] font-medium text-muted block mb-0.5">Agency or unit</label>
                             <input
                               type="text"
                               value={officialAgency}
                               onChange={(e) => setOfficialAgency(e.target.value)}
                               placeholder="e.g. Municipal Government of Roxas, MDRRMO"
-                              className="w-full p-1 text-xs bg-white rounded border border-rose-300"
+                              className="w-full p-1.5 text-xs bg-paper rounded border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                             />
                           </div>
                         </div>
@@ -699,7 +693,7 @@ export const NewCaseModal: React.FC = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="p-4 text-center text-slate-400 italic text-xs">
+                  <div className="p-4 text-center text-muted italic text-xs">
                     Single vehicle crash (skid, fixed object, canal rollover, or self-accident).
                   </div>
                 )}
@@ -707,27 +701,27 @@ export const NewCaseModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-600 block">Witness / Responding Tanod Name (Optional)</label>
+              <label className="text-xs font-medium text-muted block mb-1">Witness or responding tanod name (Optional)</label>
               <input
                 type="text"
                 placeholder="Name of primary witness or tanod first responder"
                 value={witnessName}
                 onChange={(e) => setWitnessName(e.target.value)}
-                className="w-full p-2 text-xs bg-white rounded-lg border border-slate-300"
+                className="w-full p-2 text-xs bg-paper rounded-lg border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
               />
             </div>
           </div>
 
           {/* Section 4: Narrative & Agency Action Routing */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-            <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
-              <Layers className="w-4 h-4 text-blue-600" />
-              4. Factual Crash Narrative & Multi-Agency Action Routing
+          <div className="bg-paper-2 p-4 rounded-xl border border-rule space-y-3">
+            <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5 border-b border-rule pb-2">
+              <Layers className="w-4 h-4 text-accent" />
+              <span>4. Factual crash narrative and multi-agency action routing</span>
             </h3>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Factual Sequence of Events / Crash Statement <span className="text-rose-500">*</span>
+              <label className="text-xs font-semibold text-ink block mb-1">
+                Factual sequence of events or crash statement <span className="text-error">*</span>
               </label>
               <textarea
                 required
@@ -735,60 +729,58 @@ export const NewCaseModal: React.FC = () => {
                 placeholder="State the point of origin, direction of travel, speed estimates, point of impact, vehicle damages, roadway obstacles, and on-site settlement status..."
                 value={initialNarrative}
                 onChange={(e) => setInitialNarrative(e.target.value)}
-                className="w-full p-2.5 text-xs bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal"
+                className="w-full p-2.5 text-xs bg-paper rounded-lg border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden font-normal disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Initial Action Routing / Agency Jurisdiction <span className="text-rose-500">*</span>
+              <label className="text-xs font-semibold text-ink block mb-1">
+                Initial action routing and agency jurisdiction <span className="text-error">*</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                <label className={`p-2.5 rounded-xl border cursor-pointer flex items-center space-x-2 text-xs transition ${
-                  routingType === 'MDRRMO' ? 'bg-orange-50 border-orange-500 font-bold text-orange-900 shadow-2xs' : 'bg-white border-slate-200 text-slate-700'
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label className={`p-2.5 rounded-lg border cursor-pointer flex items-center space-x-2 text-xs transition-colors ${
+                  routingType === 'MDRRMO' ? 'bg-paper border-accent font-semibold text-ink shadow-2xs' : 'bg-paper-2 border-rule text-muted'
                 }`}>
                   <input
                     type="radio"
                     name="routing"
                     checked={routingType === 'MDRRMO'}
                     onChange={() => setRoutingType('MDRRMO')}
+                    className="text-accent focus-visible:ring-2 focus-visible:ring-focus"
                   />
-                  <span>MDRRMO Emergency Desk (Rescue Operations)</span>
+                  <span>MDRRMO emergency desk (Rescue operations)</span>
                 </label>
 
-                <label className={`p-2.5 rounded-xl border cursor-pointer flex items-center space-x-2 text-xs transition ${
-                  routingType === 'LGU' ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-900 shadow-2xs' : 'bg-white border-slate-200 text-slate-700'
+                <label className={`p-2.5 rounded-lg border cursor-pointer flex items-center space-x-2 text-xs transition-colors ${
+                  routingType === 'LGU' ? 'bg-paper border-accent font-semibold text-ink shadow-2xs' : 'bg-paper-2 border-rule text-muted'
                 }`}>
                   <input
                     type="radio"
                     name="routing"
                     checked={routingType === 'LGU'}
                     onChange={() => setRoutingType('LGU')}
+                    className="text-accent focus-visible:ring-2 focus-visible:ring-focus"
                   />
-                  <span>LGU Traffic & Transport Division</span>
+                  <span>LGU traffic and transport division</span>
                 </label>
-
-
-
-
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-3 border-t border-slate-200">
+          <div className="flex justify-end space-x-3 pt-3 border-t border-rule">
             <button
               type="button"
               onClick={() => setIsNewCaseModalOpen(false)}
-              className="px-5 py-2.5 text-xs text-slate-600 hover:bg-slate-100 rounded-xl font-semibold cursor-pointer transition"
+              className="px-5 py-2 text-xs text-muted hover:text-ink hover:bg-paper-3 active:bg-paper-2 rounded-lg font-semibold cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
             >
-              Cancel
+              <span className="whitespace-nowrap">Cancel</span>
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-2 transition"
+              className="px-6 py-2 bg-accent hover:bg-accent/90 active:bg-accent/80 text-accent-ink rounded-lg text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Register Accident Dossier
+              <span className="whitespace-nowrap">Register accident</span>
             </button>
           </div>
         </form>

@@ -103,7 +103,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           type: 'header',
-          label: 'MDRRMO INCIDENT REPORTS'
+          label: 'MDRRMO incident reports'
         },
         {
           id: 'annual_narrative',
@@ -133,7 +133,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           type: 'header',
-          label: 'GOVERNANCE & STATISTICAL REPORTS'
+          label: 'Governance & statistical reports'
         },
         {
           id: 'annual_narrative',
@@ -149,7 +149,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           type: 'header',
-          label: 'SYSTEM & INTEGRITY'
+          label: 'System & integrity'
         },
         {
           id: 'audit_trail',
@@ -184,7 +184,7 @@ export const Sidebar: React.FC = () => {
       },
       {
         type: 'header',
-        label: 'GOVERNANCE & STATISTICAL REPORTS'
+        label: 'Governance & statistical reports'
       },
       {
         id: 'annual_narrative',
@@ -200,7 +200,7 @@ export const Sidebar: React.FC = () => {
       },
       {
         type: 'header',
-        label: 'SYSTEM & INTEGRITY'
+        label: 'System & integrity'
       },
       {
         id: 'audit_trail',
@@ -227,23 +227,9 @@ export const Sidebar: React.FC = () => {
   const renderSidebarContent = (isMobile: boolean) => (
     <>
       {/* Brand Header */}
-      <div
-        className={`p-4 sm:p-5 border-b flex items-center justify-between transition-colors ${isMdrrmo
-            ? 'bg-orange-50/50 border-orange-100'
-            : isLgu
-              ? 'bg-gradient-to-r from-emerald-50/80 via-emerald-50/50 to-amber-50/40 border-emerald-200/90'
-              : 'bg-emerald-50/40 border-emerald-100'
-          }`}
-      >
+      <div className="p-4 border-b border-rule flex items-center justify-between bg-paper transition-colors">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 bg-white rounded-xl p-0.5 flex items-center justify-center shadow-xs border ${isMdrrmo
-                ? 'border-orange-200/90'
-                : isLgu
-                  ? 'border-2 border-amber-400 ring-1 ring-emerald-700/20'
-                  : 'border-emerald-200/80'
-              }`}
-          >
+          <div className="w-9 h-9 bg-paper-2 rounded-md p-0.5 flex items-center justify-center border border-rule">
             <img
               src={
                 currentUser.agencyType === 'MDRRMO'
@@ -259,37 +245,23 @@ export const Sidebar: React.FC = () => {
                     ? 'LGU Roxas Seal'
                     : 'B-CONNECT Logo'
               }
-              className="w-full h-full object-contain rounded-lg"
+              className="w-full h-full object-contain rounded-sm"
             />
           </div>
           <div>
-            <h1
-              className={`font-extrabold tracking-tight text-base leading-tight ${isMdrrmo
-                  ? 'text-slate-900'
-                  : isLgu
-                    ? 'text-[#062612]'
-                    : 'text-emerald-950'
-                }`}
-            >
+            <h1 className="font-bold text-sm text-ink leading-tight">
               {currentUser.agencyType === 'MDRRMO'
-                ? 'MDRRMO ROXAS'
+                ? 'MDRRMO Roxas'
                 : currentUser.agencyType === 'LGU'
-                  ? 'LGU ROXAS'
+                  ? 'LGU Roxas'
                   : 'B-CONNECT'}
             </h1>
-            <span
-              className={`text-[9px] uppercase tracking-widest font-black block ${isMdrrmo
-                  ? 'text-orange-600'
-                  : isLgu
-                    ? 'text-[#0f532a]'
-                    : 'text-emerald-700'
-                }`}
-            >
+            <span className="text-xs text-muted block font-medium">
               {currentUser.agencyType === 'MDRRMO'
-                ? 'DISASTER RISK & RESCUE'
+                ? 'Disaster risk & rescue'
                 : currentUser.agencyType === 'LGU'
-                  ? 'MUNICIPAL GOVERNMENT'
-                  : 'ROXAS, ORI. MINDORO'}
+                  ? 'Municipal government'
+                  : 'Roxas, Oriental Mindoro'}
             </span>
           </div>
         </div>
@@ -298,12 +270,7 @@ export const Sidebar: React.FC = () => {
           <button
             id="btn-close-mobile-sidebar"
             onClick={() => setIsMobileMenuOpen(false)}
-            className={`p-1.5 rounded-lg transition cursor-pointer ${isMdrrmo
-                ? 'text-orange-800 hover:text-orange-950 hover:bg-orange-100/70'
-                : isLgu
-                  ? 'text-emerald-900 hover:text-[#062612] hover:bg-emerald-100/80'
-                  : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70'
-              }`}
+            className="p-1.5 rounded-md text-muted hover:text-ink hover:bg-paper-2 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
             title="Close navigation"
           >
             <X className="w-5 h-5" />
@@ -313,53 +280,31 @@ export const Sidebar: React.FC = () => {
 
       {/* Active Operating Jurisdiction info pill */}
       <div className="px-3 pt-3">
-        <div
-          className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors ${isMdrrmo
-              ? 'bg-orange-50/70 border-orange-200/90 shadow-2xs'
-              : isLgu
-                ? 'bg-gradient-to-r from-emerald-50/90 to-amber-50/50 border-2 border-amber-400/70 shadow-2xs'
-                : 'bg-emerald-50/70 border-emerald-200/80'
-            }`}
-        >
-          <div className={`${isMdrrmo ? 'text-orange-700' : isLgu ? 'text-emerald-800' : 'text-emerald-700'} flex-shrink-0`}>
+        <div className="flex items-center gap-2.5 p-2 rounded-md border border-rule bg-paper-2 transition-colors">
+          <div className="flex-shrink-0">
             {currentUser.agencyType === 'MDRRMO' ? (
               <img
                 src="/mdrrmo_logo.png"
                 alt="MDRRMO Seal"
-                className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border border-orange-300 shadow-2xs"
+                className="w-6 h-6 rounded-md object-contain bg-paper p-0.5 border border-rule"
               />
             ) : currentUser.agencyType === 'LGU' ? (
               <img
                 src="/lgu_logo.png"
                 alt="LGU Roxas Seal"
-                className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border-2 border-amber-400 shadow-2xs"
+                className="w-6 h-6 rounded-md object-contain bg-paper p-0.5 border border-rule"
               />
             ) : (
-              <>
-                {currentUser.agencyType === 'ADMIN' && <Settings className="w-4 h-4" />}
-                {currentUser.agencyType === 'RESIDENT' && <UserPlus className="w-4 h-4" />}
-              </>
+              <div className="w-6 h-6 rounded-md bg-paper border border-rule flex items-center justify-center text-ink">
+                {currentUser.agencyType === 'ADMIN' ? <Settings className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+              </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div
-              className={`text-[11px] font-extrabold truncate ${isMdrrmo
-                  ? 'text-slate-900'
-                  : isLgu
-                    ? 'text-[#062612]'
-                    : 'text-emerald-950'
-                }`}
-            >
+            <div className="text-xs font-semibold text-ink truncate">
               {currentUser?.agencyName || 'Agency'}
             </div>
-            <div
-              className={`text-[10px] truncate font-semibold ${isMdrrmo
-                  ? 'text-orange-800/90'
-                  : isLgu
-                    ? 'text-amber-800 font-bold'
-                    : 'text-emerald-800/80'
-                }`}
-            >
+            <div className="text-xs text-muted truncate">
               {currentUser?.position || ''}
             </div>
           </div>
@@ -367,18 +312,13 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+      <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
         {navItems.map((item, index) => {
           if (item.type === 'header') {
             return (
               <div
                 key={`header-${index}`}
-                className={`text-[10px] uppercase font-black px-3 mt-4 mb-1.5 tracking-widest ${isMdrrmo
-                    ? 'text-orange-800/90'
-                    : isLgu
-                      ? 'text-[#0f532a]'
-                      : 'text-emerald-800/70'
-                  }`}
+                className="text-xs font-medium text-muted px-2.5 mt-3 mb-1"
               >
                 {item.label}
               </div>
@@ -392,61 +332,24 @@ export const Sidebar: React.FC = () => {
               key={item.id}
               id={`nav-link-${item.id}${isMobile ? '-mobile' : ''}`}
               onClick={() => handleNavClick(item.id!)}
-              className={`w-full text-left px-3 py-2 rounded-lg transition-all flex items-center justify-between group cursor-pointer ${isActive
-                  ? isMdrrmo
-                    ? 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white font-black shadow-md shadow-orange-600/20 border border-orange-500'
-                    : isLgu
-                      ? 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] text-white font-black shadow-md border-2 border-amber-400/80 ring-1 ring-amber-300/30'
-                      : 'bg-emerald-600 text-white font-bold shadow-xs'
-                  : isMdrrmo
-                    ? 'hover:bg-orange-50/80 text-slate-700 hover:text-orange-950 font-medium'
-                    : isLgu
-                      ? 'hover:bg-emerald-50/80 text-slate-700 hover:text-[#062612] font-medium'
-                      : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-950 font-medium'
-                }`}
+              className={`w-full min-h-[36px] text-left px-2.5 py-1.5 rounded-md transition-colors flex items-center justify-between group cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
+                isActive
+                  ? 'bg-paper-3 text-ink font-semibold border border-rule'
+                  : 'text-ink-2 hover:bg-paper-2 hover:text-ink border border-transparent'
+              }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span
-                  className={`w-1 h-4 rounded-full flex-shrink-0 transition-colors ${isActive
-                      ? isMdrrmo
-                        ? 'bg-amber-300'
-                        : isLgu
-                          ? 'bg-amber-400'
-                          : 'bg-white'
-                      : isMdrrmo
-                        ? 'bg-orange-200 group-hover:bg-orange-400'
-                        : isLgu
-                          ? 'bg-emerald-200 group-hover:bg-amber-400'
-                          : 'bg-emerald-200 group-hover:bg-emerald-400'
-                    }`}
-                />
-                <span
-                  className={`transition-colors ${isActive
-                      ? isLgu
-                        ? 'text-amber-300'
-                        : 'text-white'
-                      : isMdrrmo
-                        ? 'text-orange-600 group-hover:text-orange-800'
-                        : isLgu
-                          ? 'text-[#0f532a] group-hover:text-emerald-900'
-                          : 'text-emerald-700 group-hover:text-emerald-900'
-                    }`}
+                  className={`transition-colors flex-shrink-0 ${
+                    isActive ? 'text-accent' : 'text-muted group-hover:text-ink'
+                  }`}
                 >
                   {item.icon}
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs truncate">{item.label}</div>
                   {item.subtitle && (
-                    <div
-                      className={`text-[10px] truncate ${isActive
-                          ? isMdrrmo
-                            ? 'text-orange-100 font-medium'
-                            : isLgu
-                              ? 'text-amber-100/90 font-medium'
-                              : 'text-emerald-100'
-                          : 'text-slate-400'
-                        }`}
-                    >
+                    <div className={`text-xs truncate ${isActive ? 'text-muted' : 'text-muted/80'}`}>
                       {item.subtitle}
                     </div>
                   )}
@@ -456,26 +359,18 @@ export const Sidebar: React.FC = () => {
               {/* Badges */}
               <div className="flex items-center space-x-1 flex-shrink-0">
                 {item.urgentAlert && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-600 text-white shadow-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-1.5 py-0.5 rounded bg-paper-3 text-error border border-rule">
+                    <span className="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
                     <span>{item.urgentAlert}</span>
                   </span>
                 )}
                 {item.badge !== undefined && !item.urgentAlert && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${item.badgeColor ||
-                      (isActive
-                        ? isMdrrmo
-                          ? 'bg-orange-900/90 text-amber-200 border border-orange-400/40'
-                          : isLgu
-                            ? 'bg-amber-400 text-[#082e16] border border-amber-300'
-                            : 'bg-emerald-700 text-white'
-                        : isMdrrmo
-                          ? 'bg-orange-100 text-orange-900 border border-orange-200'
-                          : isLgu
-                            ? 'bg-emerald-100 text-[#0f532a] border border-emerald-200'
-                            : 'bg-emerald-100 text-emerald-800')
-                      }`}
+                    className={`text-xs px-1.5 py-0.5 rounded-full font-medium border border-rule num ${
+                      isActive
+                        ? 'bg-accent text-accent-ink'
+                        : 'bg-paper-2 text-ink'
+                    }`}
                   >
                     {item.badge}
                   </span>
@@ -489,12 +384,12 @@ export const Sidebar: React.FC = () => {
       {/* Official Inquiries Quick Indicator (Shown only to Oversight agencies: LGU, ADMIN) */}
       {(isLgu || isAdmin) && officialComplaintsCount > 0 && (
         <div className="px-3 pb-2">
-          <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs">
-            <div className="flex items-center space-x-1.5 text-rose-800 font-bold text-[10px]">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-600" />
-              <span>Official Complaints Radar</span>
+          <div className="p-2.5 bg-paper-2 border border-rule rounded-md text-xs">
+            <div className="flex items-center space-x-1.5 text-error font-semibold text-xs">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-error" />
+              <span>Official complaints radar</span>
             </div>
-            <p className="text-[10px] text-rose-700 mt-1 leading-snug font-medium">
+            <p className="text-xs text-muted mt-1 leading-snug">
               {officialComplaintsCount} active complaint{officialComplaintsCount > 1 ? 's' : ''} involving local officials under oversight.
             </p>
           </div>
@@ -509,8 +404,7 @@ export const Sidebar: React.FC = () => {
       {/* Desktop Persistent Sidebar (Laptop & Desktop screens >= 1024px) */}
       <aside
         id="bconnect-sidebar"
-        className={`hidden lg:flex w-64 bg-white text-slate-700 flex-col border-r flex-shrink-0 select-none ${isMdrrmo ? 'border-orange-200/80' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
-          }`}
+        className="hidden lg:flex w-64 bg-paper text-ink flex-col border-r border-rule flex-shrink-0 select-none"
       >
         {renderSidebarContent(false)}
       </aside>
@@ -520,15 +414,16 @@ export const Sidebar: React.FC = () => {
         <div
           id="mobile-sidebar-backdrop"
           onClick={() => setIsMobileMenuOpen(false)}
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 z-50 lg:hidden motion-safe:transition-opacity motion-reduce:transition-none duration-300"
         />
       )}
 
       {/* Mobile & Tablet Slide-Over Drawer (< 1024px) */}
       <aside
         id="bconnect-sidebar-mobile"
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white text-slate-700 flex flex-col shadow-2xl border-r select-none transform transition-transform duration-300 ease-in-out lg:hidden ${isMdrrmo ? 'border-orange-200' : isLgu ? 'border-emerald-200' : 'border-emerald-200'
-          } ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-paper text-ink flex flex-col shadow-card border-r border-rule select-none transform motion-safe:transition-transform motion-reduce:transition-none duration-300 ease-in-out lg:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         {renderSidebarContent(true)}
       </aside>

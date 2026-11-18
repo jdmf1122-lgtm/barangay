@@ -1,14 +1,12 @@
 import React from 'react';
 import { 
   Landmark, 
-  Building, 
   FileText, 
-  TrendingUp, 
   MapPin, 
   ArrowUpRight, 
-  Users, 
   CheckCircle,
-  Clock
+  Clock,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -25,12 +23,12 @@ export const LguDashboard: React.FC = () => {
 
   const safeCases = cases || [];
   const totalCases = safeCases.length;
-  const resolvedCases = safeCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
-  const pendingCases = safeCases.filter((c) => c.isPending || c.status === 'Pending').length;
+  const resolvedCases = safeCases.filter((c) => c.status === 'Resolved' || (c.status as string) === 'Closed').length;
+  const pendingCases = safeCases.filter((c) => c.isPending || (c.status as string) === 'Pending').length;
 
   // MDRRMO to LGU Escalated Incidents (MDRRMO non-response timeout reached)
   const escalatedToLguCases = safeCases.filter(
-    (c) => c && c.isEscalatedToLgu && c.status !== 'Resolved' && c.status !== 'Closed'
+    (c) => c && c.isEscalatedToLgu && c.status !== 'Resolved' && (c.status as string) !== 'Closed'
   );
 
   // Barangay case distribution
@@ -44,69 +42,75 @@ export const LguDashboard: React.FC = () => {
   return (
     <div id="lgu-dashboard-view" className="space-y-6">
       {/* Top Banner with Official LGU Roxas Seal */}
-      <div className="bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 border-amber-400/80 ring-1 ring-amber-300/30 relative overflow-hidden">
-        {/* Subtle background seal watermark */}
-        <img
-          src="/lgu_logo.png"
-          alt=""
-          className="absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]"
-        />
-
+      <section
+        aria-label="LGU executive overview"
+        className="bg-paper border border-rule rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden"
+      >
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 border-amber-400 ring-2 ring-[#0f532a]/60 flex-shrink-0 flex items-center justify-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-paper-2 border border-rule p-1.5 shrink-0 flex items-center justify-center">
             <img
               src="/lgu_logo.png"
-              alt="Municipal Government of Roxas Official Seal"
-              className="w-full h-full object-contain rounded-xl"
+              alt="Municipal Government of Roxas official seal"
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#062612]/90 text-amber-300 text-xs font-bold border border-amber-400/60 shadow-xs">
-                <Landmark className="w-3.5 h-3.5 text-amber-400" />
-                <span>{isAdministrator ? 'Executive & Administrative Oversight' : 'Departmental Action & Public Service'} • LGU Roxas</span>
-              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paper-2 text-ink text-xs font-semibold border border-rule">
+                <Landmark className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span>{isAdministrator ? 'Executive & administrative oversight' : 'Departmental action & public service'} &middot; LGU Roxas</span>
+              </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
-              {isAdministrator ? 'Municipal Government Executive & Public Service Dashboard' : 'LGU Departmental Action & Grievance Desk Dashboard'}
+            <h2 className="text-lg sm:text-xl font-semibold text-ink tracking-tight leading-tight">
+              {isAdministrator ? 'Municipal executive and public service console' : 'LGU departmental action and grievance desk'}
             </h2>
-            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
-              <span className="text-amber-300 font-bold tracking-wide">MUNICIPALITY OF ROXAS &bull; ORIENTAL MINDORO (EST. 1948)</span> &bull; <span className="text-emerald-100/90">Coordinating municipal departments across all barangays.</span>
+            <p className="text-xs text-muted mt-1 max-w-2xl leading-relaxed">
+              Municipality of Roxas, Oriental Mindoro. Cross-departmental coordination and statutory escalation oversight across all 20 component barangays.
             </p>
           </div>
         </div>
 
         <div className="flex w-full md:w-auto z-10">
           <button
+            type="button"
+            data-testid="btn-lgu-municipal-report"
             onClick={() => setActiveTab('standard_reports')}
-            className="w-full sm:w-auto justify-center px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] rounded-xl text-xs font-black shadow-md border border-amber-200 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="w-full sm:w-auto justify-center px-4 py-2 bg-paper-2 hover:bg-paper-3 active:bg-paper-3 text-ink rounded-lg text-xs font-semibold border border-rule transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FileText className="w-4 h-4 text-[#082e16]" />
-            <span>Municipal Report</span>
+            <FileText className="w-4 h-4 text-ink shrink-0" />
+            <span>Municipal reports</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Prominent Escalated Incidents Alert Card (MDRRMO Non-Response Timeout) */}
+      {/* Prominent Escalated Incidents Section (MDRRMO Non-Response Timeout) */}
       {escalatedToLguCases.length > 0 && (
-        <div id="lgu-escalated-incidents-section" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500/80 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-3">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
+        <section
+          id="lgu-escalated-incidents-section"
+          aria-label="Statutory escalations requiring executive intervention"
+          className="bg-paper border-2 border-error/70 rounded-xl p-4 sm:p-5 shadow-xs space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rule pb-3">
+            <div className="flex items-start sm:items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-error/10 border border-error/20 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                <ShieldAlert className="w-4 h-4 text-error" />
+              </div>
               <div>
-                <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide flex items-center gap-2">
-                  <span>🚨 Incidents Escalated to LGU ({escalatedToLguCases.length})</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white">
-                    Action Required
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-ink">
+                    Incidents escalated to LGU ({escalatedToLguCases.length})
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/30">
+                    Action required
                   </span>
-                </h3>
-                <p className="text-xs text-rose-800/90 font-medium">
-                  MDRRMO response deadline was exceeded without acknowledgment. Automated SMS alert dispatched to designated LGU Officials. LGU review and intervention is required.
+                </div>
+                <p className="text-xs text-muted mt-0.5">
+                  MDRRMO response deadline was exceeded without acknowledgment. Automated SMS alert dispatched to designated LGU officials. Executive review and directive required.
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-bold px-2.5 py-1 bg-white border border-rose-300 text-rose-800 rounded-lg shadow-2xs self-start sm:self-auto">
-              Automated Statutory Escalation
+            <span className="text-xs font-semibold px-2.5 py-1 bg-paper-2 border border-rule text-ink rounded-lg self-start sm:self-auto">
+              Statutory escalation
             </span>
           </div>
 
@@ -114,198 +118,229 @@ export const LguDashboard: React.FC = () => {
             {escalatedToLguCases.map((c) => (
               <div 
                 key={c.id} 
-                className="bg-white border-2 border-rose-200 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:border-rose-400 transition"
+                data-testid={`escalated-case-card-${c.id}`}
+                className="bg-paper-2 border border-rule hover:border-error/50 rounded-xl p-4 flex flex-col justify-between shadow-xs transition-colors motion-reduce:transition-none space-y-3"
               >
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-black px-2 py-0.5 bg-rose-100 text-rose-900 rounded border border-rose-200">
+                    <span className="font-outlier text-xs font-semibold px-2 py-0.5 bg-paper text-ink rounded border border-rule tabular-nums">
                       #{c.id}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
                       <span>Escalated to LGU</span>
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-1">{c.title}</h4>
-                    <p className="text-[11px] text-slate-600 mt-0.5 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                    <h4 className="text-sm font-semibold text-ink leading-snug line-clamp-1">{c.title}</h4>
+                    <p className="text-xs text-muted mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
                       <span className="truncate">Location: {c.specificLocation || `Brgy. ${c.barangay}`}</span>
                     </p>
                   </div>
 
-                  <div className="bg-rose-50/70 p-2.5 rounded-lg border border-rose-200/60 text-[11px] space-y-1">
-                    <div className="flex justify-between text-slate-700">
-                      <span>Emergency Type:</span>
-                      <strong className="text-slate-900">{c.category || 'Accident Incident'}</strong>
+                  <div className="bg-paper p-2.5 rounded-lg border border-rule text-xs space-y-1.5">
+                    <div className="flex justify-between text-muted">
+                      <span>Emergency type:</span>
+                      <span className="text-ink font-semibold">{c.category || 'Accident incident'}</span>
                     </div>
-                    <div className="flex justify-between text-slate-700">
-                      <span>Reported Date & Time:</span>
-                      <strong className="text-slate-900">{c.incidentDate || c.dateReported?.split('T')[0]} {c.incidentTime || ''}</strong>
+                    <div className="flex justify-between text-muted">
+                      <span>Reported date &amp; time:</span>
+                      <span className="text-ink font-semibold font-outlier tabular-nums">
+                        {c.incidentDate || c.dateReported?.split('T')[0]} {c.incidentTime || ''}
+                      </span>
                     </div>
-                    <div className="flex justify-between text-rose-800 font-bold">
+                    <div className="flex justify-between text-muted">
                       <span>Elapsed without MDRRMO:</span>
-                      <span className="text-rose-700 font-mono underline decoration-rose-300">
+                      <span className="text-error font-semibold font-outlier tabular-nums">
                         {c.escalationElapsedStr || 'Over 2 hours'}
                       </span>
                     </div>
-                    <div className="flex justify-between text-slate-700">
-                      <span>Current Status:</span>
-                      <span className="font-bold text-amber-800">{c.status || 'Escalated to LGU'}</span>
+                    <div className="flex justify-between text-muted">
+                      <span>Current status:</span>
+                      <span className="font-semibold text-ink">{c.status || 'Escalated to LGU'}</span>
                     </div>
-                    <div className="flex justify-between text-slate-700">
-                      <span>Recommended Action:</span>
-                      <strong className="text-rose-700">LGU intervention/review required</strong>
+                    <div className="flex justify-between text-muted">
+                      <span>Recommended action:</span>
+                      <span className="text-error font-semibold">Executive directive required</span>
                     </div>
                   </div>
 
                   {c.escalationSmsRecipient && (
-                    <div className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 flex items-center gap-1.5">
-                      <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
-                      <span>SMS delivered to: <strong>{c.escalationSmsRecipient}</strong> ({c.escalationSmsRecipientPhone})</span>
+                    <div className="text-xs text-ink bg-paper p-2 rounded-lg border border-rule flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" />
+                      <span>SMS delivered to <strong>{c.escalationSmsRecipient}</strong> ({c.escalationSmsRecipientPhone})</span>
                     </div>
                   )}
 
                   {c.lguActionTaken && (
-                    <div className="text-[10px] text-sky-800 bg-sky-50 px-2 py-1 rounded border border-sky-200">
-                      <span>Current LGU Directive: <strong>{c.lguActionTaken}</strong></span>
-                      {c.lguInterventionNotes && <p className="text-slate-600 italic mt-0.5 line-clamp-1">"{c.lguInterventionNotes}"</p>}
+                    <div className="text-xs text-ink bg-paper p-2 rounded-lg border border-rule space-y-0.5">
+                      <div>Current directive: <strong>{c.lguActionTaken}</strong></div>
+                      {c.lguInterventionNotes && (
+                        <p className="text-muted italic line-clamp-1">&ldquo;{c.lguInterventionNotes}&rdquo;</p>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-slate-500">
+                <div className="pt-2.5 border-t border-rule flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted font-outlier tabular-nums">
                     Escalated: {c.escalatedAt ? new Date(c.escalatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
                   </span>
                   <button
+                    type="button"
+                    data-testid={`btn-intervene-case-${c.id}`}
                     onClick={() => setSelectedCaseId(c.id)}
-                    className="px-3.5 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="px-3 py-1.5 bg-accent hover:bg-accent/90 active:bg-accent/90 text-accent-ink rounded-lg text-xs font-semibold shadow-xs transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    <span>Intervene & Take Action</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    <span>Take action</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Municipality Total</p>
-          <h3 className="text-3xl font-bold mt-1 text-slate-900">{totalCases}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-bold">
-            <span>Across 20 Barangays</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+      <section aria-label="Municipal case statistics" className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Municipality total cases</p>
+          <p className="text-2xl sm:text-3xl font-semibold mt-1 text-ink font-outlier tabular-nums">{totalCases}</p>
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+            <span>Across 20 barangays</span>
+            <div className="h-px flex-1 bg-rule"></div>
           </div>
         </div>
 
-        <div className={`p-4 rounded-xl border shadow-xs transition ${
+        <div className={`p-4 rounded-xl border shadow-xs transition-colors motion-reduce:transition-none ${
           escalatedToLguCases.length > 0 
-            ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/40' 
-            : 'bg-white border-slate-200'
+            ? 'bg-paper-2 border-error/50' 
+            : 'bg-paper border-rule'
         }`}>
-          <p className="text-xs text-rose-700 uppercase font-black tracking-tight flex items-center justify-between">
-            <span>Escalated to LGU</span>
-            {escalatedToLguCases.length > 0 && <span className="w-2 h-2 rounded-full bg-rose-500"></span>}
+          <div className="flex items-center justify-between">
+            <p className={`text-xs font-medium ${escalatedToLguCases.length > 0 ? 'text-error font-semibold' : 'text-muted'}`}>
+              Escalated to LGU
+            </p>
+            {escalatedToLguCases.length > 0 && <span className="w-2 h-2 rounded-full bg-error"></span>}
+          </div>
+          <p className={`text-2xl sm:text-3xl font-semibold mt-1 font-outlier tabular-nums ${
+            escalatedToLguCases.length > 0 ? 'text-error' : 'text-ink'
+          }`}>
+            {escalatedToLguCases.length}
           </p>
-          <h3 className="text-3xl font-black mt-1 text-rose-700">{escalatedToLguCases.length}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-rose-700 font-bold">
-            <span>{escalatedToLguCases.length > 0 ? 'MDRRMO Timeout Exceeded' : 'Zero Escalations'}</span>
-            <div className="h-px flex-1 bg-rose-200"></div>
+          <div className="flex items-center gap-2 mt-2 text-xs">
+            <span className={escalatedToLguCases.length > 0 ? 'text-error font-medium' : 'text-muted'}>
+              {escalatedToLguCases.length > 0 ? 'Timeout exceeded' : 'Zero escalations'}
+            </span>
+            <div className="h-px flex-1 bg-rule"></div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Active Monitoring</p>
-          <h3 className="text-3xl font-bold mt-1 text-amber-600">{pendingCases}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-amber-600 font-bold">
-            <span>Pending / In Progress</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Active monitoring</p>
+          <p className="text-2xl sm:text-3xl font-semibold mt-1 text-ink font-outlier tabular-nums">{pendingCases}</p>
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+            <span>Pending and in progress</span>
+            <div className="h-px flex-1 bg-rule"></div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-tight">Resolved Cases</p>
-          <h3 className="text-3xl font-bold mt-1 text-emerald-600">{resolvedCases}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-emerald-600 font-bold">
-            <span>Settled / Completed</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Resolved cases</p>
+          <p className="text-2xl sm:text-3xl font-semibold mt-1 text-success font-outlier tabular-nums">{resolvedCases}</p>
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+            <span>Settled and completed</span>
+            <div className="h-px flex-1 bg-rule"></div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Two columns: Municipal Case Monitoring & Barangay Comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Municipal Incident & Case Monitoring */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <section aria-label="Municipal case monitoring feed" className="lg:col-span-2 bg-paper rounded-xl border border-rule shadow-xs p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-rule">
             <div>
-              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-700" />
-                <span>Municipal Incident & Case Monitoring</span>
+              <h3 className="font-semibold text-sm text-ink flex items-center gap-2">
+                <Clock className="w-4 h-4 text-accent shrink-0" />
+                <span>Municipal incident &amp; case monitoring</span>
               </h3>
-              <p className="text-xs text-slate-500">Cross-barangay incident oversight across 20 barangays</p>
+              <p className="text-xs text-muted mt-0.5">Cross-barangay incident oversight across 20 barangays</p>
             </div>
-            <span className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full font-bold border border-emerald-200">
-              {safeCases.length} Total Monitored
+            <span className="text-xs text-ink bg-paper-2 px-2.5 py-1 rounded-full font-semibold border border-rule font-outlier tabular-nums">
+              {safeCases.length} total monitored
             </span>
           </div>
 
-          <div className="mt-3 divide-y divide-slate-100">
+          <div className="mt-3 divide-y divide-rule">
             {safeCases.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">
-                No incident records currently logged in the municipality.
+              <div className="py-12 text-center text-xs text-muted space-y-1">
+                <FileText className="w-8 h-8 mx-auto text-muted/60 mb-2" />
+                <p className="font-semibold text-ink">No incident records currently logged</p>
+                <p>Municipal incident reports will appear here as they are received.</p>
               </div>
             ) : (
               safeCases.slice(0, 8).map((c) => (
                 <div
                   key={c.id}
+                  data-testid={`case-row-${c.id}`}
                   onClick={() => setSelectedCaseId(c.id)}
-                  className="py-3 px-2 hover:bg-emerald-50/40 rounded-lg cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedCaseId(c.id);
+                    }
+                  }}
+                  className="py-3 px-2 hover:bg-paper-2 rounded-lg cursor-pointer transition-colors motion-reduce:transition-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
                 >
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-emerald-800">{c.caseNumber || c.id}</span>
+                      <span className="font-outlier text-xs font-semibold text-ink px-1.5 py-0.5 bg-paper-2 rounded border border-rule tabular-nums">
+                        {c.caseNumber || c.id}
+                      </span>
                       <StatusBadge status={c.status} size="sm" />
                       <PriorityBadge priority={c.priority} />
-                      <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        Brgy. {c.barangay}
+                      <span className="text-xs text-muted bg-paper-2 px-2 py-0.5 rounded border border-rule flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
+                        <span>Brgy. {c.barangay}</span>
                       </span>
                     </div>
-                    <div className="text-xs font-bold text-slate-800">{c.title}</div>
-                    <div className="text-[11px] text-slate-500 line-clamp-1">{c.description}</div>
+                    <div className="text-xs font-semibold text-ink">{c.title}</div>
+                    {c.description && (
+                      <div className="text-xs text-muted line-clamp-1">{c.description}</div>
+                    )}
                   </div>
 
                   <div className="text-right flex sm:flex-col items-center sm:items-end justify-between text-xs shrink-0">
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs text-muted font-outlier tabular-nums">
                       {c.dateReported || c.dateCreated ? new Date(c.dateReported || c.dateCreated!).toLocaleDateString() : 'Recent'}
                     </span>
-                    <span className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 mt-1 flex items-center gap-0.5">
-                      <span>View Details</span>
-                      <ArrowUpRight className="w-3 h-3" />
+                    <span className="text-xs font-semibold text-accent hover:text-accent/80 mt-1 flex items-center gap-1">
+                      <span>View details</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                     </span>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right Col: 20 Barangays Distribution */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-          <h3 className="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-emerald-700" />
-            20 Barangays Incident Distribution
-          </h3>
-          <p className="text-xs text-slate-500 mb-3">Case load across Roxas, Oriental Mindoro</p>
+        <section aria-label="Barangay incident distribution" className="bg-paper rounded-xl border border-rule shadow-xs p-4 sm:p-5">
+          <div className="pb-3 border-b border-rule">
+            <h3 className="font-semibold text-sm text-ink flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-accent shrink-0" />
+              <span>Barangay incident distribution</span>
+            </h3>
+            <p className="text-xs text-muted mt-0.5">Incident load across 20 barangays</p>
+          </div>
 
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1 mt-3">
             {ROXAS_BARANGAYS.map((bgy) => {
               const count = barangayCounts[bgy] || 0;
               const percent = totalCases > 0 ? Math.round((count / totalCases) * 100) : 0;
@@ -313,20 +348,22 @@ export const LguDashboard: React.FC = () => {
               return (
                 <div key={bgy} className="space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className="font-medium text-slate-700">Brgy. {bgy}</span>
-                    <span className="font-mono text-slate-500">{count} case{count === 1 ? '' : 's'}</span>
+                    <span className="font-medium text-ink">Brgy. {bgy}</span>
+                    <span className="text-muted font-outlier tabular-nums">
+                      {count} {count === 1 ? 'case' : 'cases'}
+                    </span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-paper-3 rounded-full h-1.5 overflow-hidden">
                     <div
-                      className="bg-emerald-600 h-1.5 rounded-full"
-                      style={{ width: `${percent || (count > 0 ? 10 : 0)}%` }}
+                      className="bg-accent h-1.5 rounded-full"
+                      style={{ width: `${percent || (count > 0 ? 8 : 0)}%` }}
                     />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

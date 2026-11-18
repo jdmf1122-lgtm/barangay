@@ -18,7 +18,10 @@ import {
   Clock,
   Sparkles,
   Menu,
-  X
+  X,
+  MapPin,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -32,7 +35,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
   const { currentUser, logout } = useAuth();
   const { setSelectedCaseId } = useCases();
   const { unreadNotifCount, userNotifications, markNotificationAsRead, markAllNotificationsAsRead } = useNotifications();
-  const { setIsNewCaseModalOpen, openEditAccountModal, setActiveTab, searchQuery, setSearchQuery, activeTab, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
+  const { isDark, toggleTheme, setIsNewCaseModalOpen, openEditAccountModal, setActiveTab, searchQuery, setSearchQuery, activeTab, isMobileMenuOpen, setIsMobileMenuOpen } = useUI();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -72,90 +75,48 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
     return true;
   });
 
-  const getAgencyColor = (agency: string) => {
-    switch (agency) {
-      case 'RESIDENT':
-        return 'bg-emerald-600 text-white';
-      case 'MDRRMO':
-        return 'bg-orange-600 text-white';
-      case 'LGU':
-        return 'bg-emerald-700 text-white';
-      case 'ADMIN':
-        return 'bg-purple-700 text-white';
-      default:
-        return 'bg-slate-700 text-white';
-    }
-  };
-
-  const getAgencyIcon = (agency: string) => {
-    switch (agency) {
-      case 'RESIDENT':
-        return <UserCheck className="w-4 h-4" />;
-      case 'MDRRMO':
-        return (
-          <img
-            src="/mdrrmo_logo.png"
-            alt="MDRRMO Seal"
-            className="w-4 h-4 object-contain rounded-full"
-          />
-        );
-      case 'LGU':
-        return (
-          <img
-            src="/lgu_logo.png"
-            alt="LGU Seal"
-            className="w-4 h-4 object-contain rounded-full"
-          />
-        );
-      default:
-        return <UserCheck className="w-4 h-4" />;
-    }
-  };
-
   const getTabLabel = (tab: string) => {
     if (currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') {
       switch (tab) {
-        case 'submit_report': return 'Incident & Photo Submission Form';
-        case 'my_reports': return 'My Reports & Real-Time Status Tracker';
-
-        default: return `Resident Citizen Portal • Brgy. ${currentUser.barangay || 'San Aquilino'}`;
+        case 'submit_report': return 'Incident & photo submission form';
+        case 'my_reports': return 'My reports & real-time status tracker';
+        default: return `Resident citizen portal • Brgy. ${currentUser.barangay || 'San Aquilino'}`;
       }
     }
 
     switch (tab) {
-      case 'resident_portal': return 'Resident Citizen Reporting Portal';
-      case 'submit_report': return 'Citizen Incident Report & Evidence Submission';
-      case 'my_reports': return 'Citizen Reports & Resolution Tracker';
-
+      case 'resident_portal': return 'Resident citizen reporting portal';
+      case 'submit_report': return 'Citizen incident report & evidence submission';
+      case 'my_reports': return 'Citizen reports & resolution tracker';
       case 'dashboard':
         if (currentUser.agencyType === 'MDRRMO') {
           return currentUser.role === 'MDRRMO_ADMIN'
-            ? 'MDRRMO Operations Hub & Emergency Dispatch'
-            : 'MDRRMO Incident Response & Triage';
+            ? 'MDRRMO operations hub & emergency dispatch'
+            : 'MDRRMO incident response & triage';
         }
         if (currentUser.agencyType === 'LGU') {
           return currentUser.role === 'LGU_ADMINISTRATOR'
-            ? 'LGU Executive Administration Dashboard'
-            : 'LGU Departmental Action & Grievance Desk';
+            ? 'LGU executive administration dashboard'
+            : 'LGU departmental action & grievance desk';
         }
+        return 'System dashboard';
       case 'cases':
-        if (currentUser.agencyType === 'MDRRMO') return 'Emergency Incident Queue & Dispatch';
-        return 'Incident & Complaint Ledger';
-      case 'incident_graph': return 'MDRRMO Resident Incident Reports Graph';
-      case 'transparency': return 'Inter-Agency Transparency & Oversight';
-      case 'annual_narrative': return 'Case Narrative & Governance Report';
-      case 'standard_reports': return 'Standard Operational & KP Reports';
-      case 'audit_trail': return 'System Audit Trail & Integrity Logs';
-      case 'admin': return 'System Administration & Master Config';
-      default: return 'B-CONNECT Management System';
+        if (currentUser.agencyType === 'MDRRMO') return 'Emergency incident queue & dispatch';
+        return 'Incident & complaint ledger';
+      case 'incident_graph': return 'MDRRMO resident incident reports graph';
+      case 'transparency': return 'Inter-agency transparency & oversight';
+      case 'annual_narrative': return 'Case narrative & governance report';
+      case 'standard_reports': return 'Standard operational & KP reports';
+      case 'audit_trail': return 'System audit trail & integrity logs';
+      case 'admin': return 'System administration & master config';
+      default: return 'B-CONNECT management system';
     }
   };
 
   return (
     <header
       id="bconnect-main-header"
-      className={`h-16 bg-white border-b flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-2xs transition-colors ${isMdrrmo ? 'border-orange-100' : isLgu ? 'border-emerald-200/90' : 'border-emerald-100'
-        }`}
+      className="h-14 bg-paper border-b border-rule flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-colors"
     >
       {/* Left: Mobile hamburger menu & view title */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -163,16 +124,11 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           id="btn-toggle-mobile-sidebar"
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`lg:hidden p-2 -ml-1 rounded-xl transition cursor-pointer flex-shrink-0 ${isMdrrmo
-              ? 'text-orange-800 hover:text-orange-950 hover:bg-orange-100/70'
-              : isLgu
-                ? 'text-emerald-900 hover:text-[#062612] hover:bg-emerald-100/80'
-                : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100/70'
-            }`}
+          className="lg:hidden p-2 -ml-1 rounded-md text-ink hover:bg-paper-2 transition-colors cursor-pointer flex-shrink-0 focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="Open navigation menu"
           title="Toggle Navigation Menu"
         >
-          <Menu className={`w-5 h-5 ${isMdrrmo ? 'text-orange-600' : isLgu ? 'text-[#0f532a]' : 'text-emerald-700'}`} />
+          <Menu className="w-5 h-5 text-ink" />
         </button>
 
         {currentUser.agencyType === 'MDRRMO' ? (
@@ -180,7 +136,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             <img
               src="/mdrrmo_logo.png"
               alt="MDRRMO"
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full shadow-2xs border border-orange-300 bg-white"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full border border-rule bg-paper"
             />
           </div>
         ) : currentUser.agencyType === 'LGU' ? (
@@ -188,7 +144,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             <img
               src="/lgu_logo.png"
               alt="LGU Roxas"
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full shadow-2xs border-2 border-amber-400 bg-white ring-1 ring-emerald-700/20"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full border border-rule bg-paper"
             />
           </div>
         ) : (
@@ -196,30 +152,17 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             <img
               src="/bconnect_logo_transparent.png"
               alt="B-CONNECT"
-              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full shadow-2xs border border-emerald-300 bg-white"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-full border border-rule bg-paper"
             />
           </div>
         )}
 
-        <h2
-          className={`font-extrabold text-xs sm:text-sm md:text-base tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md ${isMdrrmo ? 'text-slate-900' : isLgu ? 'text-[#062612]' : 'text-emerald-950'
-            }`}
-        >
+        <h2 className="font-bold text-xs sm:text-sm md:text-base text-ink tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
           {getTabLabel(activeTab)}
         </h2>
-        <span
-          className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider flex-shrink-0 ${isMdrrmo
-              ? 'bg-orange-50 text-orange-700 border-orange-200'
-              : isLgu
-                ? 'bg-emerald-50 text-emerald-900 border-2 border-amber-400/60'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            }`}
-        >
-          <span
-            className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMdrrmo ? 'bg-orange-500' : isLgu ? 'bg-amber-400' : 'bg-emerald-500'
-              }`}
-          ></span>
-          System Online
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full border border-rule bg-paper-2 text-ink font-medium flex-shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent motion-safe:animate-pulse"></span>
+          System online
         </span>
       </div>
 
@@ -227,54 +170,55 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
       <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-5 flex-shrink-0">
         {/* Search Input */}
         <div className="relative hidden md:block">
-          <Search
-            className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${isMdrrmo ? 'text-orange-600' : isLgu ? 'text-[#0f532a]' : 'text-emerald-600'
-              }`}
-          />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
           <input
             id="global-search-input"
             type="text"
             placeholder="Search Case ID or Person..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`border rounded-xl pl-8 pr-4 py-1.5 text-xs text-slate-800 w-44 lg:w-60 focus:bg-white focus:outline-none focus:ring-2 transition-all ${isMdrrmo
-                ? 'bg-orange-50/50 border-orange-200 placeholder-orange-700/50 focus:ring-orange-500'
-                : isLgu
-                  ? 'bg-emerald-50/60 border-emerald-200 placeholder-emerald-800/50 focus:ring-emerald-700 focus:border-amber-400'
-                  : 'bg-emerald-50/50 border-emerald-200 placeholder-emerald-700/50 focus:ring-emerald-500'
-              }`}
+            className="border border-rule rounded-md pl-8 pr-4 py-1.5 text-xs text-ink bg-paper-2 placeholder:text-muted w-44 lg:w-60 focus:bg-paper focus:outline-hidden focus:ring-2 focus:ring-focus transition-colors"
           />
         </div>
 
-        {/* Action Button: Submit Incident Report (Residents ONLY - LGU and MDRRMO cannot submit reports) */}
+        {/* Action Button: Submit Incident Report (Residents ONLY) */}
         {(currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') && (
           <button
             id="btn-register-new-case"
             onClick={() => setActiveTab('submit_report')}
-            className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer bg-emerald-600 hover:bg-emerald-700 shadow-xs"
+            className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 text-accent-ink rounded-md text-xs font-semibold bg-accent hover:opacity-90 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
           >
             <PlusCircle className="w-4 h-4 flex-shrink-0" />
-            <span>Submit Report</span>
+            <span>Submit report</span>
           </button>
         )}
+
+        {/* Theme Mode Toggle (Light / Dark) */}
+        <button
+          id="btn-theme-toggle-header"
+          type="button"
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="p-2 rounded-full transition-colors cursor-pointer relative border bg-paper-2 hover:bg-paper-3 text-ink border-rule active:translate-y-px focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          {isDark ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-ink-2" />
+          )}
+        </button>
 
         {/* Notification Bell with Role Badge */}
         <div className="relative">
           <button
             id="btn-notifications-bell"
             onClick={toggleNotif}
-            className={`p-2 rounded-full transition cursor-pointer relative border ${isNotifOpen
-                ? isMdrrmo
-                  ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
-                  : isLgu
-                    ? 'bg-[#0f532a] text-amber-300 border-amber-400 shadow-sm'
-                    : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                : isMdrrmo
-                  ? 'bg-orange-50 hover:bg-orange-100 text-orange-800 border-orange-200/60'
-                  : isLgu
-                    ? 'bg-emerald-50 hover:bg-emerald-100 text-[#0f532a] border border-emerald-200/80'
-                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200/60'
-              }`}
+            className={`p-2 rounded-full transition-colors cursor-pointer relative border active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-focus ${
+              isNotifOpen
+                ? 'bg-accent text-accent-ink border-accent'
+                : 'bg-paper-2 hover:bg-paper-3 text-ink border-rule'
+            }`}
             title={`${roleMeta.centerTitle} (${currentUser.agencyType})`}
             aria-expanded={isNotifOpen}
             aria-haspopup="dialog"
@@ -282,7 +226,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           >
             <Bell className="w-4 h-4" />
             {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center motion-safe:animate-pulse num">
                 {unreadNotifCount}
               </span>
             )}
@@ -292,45 +236,27 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             <>
               {/* Backdrop for closing popover on mobile/desktop outside click */}
               <div
-                className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                className="fixed inset-0 z-40 bg-black/40 sm:bg-transparent"
                 onClick={() => setIsNotifOpen(false)}
                 aria-hidden="true"
               />
 
               <div
                 id="notifications-popover"
-                className={`fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-lg sm:max-w-none mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-2xl border z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150 ${isMdrrmo ? 'border-orange-200' : isLgu ? 'border-2 border-amber-400/80 shadow-2xl' : 'border-emerald-200'
-                  }`}
+                className="fixed inset-x-3 top-14 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none mx-auto sm:mx-0 bg-paper text-ink rounded-lg shadow-card border border-rule z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-4.5rem)] sm:max-h-[34rem] animate-in fade-in duration-150"
               >
                 {/* Header Box Tailored to Role */}
-                <div
-                  className={`p-3.5 text-white border-b flex-shrink-0 ${isMdrrmo
-                      ? 'bg-gradient-to-r from-slate-950 via-[#1c2c44] to-orange-950 border-orange-800/80'
-                      : isLgu
-                        ? 'bg-gradient-to-r from-[#062612] via-[#0f532a] to-[#082e16] border-amber-400/60'
-                        : 'bg-gradient-to-r from-emerald-900 to-teal-950 border-emerald-800'
-                    }`}
-                >
+                <div className="p-3.5 bg-paper-2 text-ink border-b border-rule flex-shrink-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className={`p-1 rounded-lg flex-shrink-0 ${isMdrrmo
-                            ? 'bg-orange-800/80 text-orange-200'
-                            : isLgu
-                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                              : 'bg-emerald-800/80 text-emerald-300'
-                          }`}
-                      >
+                      <div className="p-1.5 rounded-md bg-paper-3 text-ink flex-shrink-0 border border-rule">
                         <Bell className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-bold text-xs leading-tight text-white truncate">
+                        <h4 className="font-bold text-xs leading-tight text-ink truncate">
                           {roleMeta.centerTitle}
                         </h4>
-                        <p
-                          className={`text-[10px] truncate ${isMdrrmo ? 'text-amber-200/90' : isLgu ? 'text-amber-300 font-bold' : 'text-emerald-300'
-                            }`}
-                        >
+                        <p className="text-xs text-muted truncate">
                           {roleMeta.badgeLabel}
                         </p>
                       </div>
@@ -338,7 +264,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
 
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {unreadNotifCount > 0 && (
-                        <span className="px-2 py-0.5 bg-rose-500/90 text-white text-[10px] font-black rounded-full">
+                        <span className="px-2 py-0.5 bg-error text-white text-[10px] font-semibold rounded-full num">
                           {unreadNotifCount} new
                         </span>
                       )}
@@ -346,12 +272,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                         id="btn-close-notifications"
                         type="button"
                         onClick={() => setIsNotifOpen(false)}
-                        className={`p-1 rounded-lg transition cursor-pointer ${isMdrrmo
-                            ? 'text-orange-200 hover:text-white hover:bg-orange-800/60'
-                            : isLgu
-                              ? 'text-amber-200 hover:text-white hover:bg-emerald-800/60'
-                              : 'text-emerald-300 hover:text-white hover:bg-emerald-800/60'
-                          }`}
+                        className="p-1 rounded-md text-muted hover:text-ink hover:bg-paper-3 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                         aria-label="Close notification panel"
                         title="Close"
                       >
@@ -361,52 +282,32 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                   </div>
 
                   {/* Sub-header text */}
-                  <p
-                    className={`text-[10px] mt-1.5 line-clamp-1 ${isMdrrmo ? 'text-orange-100/80' : isLgu ? 'text-amber-100/90' : 'text-emerald-200/70'
-                      }`}
-                  >
+                  <p className="text-xs text-muted mt-1.5 line-clamp-1">
                     {roleMeta.subHeader}
                   </p>
 
                   {/* Quick actions row */}
-                  <div
-                    className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] gap-2 ${isMdrrmo ? 'border-orange-800/60' : isLgu ? 'border-amber-400/30' : 'border-emerald-800/60'
-                      }`}
-                  >
+                  <div className="mt-2.5 pt-2 border-t border-rule flex items-center justify-between text-xs gap-2">
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => setNotifFilter('ALL')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${notifFilter === 'ALL'
-                            ? isMdrrmo
-                              ? 'bg-white text-slate-900 font-black'
-                              : isLgu
-                                ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
-                                : 'bg-white text-emerald-950 font-black'
-                            : isMdrrmo
-                              ? 'text-orange-200 hover:text-white'
-                              : isLgu
-                                ? 'text-amber-200 hover:text-white'
-                                : 'text-emerald-200 hover:text-white'
-                          }`}
+                        className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus ${
+                          notifFilter === 'ALL'
+                            ? 'bg-accent text-accent-ink font-semibold'
+                            : 'bg-paper text-muted hover:text-ink hover:bg-paper-3 border border-rule'
+                        }`}
                       >
                         All ({userNotifications?.length || 0})
                       </button>
                       <button
                         type="button"
                         onClick={() => setNotifFilter('UNREAD')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${notifFilter === 'UNREAD'
-                            ? isMdrrmo
-                              ? 'bg-white text-slate-900 font-black'
-                              : isLgu
-                                ? 'bg-amber-400 text-[#082e16] font-black shadow-xs'
-                                : 'bg-white text-emerald-950 font-black'
-                            : isMdrrmo
-                              ? 'text-orange-200 hover:text-white'
-                              : isLgu
-                                ? 'text-amber-200 hover:text-white'
-                                : 'text-emerald-200 hover:text-white'
-                          }`}
+                        className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus ${
+                          notifFilter === 'UNREAD'
+                            ? 'bg-accent text-accent-ink font-semibold'
+                            : 'bg-paper text-muted hover:text-ink hover:bg-paper-3 border border-rule'
+                        }`}
                       >
                         Unread ({unreadNotifCount})
                       </button>
@@ -418,8 +319,7 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           id="btn-mark-all-read"
                           type="button"
                           onClick={markAllNotificationsAsRead}
-                          className={`text-[10px] font-semibold cursor-pointer underline underline-offset-2 ${isMdrrmo ? 'text-amber-200 hover:text-white' : isLgu ? 'text-amber-300 hover:text-amber-100 font-bold' : 'text-emerald-300 hover:text-white'
-                            }`}
+                          className="text-xs text-muted hover:text-ink cursor-pointer underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-focus"
                         >
                           Mark read
                         </button>
@@ -433,15 +333,10 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                             setIsNotifOpen(false);
                             setIsCreateNotifModalOpen(true);
                           }}
-                          className={`px-2 py-0.5 text-white text-[10px] font-bold rounded flex items-center gap-1 transition cursor-pointer shadow-xs ${isMdrrmo
-                              ? 'bg-orange-600 hover:bg-orange-500'
-                              : isLgu
-                                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#082e16] font-black'
-                                : 'bg-emerald-600 hover:bg-emerald-500'
-                            }`}
-                          title="Send / Dispatch Alert for this Role"
+                          className="px-2.5 py-1 text-accent-ink bg-accent hover:opacity-90 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold rounded-md flex items-center gap-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
+                          title="Send / dispatch alert for this role"
                         >
-                          <Send className="w-2.5 h-2.5" />
+                          <Send className="w-3 h-3" />
                           <span>Dispatch</span>
                         </button>
                       )}
@@ -450,13 +345,13 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                 </div>
 
                 {/* Notification List */}
-                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 bg-slate-50/50 min-h-0 overscroll-contain">
+                <div className="flex-1 overflow-y-auto divide-y divide-rule bg-paper min-h-0 overscroll-contain">
                   {(!displayedNotifs || displayedNotifs.length === 0) ? (
                     <div className="p-8 text-center space-y-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                      <div className="w-8 h-8 rounded-full bg-paper-2 text-muted flex items-center justify-center mx-auto border border-rule">
                         <Bell className="w-4 h-4" />
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">{roleMeta.emptyMessage}</p>
+                      <p className="text-xs text-muted font-medium">{roleMeta.emptyMessage}</p>
                     </div>
                   ) : (
                     displayedNotifs.map((n, idx) => (
@@ -476,53 +371,46 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                           }
                           setIsNotifOpen(false);
                         }}
-                        className={`p-3 text-xs hover:bg-emerald-50/60 cursor-pointer transition flex items-start gap-2.5 bg-white ${!n.isRead ? 'border-l-3 border-l-emerald-600 bg-emerald-50/20' : ''
-                          }`}
+                        className={`p-3 text-xs hover:bg-paper-2 cursor-pointer transition-colors flex items-start gap-2.5 bg-paper ${
+                          !n.isRead ? 'border-l-2 border-l-accent bg-paper-2/60' : ''
+                        }`}
                       >
                         <div className="mt-0.5 shrink-0">
-                          {n.type === 'pending_alert' ? (
-                            <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                            </div>
-                          ) : n.type === 'recommendation' ? (
-                            <div className="p-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
-                              <FileText className="w-3.5 h-3.5" />
-                            </div>
-                          ) : n.type === 'referral' ? (
-                            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
-                              <Shield className="w-3.5 h-3.5" />
-                            </div>
-                          ) : n.type === 'hearing' ? (
-                            <div className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
-                              <Clock className="w-3.5 h-3.5" />
-                            </div>
-                          ) : (
-                            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Sparkles className="w-3.5 h-3.5" />
-                            </div>
-                          )}
+                          <div className="p-1.5 rounded-md bg-paper-2 text-ink border border-rule">
+                            {n.type === 'pending_alert' ? (
+                              <AlertTriangle className="w-3.5 h-3.5 text-warning" />
+                            ) : n.type === 'recommendation' ? (
+                              <FileText className="w-3.5 h-3.5 text-ink" />
+                            ) : n.type === 'referral' ? (
+                              <Shield className="w-3.5 h-3.5 text-ink" />
+                            ) : n.type === 'hearing' ? (
+                              <Clock className="w-3.5 h-3.5 text-ink" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5 text-accent" />
+                            )}
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-1">
-                            <span className={`text-xs ${!n.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
+                            <span className={`text-xs ${!n.isRead ? 'font-bold text-ink' : 'font-medium text-ink-2'}`}>
                               {n.title}
                             </span>
                             {!n.isRead && (
-                              <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 mt-1" />
                             )}
                           </div>
-                          <p className="text-slate-600 mt-0.5 leading-relaxed text-[11px] line-clamp-2">
+                          <p className="text-muted mt-0.5 leading-relaxed text-xs line-clamp-2">
                             {n.message}
                           </p>
-                          <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                            <span>{formatDate(n.timestamp)}</span>
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted">
+                            <span className="num">{formatDate(n.timestamp)}</span>
                             {n.caseId && (
-                              <span className="px-1.5 py-0.2 rounded bg-slate-100 font-mono text-slate-600 font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-paper-2 text-ink font-medium border border-rule num">
                                 #{n.caseId}
                               </span>
                             )}
                             {n.priority === 'urgent' && (
-                              <span className="px-1 py-0.2 rounded bg-rose-100 text-rose-700 font-bold uppercase text-[9px]">
+                              <span className="px-1.5 py-0.5 rounded bg-paper-3 text-error border border-rule font-medium text-xs">
                                 Urgent
                               </span>
                             )}
@@ -534,9 +422,9 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                 </div>
 
                 {/* Popover Footer */}
-                <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 px-3 flex-shrink-0">
-                  <span className="text-[10px]">
-                    Role Scope: <strong className="text-slate-800">{currentUser.agencyType}</strong>
+                <div className="p-2.5 bg-paper-2 border-t border-rule flex items-center justify-between text-xs text-muted px-3 flex-shrink-0">
+                  <span className="text-xs">
+                    Role scope: <strong className="text-ink font-semibold">{currentUser.agencyType}</strong>
                   </span>
                   {currentUser.agencyType !== 'RESIDENT' ? (
                     <button
@@ -545,15 +433,15 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                         setIsNotifOpen(false);
                         setIsCreateNotifModalOpen(true);
                       }}
-                      className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold cursor-pointer"
+                      className="text-xs text-accent hover:underline font-semibold cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                     >
-                      + Create Alert
+                      + Create alert
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setIsNotifOpen(false)}
-                      className="text-[10px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+                      className="text-xs text-muted hover:text-ink font-medium cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                     >
                       Dismiss
                     </button>
@@ -569,37 +457,37 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
           <button
             id="btn-role-switcher"
             onClick={toggleRoleDropdown}
-            className={`flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition cursor-pointer text-left ${isRoleDropdownOpen
-                ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-400/30'
-                : 'bg-emerald-50/60 hover:bg-emerald-100 border-emerald-200'
-              }`}
-            title="View Logged-in Profile"
+            className={`flex items-center gap-2.5 px-3 py-1.5 border rounded-md transition-colors cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-focus ${
+              isRoleDropdownOpen
+                ? 'bg-paper-3 border-rule ring-2 ring-focus'
+                : 'bg-paper-2 hover:bg-paper-3 border-rule'
+            }`}
+            title="View logged-in profile"
             aria-expanded={isRoleDropdownOpen}
             aria-haspopup="dialog"
           >
-            <div className={`rounded-lg overflow-hidden flex items-center justify-center ${currentUser.agencyType === 'MDRRMO'
-                ? 'bg-white border border-orange-300 w-7 h-7 p-0.5'
-                : currentUser.agencyType === 'LGU'
-                  ? 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
-                  : 'bg-white border border-emerald-300 w-7 h-7 p-0.5'
-              }`}>
-              {currentUser.agencyType === 'MDRRMO' ? (
-                <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-full h-full object-contain" />
-              ) : currentUser.agencyType === 'LGU' ? (
-                <img src="/lgu_logo.png" alt="LGU" className="w-full h-full object-contain" />
-              ) : (
-                <img src="/bconnect_logo_transparent.png" alt="B-CONNECT" className="w-full h-full object-contain" />
-              )}
+            <div className="rounded-md overflow-hidden flex items-center justify-center bg-paper border border-rule w-7 h-7 p-0.5">
+              <img
+                src={
+                  currentUser.agencyType === 'MDRRMO'
+                    ? '/mdrrmo_logo.png'
+                    : currentUser.agencyType === 'LGU'
+                      ? '/lgu_logo.png'
+                      : '/bconnect_logo_transparent.png'
+                }
+                alt={currentUser.agencyType}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div className="hidden sm:block">
-              <div className="text-xs font-bold text-emerald-950 leading-tight">
+              <div className="text-xs font-semibold text-ink leading-tight">
                 {currentUser.name}
               </div>
-              <div className="text-[10px] text-emerald-800/70 font-medium truncate max-w-[120px]">
+              <div className="text-xs text-muted truncate max-w-[120px]">
                 {currentUser.agencyType}
               </div>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-emerald-800 font-mono font-bold border border-emerald-200">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-paper text-ink font-medium border border-rule">
               {currentUser.agencyType}
             </span>
           </button>
@@ -608,30 +496,30 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
             <>
               {/* Backdrop */}
               <div
-                className="fixed inset-0 z-40 bg-slate-900/30 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                className="fixed inset-0 z-40 bg-black/40 sm:bg-transparent"
                 onClick={() => setIsRoleDropdownOpen(false)}
                 aria-hidden="true"
               />
 
               <div
                 id="role-switcher-dropdown"
-                className="fixed inset-x-3 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-80 max-w-sm mx-auto sm:mx-0 bg-white text-slate-900 rounded-2xl shadow-xl border border-emerald-200 z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 duration-150"
+                className="fixed inset-x-3 top-14 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-80 max-w-[calc(100vw-1.5rem)] mx-auto sm:mx-0 bg-paper text-ink rounded-lg shadow-card border border-rule z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-4.5rem)] sm:max-h-[34rem] animate-in fade-in duration-150"
               >
-                <div className="p-3.5 bg-emerald-950 text-white flex items-center justify-between flex-shrink-0">
+                <div className="p-3.5 bg-paper-2 border-b border-rule flex items-center justify-between flex-shrink-0">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-tight text-emerald-100">Official Account Profile</span>
-                    <p className="text-[10px] text-emerald-300">Authenticated Session</p>
+                    <span className="text-xs font-bold text-ink">Official account profile</span>
+                    <p className="text-xs text-muted">Authenticated session</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-ink bg-paper px-2 py-0.5 rounded-md border border-rule">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent motion-safe:animate-pulse"></span>
                       Active
                     </span>
                     <button
                       id="btn-close-role-dropdown"
                       type="button"
                       onClick={() => setIsRoleDropdownOpen(false)}
-                      className="p-1 text-emerald-300 hover:text-white hover:bg-emerald-900 rounded-lg transition cursor-pointer"
+                      className="p-1 text-muted hover:text-ink hover:bg-paper-3 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                       aria-label="Close profile menu"
                       title="Close"
                     >
@@ -643,52 +531,53 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                 {/* Logged in User Card */}
                 <div className="p-4 space-y-3 flex-1 overflow-y-auto min-h-0">
                   <div className="flex items-start gap-3">
-                    {currentUser.agencyType === 'MDRRMO' ? (
-                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-orange-300 shadow-xs flex-shrink-0 flex items-center justify-center">
-                        <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-full h-full object-contain rounded-lg" />
-                      </div>
-                    ) : currentUser.agencyType === 'LGU' ? (
-                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-emerald-300 shadow-xs flex-shrink-0 flex items-center justify-center">
-                        <img src="/lgu_logo.png" alt="LGU Roxas" className="w-full h-full object-contain rounded-lg" />
-                      </div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-emerald-300 shadow-xs flex-shrink-0 flex items-center justify-center">
-                        <img src="/bconnect_logo_transparent.png" alt="B-CONNECT Resident" className="w-full h-full object-contain rounded-lg" />
-                      </div>
-                    )}
+                    <div className="w-11 h-11 rounded-lg bg-paper p-1 border border-rule flex-shrink-0 flex items-center justify-center">
+                      <img
+                        src={
+                          currentUser.agencyType === 'MDRRMO'
+                            ? '/mdrrmo_logo.png'
+                            : currentUser.agencyType === 'LGU'
+                              ? '/lgu_logo.png'
+                              : '/bconnect_logo_transparent.png'
+                        }
+                        alt={currentUser.agencyType}
+                        className="w-full h-full object-contain rounded-md"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-900 leading-snug">{currentUser.name}</div>
-                      <div className="text-xs text-slate-600 font-medium">{currentUser.position}</div>
-                      <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">{currentUser.agencyName}</div>
+                      <div className="text-xs font-bold text-ink leading-snug">{currentUser.name}</div>
+                      <div className="text-xs text-muted font-medium">{currentUser.position}</div>
+                      <div className="text-xs text-accent font-semibold mt-0.5">{currentUser.agencyName}</div>
                       {currentUser.barangay && (
-                        <span className="inline-block mt-1 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
-                          📍 Brgy. {currentUser.barangay}
+                        <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-muted bg-paper-2 px-1.5 py-0.5 rounded border border-rule">
+                          <MapPin className="w-3 h-3 text-accent" />
+                          <span>Brgy. {currentUser.barangay}</span>
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-[11px]">
-                    <div className="flex justify-between items-center text-slate-600">
-                      <span>Agency Role:</span>
-                      <span className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                  <div className="p-2.5 bg-paper-2 rounded-md border border-rule space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center text-muted">
+                      <span>Agency role:</span>
+                      <span className="font-semibold text-ink bg-paper px-1.5 py-0.5 rounded border border-rule">
                         {currentUser.agencyType}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-slate-600">
+                    <div className="flex justify-between items-center text-muted">
                       <span>Email:</span>
-                      <span className="font-medium text-slate-800 truncate max-w-[170px]">{currentUser.email}</span>
+                      <span className="font-medium text-ink truncate max-w-[170px]">{currentUser.email}</span>
                     </div>
                   </div>
 
-                  <div className="p-2 bg-amber-50/80 border border-amber-200 rounded-lg text-[10px] text-amber-800 flex items-start gap-1.5 leading-relaxed">
-                    <Shield className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <span>To access another agency or user account, click <strong>Log Out</strong> and sign in with the respective credentials.</span>
+                  <div className="p-2.5 bg-paper-2 border border-rule rounded-md text-xs text-muted flex items-start gap-1.5 leading-relaxed">
+                    <Shield className="w-3.5 h-3.5 text-accent flex-shrink-0 mt-0.5" />
+                    <span>To access another agency or user account, click <strong>Log out</strong> and sign in with the respective credentials.</span>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="p-2.5 bg-emerald-50/50 border-t border-emerald-100 space-y-1.5 flex-shrink-0">
+                <div className="p-2.5 bg-paper-2 border-t border-rule space-y-1.5 flex-shrink-0">
                   <button
                     id="btn-role-dropdown-edit-current"
                     type="button"
@@ -696,10 +585,10 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                       setIsRoleDropdownOpen(false);
                       openEditAccountModal(currentUser);
                     }}
-                    className="w-full py-2 px-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                    className="w-full py-2 px-3 bg-paper hover:bg-paper-3 border border-rule text-ink rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Edit My Profile</span>
+                    <Edit3 className="w-3.5 h-3.5 text-muted" />
+                    <span>Edit my profile</span>
                   </button>
                   <button
                     id="btn-role-dropdown-logout"
@@ -708,10 +597,10 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
                       setIsRoleDropdownOpen(false);
                       logout();
                     }}
-                    className="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                    className="w-full py-2 px-3 bg-error text-white rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span>Log Out / Switch Account</span>
+                    <span>Log out / switch account</span>
                   </button>
                 </div>
               </div>
@@ -723,11 +612,11 @@ export const Header: React.FC<{ onToggleSidebar?: () => void }> = () => {
         <button
           id="btn-header-logout"
           onClick={logout}
-          className="hidden sm:inline-flex items-center gap-1.5 p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition border border-transparent hover:border-rose-200 text-xs font-bold cursor-pointer"
-          title="Log Out of System"
+          className="hidden sm:inline-flex items-center gap-1.5 p-2 text-muted hover:text-error hover:bg-paper-2 rounded-md transition-colors border border-transparent hover:border-rule text-xs font-semibold cursor-pointer focus-visible:ring-2 focus-visible:ring-focus"
+          title="Log out of system"
         >
           <LogOut className="w-4 h-4" />
-          <span className="hidden xl:inline">Log Out</span>
+          <span className="hidden xl:inline">Log out</span>
         </button>
       </div>
 

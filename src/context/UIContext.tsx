@@ -2,8 +2,15 @@ import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { User } from '../types';
 
 const LOCAL_STORAGE_USER_KEY = 'bconnect_roxas_user_v11';
+const LOCAL_STORAGE_THEME_KEY = 'bconnect_theme';
+
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 export interface UIState {
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
   isMobileMenuOpen: boolean;
@@ -33,6 +40,74 @@ export interface UIState {
 export const UIContext = createContext<UIState | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode; currentUser?: User | null }> = ({ children, currentUser }) => {
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'system';
+    return (localStorage.getItem(LOCAL_STORAGE_THEME_KEY) as ThemeMode) || 'system';
+  });
+
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  // Listen to system preference changes (reactive to OS changes)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemIsDark(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const isDark = theme === 'dark' || (theme === 'system' && systemIsDark);
+
+  const setTheme = (newTheme: ThemeMode) => {
+    setThemeState(newTheme);
+    try {
+      if (newTheme === 'system') {
+        localStorage.removeItem(LOCAL_STORAGE_THEME_KEY);
+      } else {
+        localStorage.setItem(LOCAL_STORAGE_THEME_KEY, newTheme);
+      }
+    } catch {}
+  };
+
+  const toggleTheme = () => {
+    setTheme(isDark ? 'light' : 'dark');
+  };
+
+  // Sync theme to document root and meta color-scheme
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const metaTheme = document.querySelector('meta[name="color-scheme"]') as HTMLMetaElement | null;
+    if (isDark) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      root.setAttribute('data-theme', 'dark');
+      if (metaTheme) metaTheme.content = theme === 'system' ? 'light dark' : 'dark';
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+      root.setAttribute('data-theme', 'light');
+      if (metaTheme) metaTheme.content = theme === 'system' ? 'light dark' : 'light';
+    }
+  }, [isDark, theme]);
+
+  // Sync theme changes across browser tabs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === LOCAL_STORAGE_THEME_KEY) {
+        setThemeState((e.newValue as ThemeMode) || 'system');
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState<boolean>(false);
@@ -64,6 +139,8 @@ export const UIProvider: React.FC<{ children: ReactNode; currentUser?: User | nu
 
   return (
     <UIContext.Provider value={{
+      theme, setTheme,
+      isDark, toggleTheme,
       activeTab, setActiveTab,
       isMobileMenuOpen, setIsMobileMenuOpen,
       isNewCaseModalOpen, setIsNewCaseModalOpen,

@@ -5,25 +5,31 @@ import {
   Filter, 
   Download, 
   Eye, 
-  Clock, 
-  Building2, 
-  ShieldAlert, 
-  AlertCircle,
-  ArrowRightLeft,
-  FileText
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useUI } from '../../hooks/useUI';
 import { StatusBadge, PriorityBadge, OfficialBadge } from '../common/StatusBadge';
-import { ROXAS_BARANGAYS, IncidentCategory } from '../../types';
+import { ROXAS_BARANGAYS } from '../../types';
 import { formatDateShort, exportToCsv } from '../../utils/reportGenerators';
 import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 export const CaseList: React.FC = () => {
   const { currentUser } = useAuth();
   const { cases, setSelectedCaseId } = useCases();
-  const { searchQuery, setSearchQuery, filterBarangay, setFilterBarangay, filterStatus, setFilterStatus, filterCategory, setFilterCategory, filterOfficialInvolved, setFilterOfficialInvolved } = useUI();
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    filterBarangay, 
+    setFilterBarangay, 
+    filterStatus, 
+    setFilterStatus, 
+    filterCategory, 
+    setFilterCategory, 
+    filterOfficialInvolved, 
+    setFilterOfficialInvolved 
+  } = useUI();
 
   const isBarangayOfficer = (currentUser?.agencyType as string) === 'BARANGAY' && !!currentUser?.barangay;
   const userBarangay = currentUser?.barangay;
@@ -62,8 +68,8 @@ export const CaseList: React.FC = () => {
 
     // Status filter
     if (filterStatus !== 'ALL') {
-      if (filterStatus === 'Unresolved' && (c.status === 'Resolved' || c.status === 'Closed' as any)) return false;
-      if (filterStatus === 'Resolved' && c.status !== 'Resolved' && c.status !== 'Closed' as any) return false;
+      if (filterStatus === 'Unresolved' && (c.status === 'Resolved' || (c.status as string) === 'Closed')) return false;
+      if (filterStatus === 'Resolved' && c.status !== 'Resolved' && (c.status as string) !== 'Closed') return false;
     }
 
     // Category filter
@@ -72,8 +78,6 @@ export const CaseList: React.FC = () => {
     // Official involved filter
     if (filterOfficialInvolved === 'YES' && !c.isInvolvingOfficial) return false;
     if (filterOfficialInvolved === 'NO' && c.isInvolvingOfficial) return false;
-
-
 
     return true;
   });
@@ -117,13 +121,16 @@ export const CaseList: React.FC = () => {
   return (
     <div id="case-ledger-view" className="space-y-4">
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <section
+        aria-label="Case ledger overview"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-paper p-4 rounded-xl border border-rule shadow-xs"
+      >
         <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-blue-700" />
-            Central Case & Incident Ledger
+          <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-accent" />
+            <span>Central case and incident ledger</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             Full record of complaints, incidents, referrals, and outcomes in Roxas, Oriental Mindoro.
           </p>
         </div>
@@ -131,52 +138,56 @@ export const CaseList: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             id="btn-export-cases-csv"
+            type="button"
             onClick={handleExportCsv}
-            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink rounded-lg text-xs font-semibold border border-rule shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV
+            <Download className="w-3.5 h-3.5 text-muted" />
+            <span>Export CSV</span>
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Filter Control Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div className="flex items-center space-x-2 text-xs font-bold text-slate-700">
-          <Filter className="w-3.5 h-3.5 text-blue-600" />
-          <span>Advanced Case Filtering & Search</span>
+      <section
+        aria-label="Case filters and search"
+        className="bg-paper p-4 rounded-xl border border-rule shadow-xs space-y-3"
+      >
+        <div className="flex items-center space-x-2 text-xs font-semibold text-ink">
+          <Filter className="w-3.5 h-3.5 text-accent" />
+          <span>Case filtering and search</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {/* Search Box */}
           <div className="lg:col-span-2 relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-2.5" />
             <input
               type="text"
-              placeholder="Search Case ID, vehicles, plate, names..."
+              placeholder="Search case ID, vehicles, plate, names..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-paper-2 text-ink rounded-lg border border-rule focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
             />
           </div>
 
           {/* Barangay Filter */}
           <div>
-            {(isBarangayOfficer || currentUser.agencyType === 'RESIDENT' || currentUser.role === 'RESIDENT') ? (
+            {(isBarangayOfficer || currentUser?.agencyType === 'RESIDENT' || currentUser?.role === 'RESIDENT') ? (
               <div 
-                className="w-full py-1.5 px-2 text-xs bg-emerald-50 text-emerald-950 rounded border border-emerald-300 font-bold flex items-center justify-between"
-                title={`Jurisdiction locked to Barangay ${currentUser.barangay || userBarangay || 'San Aquilino'}`}
+                className="w-full py-1.5 px-2.5 text-xs bg-paper-2 text-ink rounded-lg border border-rule font-medium flex items-center justify-between"
+                title={`Jurisdiction locked to Barangay ${currentUser?.barangay || userBarangay || 'San Aquilino'}`}
               >
-                <span className="truncate">Brgy. {currentUser.barangay || userBarangay || 'San Aquilino'}</span>
-                <span className="text-[9px] px-1 py-0.2 bg-emerald-200 text-emerald-900 rounded font-semibold">Jurisdiction Locked</span>
+                <span className="truncate">Brgy. {currentUser?.barangay || userBarangay || 'San Aquilino'}</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-paper text-muted rounded border border-rule font-medium">Locked</span>
               </div>
             ) : (
               <select
                 value={filterBarangay}
                 onChange={(e) => setFilterBarangay(e.target.value)}
-                className="w-full py-1.5 px-2 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full py-1.5 px-2 text-xs bg-paper-2 text-ink rounded-lg border border-rule focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
               >
-                <option value="ALL">All Barangays ({ROXAS_BARANGAYS.length})</option>
+                <option value="ALL">All barangays ({ROXAS_BARANGAYS.length})</option>
                 {ROXAS_BARANGAYS.map((b) => (
                   <option key={b} value={b}>Brgy. {b}</option>
                 ))}
@@ -189,9 +200,9 @@ export const CaseList: React.FC = () => {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full py-1.5 px-2 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
+              className="w-full py-1.5 px-2 text-xs bg-paper-2 text-ink rounded-lg border border-rule focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden font-medium cursor-pointer disabled:opacity-50"
             >
-              <option value="ALL">All Crash Categories</option>
+              <option value="ALL">All crash categories</option>
               <option value="Motorcycle vs Motorcycle Collision">Motorcycle vs Motorcycle</option>
               <option value="Motorcycle vs Car / SUV Collision">Motorcycle vs Car/SUV</option>
               <option value="Motorcycle vs Tricycle Collision">Motorcycle vs Tricycle</option>
@@ -212,19 +223,33 @@ export const CaseList: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full py-1.5 px-2 text-xs bg-slate-50 rounded border border-slate-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full py-1.5 px-2 text-xs bg-paper-2 text-ink rounded-lg border border-rule focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">All statuses</option>
               <option value="Unresolved">Unresolved</option>
               <option value="Resolved">Resolved</option>
             </select>
           </div>
+
+          {/* Official Involved Filter */}
+          <div>
+            <select
+              value={filterOfficialInvolved}
+              onChange={(e) => setFilterOfficialInvolved(e.target.value)}
+              className="w-full py-1.5 px-2 text-xs bg-paper-2 text-ink rounded-lg border border-rule focus-visible:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
+            >
+              <option value="ALL">All parties</option>
+              <option value="YES">Public official involved</option>
+              <option value="NO">Standard citizens only</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-          <span>Showing <strong>{filteredCases.length}</strong> of <strong>{cases.length}</strong> total records</span>
-          {(filterBarangay !== 'ALL' || filterStatus !== 'ALL' || filterOfficialInvolved !== 'ALL' || searchQuery) && (
+        <div className="flex items-center justify-between text-xs text-muted pt-1">
+          <span>Showing <strong className="text-ink font-semibold num">{filteredCases.length}</strong> of <strong className="text-ink font-semibold num">{cases.length}</strong> total records</span>
+          {(filterBarangay !== 'ALL' || filterStatus !== 'ALL' || filterCategory !== 'ALL' || filterOfficialInvolved !== 'ALL' || searchQuery) && (
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
                 setFilterBarangay('ALL');
@@ -232,21 +257,21 @@ export const CaseList: React.FC = () => {
                 setFilterCategory('ALL');
                 setFilterOfficialInvolved('ALL');
               }}
-              className="text-blue-600 hover:underline cursor-pointer"
+              className="text-accent hover:underline active:opacity-70 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden text-xs font-semibold whitespace-nowrap"
             >
-              Reset Filters
+              Reset filters
             </button>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Case Data List: Dual Responsive Mode (Mobile Card Feed for Phones, Table for Tablets/Laptops) */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <section aria-label="Case records list" className="bg-paper rounded-xl border border-rule shadow-xs overflow-hidden">
         
         {/* Mobile View: High-density touch-friendly cards (Phones < 640px) */}
-        <div className="sm:hidden divide-y divide-slate-100">
+        <div className="sm:hidden divide-y divide-rule">
           {filteredCases.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs px-4">
+            <div className="py-12 text-center text-muted text-xs px-4">
               No cases match the selected filters or search query.
             </div>
           ) : (
@@ -254,14 +279,14 @@ export const CaseList: React.FC = () => {
               <div
                 key={`mobile-${c.id}`}
                 onClick={() => setSelectedCaseId(c.id)}
-                className="p-4 space-y-2.5 hover:bg-emerald-50/30 active:bg-emerald-50/60 transition cursor-pointer"
+                className="p-4 space-y-2.5 hover:bg-paper-2 active:bg-paper-3 transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                    <span className="font-mono text-xs font-semibold text-ink bg-paper-2 border border-rule px-2 py-0.5 rounded num">
                       {c.id}
                     </span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs text-muted num">
                       {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}
                     </span>
                   </div>
@@ -269,31 +294,32 @@ export const CaseList: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-xs text-slate-900 leading-snug line-clamp-2">
+                  <h4 className="font-semibold text-xs text-ink leading-snug line-clamp-2">
                     {c.title}
                   </h4>
-                  <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-                    <span>📍 Brgy. {c.barangay}</span>
+                  <div className="text-xs text-muted mt-1 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <span>Brgy. {c.barangay}</span>
                     {c.specificLocation && (
-                      <span className="truncate max-w-[160px] text-slate-400">• {c.specificLocation}</span>
+                      <span className="truncate max-w-[160px] text-muted">· {c.specificLocation}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80">
-                  <div className="flex items-center gap-1.5">
-                    <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-rule">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="bg-paper-2 text-ink border border-rule px-1.5 py-0.5 rounded text-[10px] font-medium">
                       {c.category}
                     </span>
                     <PriorityBadge priority={c.priority} />
                     {c.isInvolvingOfficial && (
-                      <span className="text-[9px] font-bold bg-rose-100 text-rose-700 px-1 py-0.5 rounded">
+                      <span className="text-[10px] font-semibold bg-error/15 text-error border border-error/30 px-1.5 py-0.5 rounded">
                         Official
                       </span>
                     )}
                     {isConsolidatedCase(c) && (
-                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        ✓ Unified
+                      <span className="text-[10px] font-medium bg-paper-2 text-ink border border-rule px-1.5 py-0.5 rounded">
+                        Unified
                       </span>
                     )}
                   </div>
@@ -304,10 +330,10 @@ export const CaseList: React.FC = () => {
                       e.stopPropagation();
                       setSelectedCaseId(c.id);
                     }}
-                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
+                    className="text-xs font-semibold text-accent hover:underline active:opacity-70 flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden whitespace-nowrap"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>View Docket →</span>
+                    <Eye className="w-3.5 h-3.5 text-muted" />
+                    <span className="whitespace-nowrap">View docket</span>
                   </button>
                 </div>
               </div>
@@ -317,23 +343,23 @@ export const CaseList: React.FC = () => {
 
         {/* Tablet & Desktop View: Central Data Table (Screens >= 640px) */}
         <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-left text-xs divide-y divide-slate-200">
-            <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
+          <table className="w-full text-left text-xs divide-y divide-rule">
+            <thead className="bg-paper-2 text-muted font-semibold text-xs border-b border-rule">
               <tr>
                 <th className="py-3 px-3">Case ID</th>
-                <th className="py-3 px-3">Incident / Title</th>
+                <th className="py-3 px-3">Incident title</th>
                 <th className="py-3 px-3">Barangay</th>
-                <th className="py-3 px-3">Persons Involved</th>
+                <th className="py-3 px-3">Persons involved</th>
                 <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Agency Handling</th>
+                <th className="py-3 px-3">Handling agency</th>
                 <th className="py-3 px-3">Outcome</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-rule">
               {filteredCases.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-12 text-center text-muted text-xs">
                     No cases match the selected filters or search query.
                   </td>
                 </tr>
@@ -341,27 +367,27 @@ export const CaseList: React.FC = () => {
                 filteredCases.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-blue-50/40 transition cursor-pointer"
+                    className="hover:bg-paper-2 transition-colors cursor-pointer"
                     onClick={() => setSelectedCaseId(c.id)}
                   >
-                    <td className="py-3 px-3 align-top font-mono font-bold text-blue-700 whitespace-nowrap">
-                      {c.id}
-                      <div className="text-[10px] text-slate-400 font-normal">
+                    <td className="py-3 px-3 align-top whitespace-nowrap">
+                      <div className="font-mono font-semibold text-ink num">{c.id}</div>
+                      <div className="text-xs text-muted font-normal num">
                         {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}
                       </div>
                     </td>
 
                     <td className="py-3 px-3 align-top max-w-xs">
-                      <div className="font-semibold text-slate-900 line-clamp-1 flex items-center gap-1.5">
+                      <div className="font-semibold text-ink line-clamp-1 flex items-center gap-1.5">
                         <span>{c.title}</span>
                         {isConsolidatedCase(c) && (
-                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded shrink-0">
-                            ✓ Unified
+                          <span className="text-[10px] font-medium bg-paper-2 text-ink border border-rule px-1 py-0.2 rounded shrink-0">
+                            Unified
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                        <span className="bg-slate-100 px-1.5 py-0.2 rounded text-[10px]">{c.category}</span>
+                      <div className="text-xs text-muted flex items-center gap-1.5 mt-0.5">
+                        <span className="bg-paper-2 px-1.5 py-0.5 rounded border border-rule text-[10px]">{c.category}</span>
                         <PriorityBadge priority={c.priority} />
                       </div>
                       {c.isInvolvingOfficial && (
@@ -372,19 +398,19 @@ export const CaseList: React.FC = () => {
                     </td>
 
                     <td className="py-3 px-3 align-top whitespace-nowrap">
-                      <span className="font-medium text-slate-800">Brgy. {c.barangay}</span>
-                      <div className="text-[10px] text-slate-400 truncate max-w-[140px]">
+                      <span className="font-medium text-ink">Brgy. {c.barangay}</span>
+                      <div className="text-xs text-muted truncate max-w-[140px]">
                         {c.specificLocation}
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 align-top max-w-xs text-[11px]">
-                      <div className="text-slate-800">
-                        <span className="font-semibold text-slate-600">Complainant:</span>{' '}
+                    <td className="py-3 px-3 align-top max-w-xs text-xs">
+                      <div className="text-ink">
+                        <span className="font-semibold text-muted">Complainant:</span>{' '}
                         {c.complainants.map((p) => p.name).join(', ') || 'N/A'}
                       </div>
-                      <div className="text-slate-700 mt-0.5">
-                        <span className="font-semibold text-slate-600">Respondent:</span>{' '}
+                      <div className="text-muted mt-0.5">
+                        <span className="font-semibold text-muted">Respondent:</span>{' '}
                         {c.respondents.map((p) => p.name).join(', ') || 'N/A'}
                       </div>
                     </td>
@@ -393,35 +419,36 @@ export const CaseList: React.FC = () => {
                       <StatusBadge status={c.status} size="sm" />
                     </td>
 
-                    <td className="py-3 px-3 align-top text-[11px] max-w-[160px]">
-                      <div className="font-medium text-slate-800 truncate">
+                    <td className="py-3 px-3 align-top text-xs max-w-[160px]">
+                      <div className="font-medium text-ink truncate">
                         {c.isRemainedAtBarangay ? `Barangay ${c.barangay}` : c.currentHandlingAgency}
                       </div>
-                      <div className="text-[10px] text-slate-500 truncate">
+                      <div className="text-xs text-muted truncate">
                         {c.assignedPersonnel || 'Unassigned'}
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 align-top text-[11px] max-w-xs">
-                      {c.status === 'Resolved' || c.status === 'Closed' as any ? (
-                        <div className="text-emerald-700 font-medium">
+                    <td className="py-3 px-3 align-top text-xs max-w-xs">
+                      {c.status === 'Resolved' || (c.status as string) === 'Closed' ? (
+                        <div className="text-success font-medium">
                           {c.outcomeType || 'Resolved'}
                         </div>
                       ) : (
-                        <span className="text-slate-400 text-[11px]">—</span>
+                        <span className="text-muted text-xs">Pending</span>
                       )}
                     </td>
 
                     <td className="py-3 px-3 align-top text-right whitespace-nowrap">
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedCaseId(c.id);
                         }}
-                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-semibold transition inline-flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
                       >
-                        <Eye className="w-3 h-3" />
-                        <span>Dossier</span>
+                        <Eye className="w-3.5 h-3.5 text-muted" />
+                        <span className="whitespace-nowrap">Dossier</span>
                       </button>
                     </td>
                   </tr>
@@ -430,7 +457,7 @@ export const CaseList: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

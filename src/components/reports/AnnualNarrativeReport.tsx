@@ -3,14 +3,7 @@ import {
   BookOpenCheck, 
   Download, 
   Printer, 
-  Building2, 
-  Shield, 
-  Landmark, 
-  CheckCircle2, 
-  FileText, 
-  Filter,
-  Calendar,
-  AlertCircle
+  Calendar
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,10 +11,10 @@ import { generateAnnualStatistics, exportToCsv, formatDateShort } from '../../ut
 import { StatusBadge } from '../common/StatusBadge';
 
 export const AnnualNarrativeReport: React.FC = () => {
-  const { cases, setSelectedCaseId } = useCases();
+  const { cases } = useCases();
   const { currentUser } = useAuth();
   const [selectedYear, setSelectedYear] = useState<number>(2026);
-  const [selectedBarangay, setSelectedBarangay] = useState<string>('ALL');
+  const [selectedBarangay] = useState<string>('ALL');
 
   const isMdrrmo = currentUser?.agencyType === 'MDRRMO';
   const safeCases = cases || [];
@@ -56,44 +49,30 @@ export const AnnualNarrativeReport: React.FC = () => {
 
   return (
     <div id="annual-narrative-report-view" className="space-y-4">
-      {/* Top Banner with Official Agency Seal & Dynamic Palette */}
-      <div className={`text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 relative overflow-hidden ${
-        isMdrrmo
-          ? 'bg-gradient-to-r from-[#0a1628] via-[#142642] to-[#1c1208] border-orange-500/80 ring-1 ring-amber-400/30'
-          : 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] border-amber-400/80 ring-1 ring-amber-300/30'
-      }`}>
-        {/* Subtle background seal watermark */}
-        <img
-          src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
-          alt=""
-          className={`absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 ${
-            isMdrrmo ? 'drop-shadow-[0_0_15px_rgba(249,115,22,0.25)]' : 'drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]'
-          }`}
-        />
-
+      {/* Top Banner with Official Agency Seal */}
+      <section
+        aria-label="Annual narrative report header"
+        className="bg-paper border border-rule rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden"
+      >
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
-          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 flex-shrink-0 flex items-center justify-center ${
-            isMdrrmo ? 'border-orange-500 ring-2 ring-amber-400/50' : 'border-amber-400 ring-2 ring-[#0f532a]/60'
-          }`}>
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-paper-2 border border-rule p-1.5 shrink-0 flex items-center justify-center">
             <img
               src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
-              alt={isMdrrmo ? 'MDRRMO Roxas Official Seal' : 'Municipal Government of Roxas Official Seal'}
-              className="w-full h-full object-contain rounded-xl"
+              alt={isMdrrmo ? 'MDRRMO Roxas official seal' : 'Municipal Government of Roxas official seal'}
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
           <div>
-            <div className={`inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs font-bold border shadow-xs mb-1.5 ${
-              isMdrrmo
-                ? 'bg-[#06101e]/90 text-amber-300 border-orange-500/60'
-                : 'bg-[#062612]/90 text-amber-300 border-amber-400/60'
-            }`}>
-              <BookOpenCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isMdrrmo ? 'MDRRMO Statutory Emergency & Incident Documentation' : 'End-of-Year Statutory Documentation'}</span>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paper-2 text-ink text-xs font-semibold border border-rule">
+                <BookOpenCheck className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span>{isMdrrmo ? 'MDRRMO statutory emergency & incident documentation' : 'End-of-year statutory documentation'}</span>
+              </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
-              {isMdrrmo ? 'Comprehensive Incident & Dispatch Narrative Report' : 'Comprehensive Incident & Case Narrative Report'} ({selectedYear})
+            <h2 className="text-lg sm:text-xl font-semibold text-ink tracking-tight leading-tight">
+              {isMdrrmo ? 'Comprehensive incident & dispatch narrative report' : 'Comprehensive incident & case narrative report'} ({selectedYear})
             </h2>
-            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs text-muted mt-1 max-w-2xl leading-relaxed">
               {isMdrrmo
                 ? 'Formal narrative summary of emergency dispatch operations, road traffic collisions, and public safety responses for Roxas, Oriental Mindoro.'
                 : 'Formal narrative summary of public safety incidents, Katarungang Pambarangay settlements, and inter-agency referrals for Roxas, Oriental Mindoro.'}
@@ -103,161 +82,160 @@ export const AnnualNarrativeReport: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2 z-10">
           <button
+            type="button"
             onClick={handleExportSummaryCsv}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs border ${
-              isMdrrmo
-                ? 'bg-[#06101e]/90 hover:bg-[#12284c] text-amber-200 border-orange-500/60'
-                : 'bg-[#062612]/90 hover:bg-[#0b3d1f] text-amber-200 border-amber-400/60'
-            }`}
+            className="px-3.5 py-2 bg-paper-2 hover:bg-paper-3 text-ink rounded-lg text-xs font-semibold border border-rule transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-3.5 h-3.5 text-amber-400" />
-            <span>Export Summary CSV</span>
+            <Download className="w-3.5 h-3.5 text-muted" />
+            <span>Export summary CSV</span>
           </button>
           <button
+            type="button"
             onClick={handlePrint}
-            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 border-amber-200 ${
-              isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'
-            }`}
+            className="px-4 py-2 bg-accent text-accent-ink hover:opacity-90 rounded-lg text-xs font-bold shadow-xs transition-opacity active:scale-[0.98] flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Printer className={`w-4 h-4 ${isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'}`} />
-            <span>Print Official Report</span>
+            <Printer className="w-4 h-4" />
+            <span>Print official report</span>
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Filter Selector */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs">
+      <div className="bg-paper p-3.5 rounded-xl border border-rule shadow-xs flex items-center justify-between text-xs">
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1.5 font-semibold text-slate-700">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <span>Calendar Year:</span>
+          <div className="flex items-center space-x-1.5 font-semibold text-ink">
+            <Calendar className="w-4 h-4 text-accent" />
+            <span>Calendar year:</span>
           </div>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="p-1.5 bg-slate-50 rounded border border-slate-300 font-bold text-slate-800 text-xs"
+            className="p-1.5 bg-paper-2 rounded-lg border border-rule font-medium text-ink text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <option value={2026}>CY 2026 (Current Active Period)</option>
-            <option value={2025}>CY 2025 (Historical Archive)</option>
-            <option value={2024}>CY 2024 (Historical Archive)</option>
+            <option value={2026}>CY 2026 (Current active period)</option>
+            <option value={2025}>CY 2025 (Historical archive)</option>
+            <option value={2024}>CY 2024 (Historical archive)</option>
           </select>
         </div>
 
-        <span className="text-slate-500 text-[11px]">
+        <span className="text-muted text-xs tabular-nums">
           Generated on {new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}
         </span>
       </div>
 
       {/* Official Printable Report Document Card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 text-slate-900 max-w-4xl mx-auto">
+      <article className="bg-paper rounded-xl border border-rule shadow-xs p-6 sm:p-8 space-y-6 text-ink max-w-4xl mx-auto">
         {/* Formal Republic Header */}
-        <div className="text-center pb-6 border-b-2 border-slate-900 space-y-1">
-          <div className="text-xs font-semibold uppercase tracking-widest text-slate-600">
+        <div className="text-center pb-6 border-b border-rule space-y-1">
+          <div className="text-xs font-medium text-muted">
             Republic of the Philippines
           </div>
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-700">
+          <div className="text-xs font-medium text-muted">
             Province of Oriental Mindoro
           </div>
-          <div className="text-sm font-black uppercase tracking-wider text-slate-900">
+          <div className="text-sm font-bold text-ink">
             Municipality of Roxas
           </div>
-          <div className="pt-2 text-xs font-bold uppercase tracking-widest text-blue-900">
+          <div className="pt-2 text-xs font-semibold text-accent">
             B-CONNECT Multi-Agency Coordination & Transparency System
           </div>
-          <h1 className="text-lg sm:text-xl font-extrabold uppercase text-slate-950 pt-1 tracking-tight">
-            NARRATIVE REPORT ON INCIDENTS, COMPLAINTS & CASE RESOLUTIONS
+          <h1 className="text-base sm:text-lg font-bold text-ink pt-1 tracking-tight">
+            Narrative report on incidents, complaints, and case resolutions
           </h1>
-          <div className="text-xs font-semibold text-slate-600">
-            For the Calendar Year Ended December 31, {selectedYear}
+          <div className="text-xs text-muted">
+            For the calendar year ended December 31, {selectedYear}
           </div>
         </div>
 
         {/* Section 1: Executive Summary */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1">
-            I. EXECUTIVE SUMMARY & KEY STATISTICAL HIGHLIGHTS
+        <section aria-label="Executive summary" className="space-y-3">
+          <h3 className="text-xs font-bold text-ink border-b border-rule pb-1.5">
+            1. Executive summary and key statistical highlights
           </h3>
-          <p className="text-xs text-slate-700 leading-relaxed text-justify">
-            During the calendar year {selectedYear}, the Municipality of Roxas recorded a total of{' '}
-            <strong>
+          <p className="text-xs text-ink leading-relaxed">
+            During the calendar year {selectedYear}, the Municipality of Roxas recorded a total resolution rate of{' '}
+            <strong className="tabular-nums">
               {stats.totalCases > 0
                 ? Math.round(((stats.totalResolvedCases) / stats.totalCases) * 100)
                 : 0}%
-            </strong>.
+            </strong> across all logged public safety and katarungang pambarangay dockets.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2">
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Logged</span>
-              <span className="text-xl font-extrabold text-slate-900">{stats.totalCases}</span>
+            <div className="bg-paper-2 p-3 rounded-lg border border-rule text-center">
+              <span className="text-xs text-muted font-medium block">Total logged</span>
+              <span className="text-xl font-bold tabular-nums text-ink">{stats.totalCases}</span>
             </div>
-            <div className="bg-emerald-50 p-2.5 rounded border border-emerald-200 text-center">
-              <span className="text-[10px] uppercase font-bold text-emerald-700 block">Settled</span>
-              <span className="text-xl font-extrabold text-emerald-800">
+            <div className="bg-paper-2 p-3 rounded-lg border border-rule text-center">
+              <span className="text-xs text-muted font-medium block">Settled cases</span>
+              <span className="text-xl font-bold tabular-nums text-accent">
                 {stats.totalResolvedCases}
               </span>
             </div>
-            <div className="bg-amber-50 p-2.5 rounded border border-amber-200 text-center">
-              <span className="text-[10px] uppercase font-bold text-amber-700 block">Ongoing Cases</span>
-              <span className="text-xl font-extrabold text-amber-800">{stats.totalOngoingCases}</span>
+            <div className="bg-paper-2 p-3 rounded-lg border border-rule text-center">
+              <span className="text-xs text-muted font-medium block">Ongoing cases</span>
+              <span className="text-xl font-bold tabular-nums text-ink">{stats.totalOngoingCases}</span>
             </div>
-            <div className="bg-purple-50 p-2.5 rounded border border-purple-200 text-center">
-              <span className="text-[10px] uppercase font-bold text-purple-700 block">Avg Duration</span>
-              <span className="text-xl font-extrabold text-purple-800">{stats.averageResolutionDays} Days</span>
+            <div className="bg-paper-2 p-3 rounded-lg border border-rule text-center">
+              <span className="text-xs text-muted font-medium block">Average duration</span>
+              <span className="text-xl font-bold tabular-nums text-ink">{stats.averageResolutionDays} days</span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Section 2: Narrative Log of Primary Cases */}
-        <div className="space-y-3 pt-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1">
-            II. NARRATIVE DOCKET OF SELECTED CASES & SYSTEMIC OUTCOMES
+        <section aria-label="Narrative docket" className="space-y-3 pt-2">
+          <h3 className="text-xs font-bold text-ink border-b border-rule pb-1.5">
+            2. Narrative docket of selected cases and systemic outcomes
           </h3>
 
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-rule">
             {filteredCases.slice(0, 8).map((c) => (
-              <div key={c.id} className="py-2.5 text-xs space-y-1">
-                <div className="flex items-center justify-between font-semibold">
-                  <span className="text-blue-900 font-mono">
-                    {c.id} • {c.title}
-                  </span>
+              <div key={c.id} className="py-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-accent tabular-nums">{c.id}</span>
+                    <span className="font-semibold text-ink">{c.title}</span>
+                  </div>
                   <StatusBadge status={c.status} size="sm" />
                 </div>
-                <div className="text-[11px] text-slate-500">
-                  Brgy. {c.barangay} • Handled by: {c.currentHandlingAgency} • Reported: {formatDateShort(c.dateReported)}
+                <div className="text-xs text-muted flex flex-wrap items-center gap-2">
+                  <span className="pr-2 border-r border-rule">Brgy. {c.barangay}</span>
+                  <span className="pr-2 border-r border-rule">Agency: {c.currentHandlingAgency}</span>
+                  <span className="tabular-nums">Reported: {formatDateShort(c.dateReported)}</span>
                 </div>
-                <p className="text-slate-700 text-[11px] leading-relaxed">
+                <p className="text-ink text-xs leading-relaxed">
                   {c.initialNarrative}
                 </p>
                 {c.outcomeType && (
-                  <div className="text-[11px] text-emerald-800 font-medium bg-emerald-50/60 p-1.5 rounded">
-                    <strong>Final Action / Outcome:</strong> {c.outcomeType}
+                  <div className="text-xs text-ink bg-paper-2 p-2 rounded-lg border border-rule">
+                    <span className="font-semibold">Final action / outcome:</span> {c.outcomeType}
                   </div>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Section 6: Official Signatories */}
-        <div className="pt-8 border-t-2 border-slate-300 grid grid-cols-2 gap-8 text-xs text-center">
-          <div className="space-y-6">
-            <div className="font-medium text-slate-600">Prepared & Verified by:</div>
+        {/* Section 3: Official Signatories */}
+        <section aria-label="Official signatories" className="pt-8 border-t border-rule grid grid-cols-2 gap-8 text-xs text-center">
+          <div className="space-y-4">
+            <div className="font-medium text-muted">Prepared and verified by:</div>
             <div>
-              <div className="font-bold text-sm uppercase text-slate-900 tracking-wider">MDRRMO</div>
-              <div className="text-[11px] text-slate-600">Municipal Disaster Risk Reduction & Management Office</div>
+              <div className="font-bold text-sm text-ink">MDRRMO Operations</div>
+              <div className="text-xs text-muted">Municipal Disaster Risk Reduction & Management Office</div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="font-medium text-slate-600">Reviewed & Monitored by:</div>
+          <div className="space-y-4">
+            <div className="font-medium text-muted">Reviewed and monitored by:</div>
             <div>
-              <div className="font-bold text-sm uppercase text-slate-900 tracking-wider">LGU</div>
-              <div className="text-[11px] text-slate-600">Roxas Municipality</div>
+              <div className="font-bold text-sm text-ink">LGU Municipal Administrator</div>
+              <div className="text-xs text-muted">Municipality of Roxas, Oriental Mindoro</div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </article>
     </div>
   );
 };

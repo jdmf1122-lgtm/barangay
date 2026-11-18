@@ -8,29 +8,17 @@ import {
   Route, 
   ArrowRight, 
   CheckCircle2, 
-  AlertTriangle, 
-  Shield, 
-  Building2, 
-  Landmark, 
-  User, 
   Search, 
   Maximize2, 
   Minimize2, 
   RotateCcw, 
-  Sparkles, 
   X, 
-  ExternalLink, 
-  Filter, 
-  Eye, 
-  MapPin, 
-  Radio, 
-  Flame, 
-  Network
+  ExternalLink
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
-import { Case, GraphNode, GraphEdge, GraphCluster, ROXAS_BARANGAYS } from '../../types';
+import { GraphNode, GraphEdge, GraphCluster } from '../../types';
 import { SYSTEM_BARANGAYS_GEO, MUNICIPAL_AGENCY_HUBS } from '../../data/barangayGeoData';
-import { findDetailedPath, DetailedPath } from '../../utils/graphEngine';
+import { findDetailedPath, DetailedPath, getGraphAnimationConfig } from '../../utils/graphEngine';
 
 // Tile provider options
 type TileProvider = 'osm_standard' | 'google_street' | 'esri_satellite' | 'opentopo';
@@ -46,28 +34,28 @@ interface TileOption {
 const TILE_OPTIONS: TileOption[] = [
   {
     id: 'osm_standard',
-    name: 'OpenStreetMap Standard',
+    name: 'OpenStreetMap standard',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   },
   {
     id: 'google_street',
-    name: 'Carto / Clean Streets',
+    name: 'Carto clean streets',
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19
   },
   {
     id: 'esri_satellite',
-    name: 'Esri Satellite Imagery',
+    name: 'Esri satellite imagery',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; DigitalGlobe, GeoEye, Earthstar Geographics',
     maxZoom: 18
   },
   {
     id: 'opentopo',
-    name: 'OpenTopoMap Terrain',
+    name: 'OpenTopo terrain',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM | Map style: &copy; OpenTopoMap',
     maxZoom: 17
@@ -110,10 +98,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
   endNodeId,
   setEndNodeId,
   computedPath,
-  setComputedPath,
-  scopeFilter,
-  setScopeFilter,
-  activeCasesCount
+  setComputedPath
 }) => {
   const { cases, setSelectedCaseId } = useCases();
 
@@ -135,7 +120,6 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
   const [filterBarangay, setFilterBarangay] = useState<string>('ALL');
   const [showEdges, setShowEdges] = useState<boolean>(true);
   const [showBoundaries, setShowBoundaries] = useState<boolean>(true);
-  const [showCentralityPulse, setShowCentralityPulse] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   // Calculate coordinates for all graph nodes
@@ -149,7 +133,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
       lng: mdrrmoHub?.lng || 121.51738
     });
 
-    // 3. Place Case Incidents in their respective barangays with structured radial offsets
+    // 2. Place Case Incidents in their respective barangays with structured radial offsets
     const barangayCaseCounters: Record<string, number> = {};
     (cases || []).forEach((c) => {
       const bName = c.barangay;
@@ -283,6 +267,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
+    const animConfig = getGraphAnimationConfig();
 
     // Clear old layers
     barangayPolygonsGroupRef.current?.clearLayers();
@@ -296,21 +281,21 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
       SYSTEM_BARANGAYS_GEO.forEach((b) => {
         const isSelected = filterBarangay === b.name || selectedNode?.label?.includes(b.name);
         const poly = L.polygon(b.boundary, {
-          color: isSelected ? '#059669' : '#0d9488',
-          weight: isSelected ? 3 : 1.5,
+          color: isSelected ? 'var(--color-accent, #0b6638)' : 'var(--color-muted, #5c7768)',
+          weight: isSelected ? 2.5 : 1.2,
           dashArray: isSelected ? undefined : '4, 4',
-          fillColor: '#10b981',
-          fillOpacity: isSelected ? 0.25 : 0.1
+          fillColor: 'var(--color-accent, #0b6638)',
+          fillOpacity: isSelected ? 0.2 : 0.06
         });
 
-        poly.bindTooltip(`<strong>Brgy. ${b.name}</strong><br/><span style="font-size:11px;color:#64748b;">${b.zoneType}</span>`, {
+        poly.bindTooltip(`<strong>Brgy. ${b.name}</strong><br/><span style="font-size:11px;color:#5c7768;">${b.zoneType}</span>`, {
           sticky: true,
           className: 'leaflet-custom-tooltip'
         });
 
         poly.on('click', () => {
           setFilterBarangay(b.name);
-          map.flyTo([b.lat, b.lng], 15, { duration: 0.8 });
+          map.flyTo([b.lat, b.lng], 15, { duration: animConfig.flyDuration });
         });
 
         barangayPolygonsGroupRef.current?.addLayer(poly);
@@ -333,21 +318,21 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
         let dashArray: string | undefined = undefined;
 
         if (edge.type === 'REFERRED_TO') {
-          color = '#2563eb'; // Blue
+          color = '#2563eb';
           weight = 2.2;
           dashArray = '5, 4';
           opacity = 0.8;
         } else if (edge.type === 'MONITORED_BY') {
-          color = '#9333ea'; // Purple
+          color = '#7c3aed';
           weight = 2.2;
           dashArray = '5, 4';
           opacity = 0.85;
         } else if (edge.type === 'RELATED_CASE') {
-          color = '#ea580c'; // Orange
+          color = '#ea580c';
           weight = 2.5;
           opacity = 0.9;
         } else if (edge.type === 'INVOLVES_OFFICIAL') {
-          color = '#dc2626'; // Red
+          color = '#dc2626';
           weight = 2.8;
           opacity = 0.9;
         }
@@ -377,24 +362,23 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
       });
     }
 
-    // 3. Render Computed BFS Shortest Path Route (Glowing Golden Arcs & Hop Markers)
+    // 3. Render Computed BFS Shortest Path Route
     if (computedPath && computedPath.hops.length > 0 && pathHighlightLayerGroupRef.current) {
       computedPath.hops.forEach((hop, hopIdx) => {
         const fromPos = nodeGeoPositions.get(hop.fromNodeId);
         const toPos = nodeGeoPositions.get(hop.toNodeId);
         if (!fromPos || !toPos) return;
 
-        // Golden animated path polyline
         const pathLine = L.polyline([[fromPos.lat, fromPos.lng], [toPos.lat, toPos.lng]], {
-          color: '#f59e0b',
-          weight: 5,
+          color: '#d97706',
+          weight: 4.5,
           opacity: 0.95
         });
 
         pathLine.bindTooltip(`
           <div style="padding: 4px;">
             <strong style="color: #b45309;">Hop #${hopIdx + 1}: ${hop.edgeLabel}</strong><br/>
-            <span style="font-size: 10px; color: #475569;">${hop.edgeType}</span>
+            <span style="font-size: 10px; color: #5c7768;">${hop.edgeType}</span>
           </div>
         `, { sticky: true });
 
@@ -409,7 +393,7 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
 
       if (pathPoints.length >= 2) {
         const bounds = L.latLngBounds(pathPoints);
-        map.flyToBounds(bounds.pad(0.25), { duration: 1 });
+        map.flyToBounds(bounds.pad(0.25), { duration: animConfig.flyDuration });
       }
     }
 
@@ -421,45 +405,45 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
 
         const isSelected = selectedNode?.id === node.id;
         const isInPath = computedPath?.nodeIds.includes(node.id);
-        const isInCluster = selectedCluster?.nodeIds.includes(node.id);
         const isStart = startNodeId === node.id;
         const isEnd = endNodeId === node.id;
 
-        // Custom HTML for Node Icon
+        // Custom HTML for Node Icon (Zero Emojis - Gate 30a)
         let iconHtml = '';
         let markerSize = 28;
 
         if (node.type === 'agency') {
-          markerSize = 38;
+          markerSize = 36;
+          const sirenSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 5 13v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a1 1 0 0 0-.293-.707L18 11.586V8a6 6 0 0 0-6-6z"/><path d="M9 18a3 3 0 0 0 6 0"/></svg>`;
           iconHtml = `
             <div style="
               width: ${markerSize}px;
               height: ${markerSize}px;
               border-radius: 50%;
-              background: linear-gradient(135deg, #ea580c, #c2410c);
-              border: 3px solid #ffffff;
-              box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45);
+              background: var(--color-error, #dc2626);
+              border: 2px solid var(--color-paper, #fafbf9);
+              box-shadow: 0 2px 8px rgba(15, 29, 22, 0.25);
               display: flex;
               align-items: center;
               justify-content: center;
               color: white;
-              font-size: 17px;
-              font-weight: bold;
-              ${isSelected || isInPath ? 'transform: scale(1.25); box-shadow: 0 0 0 5px #fbbf24, 0 8px 20px rgba(0,0,0,0.5);' : ''}
+              ${isSelected || isInPath ? 'transform: scale(1.2); box-shadow: 0 0 0 3px var(--color-warning, #d97706);' : ''}
             ">
-              🚨
+              ${sirenSvg}
             </div>
           `;
         } else if (node.type === 'case') {
-          markerSize = 24;
+          markerSize = 26;
           const caseStatus = node.rawCase?.status;
           const isPending = node.rawCase?.isPending;
           const isHighPriority = node.rawCase?.priority === 'Urgent' || node.rawCase?.priority === 'High';
 
-          let color = '#3b82f6';
-          if (isHighPriority) color = '#ef4444';
-          else if (isPending) color = '#f59e0b';
-          else if (caseStatus === 'Resolved' || caseStatus === 'Closed') color = '#10b981';
+          let color = 'var(--color-accent, #0b6638)';
+          if (isHighPriority) color = 'var(--color-error, #dc2626)';
+          else if (isPending) color = 'var(--color-warning, #d97706)';
+          else if (caseStatus === 'Resolved' || caseStatus === 'Closed') color = 'var(--color-success, #0b6638)';
+
+          const docSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 
           iconHtml = `
             <div style="
@@ -467,31 +451,29 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
               height: ${markerSize}px;
               border-radius: 50%;
               background: ${color};
-              border: 2px solid #ffffff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+              border: 2px solid var(--color-paper, #fafbf9);
+              box-shadow: 0 2px 6px rgba(15, 29, 22, 0.18);
               display: flex;
               align-items: center;
               justify-content: center;
               color: white;
-              font-size: 10px;
-              font-weight: bold;
-              ${isSelected || isInPath ? 'transform: scale(1.3); box-shadow: 0 0 0 4px #f59e0b;' : ''}
+              ${isSelected || isInPath ? 'transform: scale(1.25); box-shadow: 0 0 0 3px var(--color-warning, #d97706);' : ''}
             ">
-              📄
+              ${docSvg}
             </div>
           `;
         } else {
-          // Person / Citizen
+          // Person / Resident Citizen Reporter
           markerSize = 18;
           iconHtml = `
             <div style="
               width: ${markerSize}px;
               height: ${markerSize}px;
               border-radius: 50%;
-              background: #ea580c;
-              border: 1.5px solid #ffffff;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-              ${isSelected || isInPath ? 'transform: scale(1.3); box-shadow: 0 0 0 3px #f59e0b;' : ''}
+              background: var(--color-warning, #d97706);
+              border: 2px solid var(--color-paper, #fafbf9);
+              box-shadow: 0 1px 4px rgba(15, 29, 22, 0.16);
+              ${isSelected || isInPath ? 'transform: scale(1.3); box-shadow: 0 0 0 3px var(--color-warning, #d97706);' : ''}
             "></div>
           `;
         }
@@ -508,13 +490,13 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
         // Tooltip with Node details
         marker.bindTooltip(`
           <div style="padding: 2px 4px;">
-            <div style="font-weight: 800; font-size: 12px; color: #0f172a;">${node.label}</div>
-            <div style="font-size: 10px; color: #64748b;">${node.subLabel || node.type}</div>
-            <div style="font-size: 10px; color: #059669; font-weight: bold; margin-top: 2px;">
-              ${node.degree || 0} Connected Relationships
+            <div style="font-weight: 700; font-size: 12px; color: #0f1d16;">${node.label}</div>
+            <div style="font-size: 10px; color: #5c7768;">${node.subLabel || node.type}</div>
+            <div style="font-size: 10px; color: #0b6638; font-weight: 600; margin-top: 2px;">
+              ${node.degree || 0} connected relationships
             </div>
-            ${isStart ? '<div style="color: #b45309; font-weight: bold; font-size: 10px;">★ ORIGIN NODE</div>' : ''}
-            ${isEnd ? '<div style="color: #047857; font-weight: bold; font-size: 10px;">★ TARGET NODE</div>' : ''}
+            ${isStart ? '<div style="color: #b45309; font-weight: 600; font-size: 10px;">Origin node</div>' : ''}
+            ${isEnd ? '<div style="color: #0b6638; font-weight: 600; font-size: 10px;">Target node</div>' : ''}
           </div>
         `, { sticky: true });
 
@@ -558,7 +540,8 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
 
   const handleResetMapCenter = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([12.6020, 121.4950], 13, { duration: 1 });
+      const animConfig = getGraphAnimationConfig();
+      mapInstanceRef.current.flyTo([12.6020, 121.4950], 13, { duration: animConfig.flyDuration });
       setFilterBarangay('ALL');
       setFilterType('ALL');
       setSearchTerm('');
@@ -571,48 +554,54 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
   };
 
   return (
-    <div className={`space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : ''}`}>
+    <div className={`space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-paper p-4 overflow-y-auto' : ''}`}>
       {/* Top Header & Metrics Bar */}
-      <div className="bg-white p-4 rounded-xl border border-emerald-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <section
+        aria-label="Geospatial radar overview"
+        className="bg-paper p-4 rounded-xl border border-rule shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3"
+      >
         <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Compass className="w-5 h-5 text-emerald-600" />
-            Geospatial Graph Algorithm & OpenStreetMap Radar
+          <h2 className="text-base sm:text-lg font-bold text-ink flex items-center gap-2">
+            <Compass className="w-5 h-5 text-accent" />
+            <span>Geospatial radar and municipal map overview</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-world geographic graph topology of Roxas, Oriental Mindoro with interactive shortest path BFS, cross-barangay dispute links, and multi-agency referral flows.
+          <p className="text-xs text-muted mt-0.5">
+            Geographic graph topology of Roxas, Oriental Mindoro with shortest path BFS routing, cross-barangay incident linkages, and dispatch flows.
           </p>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-2.5 text-xs bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs bg-paper-2 px-3 py-1.5 rounded-lg border border-rule">
           <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-            <span className="text-slate-600 font-medium">Cases ({graphData.nodes.filter((n) => n.type === 'case').length})</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
+            <span className="text-muted font-medium">Cases (<span className="font-mono tabular-nums">{graphData.nodes.filter((n) => n.type === 'case').length}</span>)</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
-            <span className="text-slate-600 font-medium">Persons / Residents ({graphData.nodes.filter((n) => n.type === 'person').length})</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-warning inline-block" />
+            <span className="text-muted font-medium">Resident reporters (<span className="font-mono tabular-nums">{graphData.nodes.filter((n) => n.type === 'person').length}</span>)</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-600 inline-block" />
-            <span className="text-slate-700 font-bold">MDRRMO ({graphData.nodes.filter((n) => n.type === 'agency').length || 1})</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-error inline-block" />
+            <span className="text-ink font-semibold">MDRRMO (<span className="font-mono tabular-nums">{graphData.nodes.filter((n) => n.type === 'agency').length || 1}</span>)</span>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Control Bar: Filters, Basemap Switcher & Pathfinding Toggle */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+      <section
+        aria-label="Map filters and layer options"
+        className="bg-paper p-3 rounded-xl border border-rule shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs"
+      >
         <div className="flex flex-wrap items-center gap-2">
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-2.5" />
             <input
               type="text"
-              placeholder="Search node, person, case..."
+              placeholder="Search node, person, case…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-300 focus:bg-white text-xs w-44"
+              className="pl-8 pr-2.5 py-1.5 bg-paper-2 rounded-lg border border-rule text-ink placeholder:text-muted focus:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden text-xs w-44"
             />
           </div>
 
@@ -620,9 +609,9 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
           <select
             value={filterBarangay}
             onChange={(e) => setFilterBarangay(e.target.value)}
-            className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs text-slate-800"
+            className="p-1.5 bg-paper-2 rounded-lg border border-rule font-medium text-xs text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
           >
-            <option value="ALL">All 20 Roxas Barangays</option>
+            <option value="ALL">All 20 Roxas barangays</option>
             {SYSTEM_BARANGAYS_GEO.map((b) => (
               <option key={b.name} value={b.name}>
                 Brgy. {b.name} ({b.zoneType})
@@ -634,28 +623,31 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs text-slate-800"
+            className="p-1.5 bg-paper-2 rounded-lg border border-rule font-medium text-xs text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
           >
-            <option value="ALL">All Entity Types</option>
-            <option value="agency">MDRRMO</option>
-            <option value="case">Resident Cases</option>
-            <option value="person">Resident Reporters</option>
+            <option value="ALL">All entity types</option>
+            <option value="agency">MDRRMO hub</option>
+            <option value="case">Resident cases</option>
+            <option value="person">Resident reporters</option>
           </select>
-
 
           {/* Toggle Relational Edges */}
           <button
+            type="button"
             onClick={() => setShowEdges(!showEdges)}
-            className={`px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition ${
-              showEdges ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-slate-100 text-slate-600'
+            className={`px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+              showEdges
+                ? 'bg-accent text-accent-ink shadow-xs'
+                : 'bg-paper-2 hover:bg-paper-3 text-ink border border-rule'
             }`}
           >
-            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{showEdges ? 'Hide Edges' : 'Show Edges'}</span>
+            <Share2 className="w-3.5 h-3.5" />
+            <span className="whitespace-nowrap">{showEdges ? 'Hide edges' : 'Show edges'}</span>
           </button>
 
           {/* Pathfinding Toggle */}
           <button
+            type="button"
             onClick={() => {
               setPathfindingMode(!pathfindingMode);
               if (pathfindingMode) {
@@ -664,29 +656,30 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
                 setEndNodeId('');
               }
             }}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
               pathfindingMode
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+                ? 'bg-warning text-ink shadow-xs'
+                : 'bg-paper-2 hover:bg-paper-3 text-ink border border-rule'
             }`}
           >
             <Route className="w-3.5 h-3.5" />
-            <span>{pathfindingMode ? 'BFS Path Active' : 'Trace BFS Shortest Path'}</span>
+            <span className="whitespace-nowrap">{pathfindingMode ? 'BFS path active' : 'Trace shortest path'}</span>
           </button>
         </div>
 
         {/* Map View & Layer Options */}
         <div className="flex items-center gap-2">
           {/* Basemap Tile Switcher */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+          <div className="flex items-center bg-paper-2 p-0.5 rounded-lg border border-rule">
             {TILE_OPTIONS.map((tile) => (
               <button
                 key={tile.id}
+                type="button"
                 onClick={() => setActiveTile(tile.id)}
-                className={`px-2 py-1 rounded text-[11px] font-semibold transition ${
+                className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer whitespace-nowrap ${
                   activeTile === tile.id
-                    ? 'bg-white text-emerald-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-accent text-accent-ink shadow-2xs'
+                    : 'text-muted hover:text-ink'
                 }`}
               >
                 {tile.name.split(' ')[0]}
@@ -695,39 +688,41 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={handleResetMapCenter}
-            className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition"
-            title="Reset Map View"
+            className="p-1.5 text-muted hover:text-ink bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+            title="Reset map view"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           <button
+            type="button"
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition"
-            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Map'}
+            className="p-1.5 text-muted hover:text-ink bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen map'}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Pathfinding Selection Bar (when active) */}
       {pathfindingMode && (
-        <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="bg-paper-2 border border-rule p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="font-bold text-amber-950 flex items-center gap-1.5">
-              <Route className="w-4 h-4 text-amber-600" />
-              BFS Shortest Path Algorithm:
+            <span className="font-semibold text-ink flex items-center gap-1.5">
+              <Route className="w-4 h-4 text-warning" />
+              <span>BFS shortest path algorithm:</span>
             </span>
 
             <div className="flex items-center gap-2">
               <select
                 value={startNodeId}
                 onChange={(e) => setStartNodeId(e.target.value)}
-                className="p-1.5 bg-white rounded-lg border border-amber-300 font-medium text-xs max-w-[200px]"
+                className="p-1.5 bg-paper rounded-lg border border-rule font-medium text-xs text-ink max-w-[200px] focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
               >
-                <option value="">-- Origin Node (Point A) --</option>
+                <option value="">Origin node</option>
                 {graphData.nodes.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.label} ({n.type})
@@ -735,14 +730,14 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
                 ))}
               </select>
 
-              <ArrowRight className="w-4 h-4 text-amber-600" />
+              <ArrowRight className="w-4 h-4 text-muted" />
 
               <select
                 value={endNodeId}
                 onChange={(e) => setEndNodeId(e.target.value)}
-                className="p-1.5 bg-white rounded-lg border border-amber-300 font-medium text-xs max-w-[200px]"
+                className="p-1.5 bg-paper rounded-lg border border-rule font-medium text-xs text-ink max-w-[200px] focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
               >
-                <option value="">-- Target Node (Point B) --</option>
+                <option value="">Target node</option>
                 {graphData.nodes.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.label} ({n.type})
@@ -753,16 +748,16 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
           </div>
 
           {computedPath ? (
-            <div className="text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-lg border border-emerald-300 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Shortest Path Connected: {computedPath.totalDistance} degrees of separation ({computedPath.nodeIds.length} hops)
+            <div className="text-xs font-semibold text-accent bg-paper px-3 py-1 rounded-lg border border-rule flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-accent" />
+              <span>Shortest path connected: <span className="font-mono tabular-nums">{computedPath.totalDistance}</span> degrees of separation (<span className="font-mono tabular-nums">{computedPath.nodeIds.length}</span> hops)</span>
             </div>
           ) : startNodeId && endNodeId ? (
-            <div className="text-xs text-rose-700 bg-rose-50 px-3 py-1 rounded-lg border border-rose-200">
+            <div className="text-xs text-error bg-paper px-3 py-1 rounded-lg border border-rule">
               No relational path found between selected entities
             </div>
           ) : (
-            <span className="text-[11px] text-amber-700">Click any 2 node markers on the OpenStreetMap or select from dropdowns</span>
+            <span className="text-xs text-muted">Click any 2 node markers on the map or select from dropdowns</span>
           )}
         </div>
       )}
@@ -770,33 +765,38 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
       {/* Main Grid: Leaflet OpenStreetMap Container + Inspector Drawer */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Leaflet Map Canvas */}
-        <div className="lg:col-span-2 bg-slate-100 rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative min-h-[600px]">
+        <div className="lg:col-span-2 bg-paper-2 rounded-xl border border-rule shadow-sm flex flex-col overflow-hidden relative min-h-[600px]">
           {/* Top Leaflet Status Badge */}
-          <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs p-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-slate-800">
+          <div className="absolute top-3 left-3 z-[1000] bg-paper/95 p-2 rounded-lg border border-rule shadow-xs flex items-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-accent motion-safe:animate-pulse" />
+            <span className="font-semibold text-ink">
               {TILE_OPTIONS.find((t) => t.id === activeTile)?.name}
             </span>
-            <span className="text-slate-400">|</span>
-            <span className="text-slate-600 font-mono text-[11px]">
-              {filteredNodes.length} Nodes • {filteredEdges.length} Edges
+            <span className="text-muted/40">/</span>
+            <span className="text-muted text-xs">
+              <span><strong className="font-mono tabular-nums text-ink">{filteredNodes.length}</strong> nodes</span>
+              <span className="text-muted/40 mx-1.5">/</span>
+              <span><strong className="font-mono tabular-nums text-ink">{filteredEdges.length}</strong> edges</span>
             </span>
           </div>
 
           {/* Leaflet Map DOM Element */}
           <div ref={mapContainerRef} className="w-full h-full min-h-[580px] z-10" />
 
-          {/* Floating Map Legend at Bottom Left */}
-          <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs border border-slate-200 p-2.5 rounded-lg text-[11px] space-y-1.5 shadow-md text-slate-700">
-            <div className="font-bold text-[10px] uppercase text-slate-400 pb-0.5 tracking-wider">GRAPH ENTITY OVERLAY</div>
+          {/* Map Legend at Bottom Left */}
+          <div className="absolute bottom-3 left-3 z-[1000] bg-paper/95 border border-rule p-2.5 rounded-lg text-xs space-y-1.5 shadow-xs text-ink">
+            <div className="font-semibold text-xs text-muted pb-0.5">Graph entity overlay</div>
             <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-600" /> MDRRMO
+              <span className="w-2.5 h-2.5 rounded-full bg-error inline-block" />
+              <span>MDRRMO hub</span>
             </div>
             <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Case Incident Node
+              <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
+              <span>Case incident</span>
             </div>
             <div className="flex items-center gap-2 font-medium">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" /> Resident Reporter
+              <span className="w-2.5 h-2.5 rounded-full bg-warning inline-block" />
+              <span>Resident reporter</span>
             </div>
           </div>
         </div>
@@ -805,13 +805,18 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
         <div className="space-y-4">
           {/* Path Trace Explanation */}
           {computedPath && (
-            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3 shadow-xs">
+            <div className="bg-paper rounded-xl border border-rule p-4 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs text-amber-950 uppercase flex items-center gap-1.5">
-                  <Route className="w-4 h-4 text-amber-600" />
-                  BFS Shortest Relationship Route
-                </h4>
-                <button onClick={() => setComputedPath(null)} className="text-amber-700 hover:text-amber-900 text-xs">
+                <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                  <Route className="w-4 h-4 text-warning" />
+                  <span>BFS shortest relationship route</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setComputedPath(null)}
+                  className="text-muted hover:text-ink text-xs p-1 rounded focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+                  title="Clear path"
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -821,13 +826,13 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
                   const fromNode = graphData.nodes.find((n) => n.id === hop.fromNodeId);
                   const toNode = graphData.nodes.find((n) => n.id === hop.toNodeId);
                   return (
-                    <div key={idx} className="p-2.5 bg-white rounded-lg border border-amber-200 text-xs space-y-1">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
-                        <span>Hop {idx + 1}: {fromNode?.label || hop.fromNodeId}</span>
-                        <ArrowRight className="w-3 h-3 text-amber-600" />
+                    <div key={idx} className="p-2.5 bg-paper-2 rounded-lg border border-rule text-xs space-y-1">
+                      <div className="flex items-center justify-between font-semibold text-ink">
+                        <span>Hop <span className="font-mono tabular-nums">{idx + 1}</span>: {fromNode?.label || hop.fromNodeId}</span>
+                        <ArrowRight className="w-3 h-3 text-muted" />
                         <span>{toNode?.label || hop.toNodeId}</span>
                       </div>
-                      <div className="text-[10px] text-amber-800 font-mono bg-amber-100/60 px-1.5 py-0.5 rounded inline-block">
+                      <div className="text-[11px] text-muted font-medium bg-paper px-2 py-0.5 rounded border border-rule inline-block">
                         Linkage: {hop.edgeLabel} ({hop.edgeType})
                       </div>
                     </div>
@@ -839,71 +844,73 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
 
           {/* Selected Node Inspector */}
           {selectedNode ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="bg-paper rounded-xl border border-rule shadow-xs p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-rule">
                 <div className="flex items-center space-x-2">
-                  <span className="w-3 h-3 rounded-full bg-emerald-600" />
-                  <span className="font-bold text-xs uppercase text-slate-500">
-                    {selectedNode.type} Entity
+                  <span className="w-2.5 h-2.5 rounded-full bg-accent" />
+                  <span className="font-semibold text-xs text-muted capitalize">
+                    {selectedNode.type} entity
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedNode(null)}
-                  className="text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                  className="text-muted hover:text-ink text-xs font-medium cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden"
                 >
-                  Clear Selection
+                  Clear selection
                 </button>
               </div>
 
               <div>
-                <h3 className="font-bold text-sm text-slate-900">{selectedNode.label}</h3>
+                <h3 className="font-bold text-sm text-ink">{selectedNode.label}</h3>
                 {selectedNode.subLabel && (
-                  <p className="text-xs text-slate-500 mt-0.5">{selectedNode.subLabel}</p>
+                  <p className="text-xs text-muted mt-0.5">{selectedNode.subLabel}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-paper-2 p-2.5 rounded-lg border border-rule">
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Graph Degree</span>
-                  <span className="font-mono font-bold text-slate-800">{selectedNode.degree || 0} links</span>
+                  <span className="text-[11px] text-muted block font-medium">Graph degree</span>
+                  <span className="font-semibold text-ink"><span className="font-mono tabular-nums">{selectedNode.degree || 0}</span> links</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">Classification</span>
-                  <span className="font-medium text-slate-700 capitalize">{selectedNode.type}</span>
+                  <span className="text-[11px] text-muted block font-medium">Classification</span>
+                  <span className="font-semibold text-ink capitalize">{selectedNode.type}</span>
                 </div>
               </div>
 
               {selectedNode.rawCase && (
-                <div className="pt-1 space-y-2">
+                <div className="pt-1">
                   <button
+                    type="button"
                     onClick={() => setSelectedCaseId(selectedNode.rawCase!.id)}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition"
+                    className="w-full py-2 bg-accent hover:bg-accent/90 active:bg-accent text-accent-ink rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Open Incident Dossier ({selectedNode.rawCase.id})
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    <span className="whitespace-nowrap">View case dossier</span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center text-xs text-slate-500">
+            <div className="bg-paper-2 rounded-xl border border-rule p-4 text-center text-xs text-muted">
               Click any node marker on the OpenStreetMap to inspect connections, incident classifications, and case files.
             </div>
           )}
 
           {/* Multi-Case Clusters & Linked Parties */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <div className="bg-paper rounded-xl border border-rule shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-indigo-600" />
-                Multi-Case Clusters ({graphData.clusters.length})
+              <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-accent" />
+                <span>Multi-case clusters (<span className="font-mono tabular-nums">{graphData.clusters.length}</span>)</span>
               </h3>
-              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-                AI Detected
+              <span className="text-[11px] bg-paper-2 text-muted font-medium px-2 py-0.5 rounded-full border border-rule">
+                Algorithmic detection
               </span>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               Graph algorithm identified correlated dispute patterns and multi-case participants across Roxas.
             </p>
 
@@ -917,20 +924,20 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
                       setSelectedCluster(isSelectedCluster ? null : cluster);
                       setSelectedNode(null);
                     }}
-                    className={`p-3 rounded-lg border transition cursor-pointer space-y-1.5 ${
+                    className={`p-3 rounded-lg border transition-colors cursor-pointer space-y-1.5 ${
                       isSelectedCluster
-                        ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-200'
-                        : 'bg-slate-50 hover:bg-indigo-50/40 border-slate-200'
+                        ? 'bg-paper-3 border-accent ring-1 ring-accent'
+                        : 'bg-paper-2 hover:bg-paper-3 border-rule'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-indigo-950">{cluster.title || cluster.label}</span>
-                      <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold">
-                        {cluster.caseIds?.length || cluster.nodeIds.length} Linked
+                      <span className="font-semibold text-xs text-ink">{cluster.title || cluster.label}</span>
+                      <span className="text-[11px] bg-paper text-muted px-2 py-0.5 rounded font-medium border border-rule">
+                        <span className="font-mono tabular-nums">{cluster.caseIds?.length || cluster.nodeIds.length}</span> linked
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-600 leading-snug">
+                    <p className="text-xs text-muted leading-relaxed">
                       {cluster.description}
                     </p>
 
@@ -938,11 +945,12 @@ export const GeospatialGraphMap: React.FC<GeospatialGraphMapProps> = ({
                       {(cluster.caseIds || []).map((caseId) => (
                         <button
                           key={caseId}
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedCaseId(caseId);
                           }}
-                          className="text-[10px] font-mono font-bold bg-white text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 cursor-pointer shadow-2xs"
+                          className="text-xs font-mono tabular-nums font-semibold bg-paper text-accent px-2 py-0.5 rounded border border-rule hover:bg-paper-3 cursor-pointer shadow-2xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                           {caseId}
                         </button>

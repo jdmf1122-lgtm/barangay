@@ -10,22 +10,15 @@ import {
   ExternalLink,
   Route,
   ArrowRight,
-  Shield,
-  Building2,
-  User,
-  AlertTriangle,
   Move,
-  Info,
   CheckCircle2,
   X,
-  MapPin,
   Compass,
-  Network,
-  Globe
+  Network
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
-import { generateGraphData, findDetailedPath, DetailedPath } from '../../utils/graphEngine';
-import { GraphNode, GraphEdge, GraphCluster } from '../../types';
+import { generateGraphData, findDetailedPath, DetailedPath, prefersReducedMotion } from '../../utils/graphEngine';
+import { GraphNode, GraphCluster } from '../../types';
 import { GeospatialGraphMap } from './GeospatialGraphMap';
 
 export const GraphNetworkView: React.FC = () => {
@@ -115,8 +108,6 @@ export const GraphNetworkView: React.FC = () => {
         map.set(a.id, { x: centerX + 200, y: centerY });
       });
 
-
-
       // Fallback for remaining unmapped nodes
       graphData.nodes.forEach((n, idx) => {
         if (!map.has(n.id)) {
@@ -131,7 +122,6 @@ export const GraphNetworkView: React.FC = () => {
       return map;
     }
 
-    // Structural coordinates for multi-case or all-cases view
     // Structural coordinates: Central MDRRMO Command Hub
     const agencyCoords: Record<string, { x: number; y: number }> = {
       'AGENCY-MDRRMO': { x: centerX, y: centerY } // Central Destination Hub
@@ -223,13 +213,13 @@ export const GraphNetworkView: React.FC = () => {
 
   const getNodeColor = (node: GraphNode) => {
     if (node.type === 'case') {
-      if (node.rawCase?.priority === 'Urgent' || node.rawCase?.priority === 'High') return '#ef4444'; // Red
-      if (node.rawCase?.status === 'Resolved') return '#10b981'; // Green
-      return '#3b82f6'; // Blue
+      if (node.rawCase?.priority === 'Urgent' || node.rawCase?.priority === 'High') return 'var(--color-error)';
+      if (node.rawCase?.status === 'Resolved') return 'var(--color-accent)';
+      return 'var(--color-accent)';
     }
-    if (node.type === 'person') return node.color || '#ea580c'; // Orange
-    if (node.type === 'agency') return '#ea580c'; // MDRRMO Orange
-    return '#64748b'; // Slate
+    if (node.type === 'person') return 'var(--color-warning)';
+    if (node.type === 'agency') return 'var(--color-warning)';
+    return 'var(--color-muted)';
   };
 
   // Node selection handler
@@ -303,85 +293,107 @@ export const GraphNetworkView: React.FC = () => {
   return (
     <div id="graph-network-view" className="space-y-4">
       {/* Primary Engine View Switcher & Scope Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-xs gap-3">
+      <section
+        aria-label="Graph engine controls and scope filter"
+        className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-paper p-3 rounded-xl border border-rule shadow-xs gap-3"
+      >
         {/* Graph Engine Tabs */}
-        <div className="flex items-center gap-1.5 bg-emerald-50/70 p-1 rounded-lg border border-emerald-200/60 overflow-x-auto">
+        <div className="flex items-center gap-1.5 bg-paper-2 p-1 rounded-lg border border-rule overflow-x-auto">
           <button
+            type="button"
             onClick={() => setEngineTab('osm_graph')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${engineTab === 'osm_graph'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-emerald-950 hover:bg-emerald-100/50'
-              }`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+              engineTab === 'osm_graph'
+                ? 'bg-accent text-accent-ink shadow-xs'
+                : 'text-muted hover:text-ink hover:bg-paper-3'
+            }`}
           >
-            <Compass className="w-4 h-4" />
-            <span>Geospatial Radar (OpenStreetMap)</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${engineTab === 'osm_graph' ? 'bg-white/20' : 'bg-emerald-200/60 text-emerald-900'}`}>
-              GIS Map
+            <Compass className="w-4 h-4 shrink-0" />
+            <span className="whitespace-nowrap">Geospatial radar</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap ${
+              engineTab === 'osm_graph' ? 'bg-paper/20 text-accent-ink' : 'bg-paper-3 text-muted'
+            }`}>
+              GIS map
             </span>
           </button>
 
           <button
+            type="button"
             onClick={() => setEngineTab('network_graph')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${engineTab === 'network_graph'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-emerald-950 hover:bg-emerald-100/50'
-              }`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+              engineTab === 'network_graph'
+                ? 'bg-accent text-accent-ink shadow-xs'
+                : 'text-muted hover:text-ink hover:bg-paper-3'
+            }`}
           >
-            <Network className="w-4 h-4" />
-            <span>Topological Entity Orbit Graph</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${engineTab === 'network_graph' ? 'bg-white/20' : 'bg-emerald-200/60 text-emerald-900'}`}>
-              Orbit View
+            <Network className="w-4 h-4 shrink-0" />
+            <span className="whitespace-nowrap">Orbit network</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap ${
+              engineTab === 'network_graph' ? 'bg-paper/20 text-accent-ink' : 'bg-paper-3 text-muted'
+            }`}>
+              Orbit view
             </span>
           </button>
         </div>
 
         {/* Scope Selector: Active Cases Only vs All Incidents */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-paper-2 p-1 rounded-lg border border-rule self-start sm:self-auto">
           <button
+            type="button"
             onClick={() => setScopeFilter('ACTIVE_ONLY')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${scopeFilter === 'ACTIVE_ONLY'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+              scopeFilter === 'ACTIVE_ONLY'
+                ? 'bg-warning text-ink shadow-xs'
+                : 'text-muted hover:text-ink hover:bg-paper-3'
+            }`}
           >
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <span>Active Cases Only</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${scopeFilter === 'ACTIVE_ONLY' ? 'bg-black/20' : 'bg-slate-200 text-slate-700'}`}>
-              {activeCasesList.length} Active
+            <span className="w-2 h-2 rounded-full bg-ink motion-safe:animate-pulse" />
+            <span>Active cases only</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${
+              scopeFilter === 'ACTIVE_ONLY' ? 'bg-ink/15 text-ink' : 'bg-paper-3 text-muted'
+            }`}>
+              <span className="font-mono tabular-nums">{activeCasesList.length}</span> active
             </span>
           </button>
 
           <button
+            type="button"
             onClick={() => setScopeFilter('ALL')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${scopeFilter === 'ALL'
-                ? 'bg-slate-800 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+              scopeFilter === 'ALL'
+                ? 'bg-ink text-paper shadow-xs'
+                : 'text-muted hover:text-ink hover:bg-paper-3'
+            }`}
           >
-            <span>All Incidents</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${scopeFilter === 'ALL' ? 'bg-white/20' : 'bg-slate-200 text-slate-700'}`}>
-              {cases.length} Total
+            <span>All incidents</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${
+              scopeFilter === 'ALL' ? 'bg-paper/20 text-paper' : 'bg-paper-3 text-muted'
+            }`}>
+              <span className="font-mono tabular-nums">{cases.length}</span> total
             </span>
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Active Scope Summary Banner */}
       {scopeFilter === 'ACTIVE_ONLY' && (
-        <div className="bg-amber-50/90 border border-amber-300/80 rounded-xl p-3 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-amber-950">
-          <div className="flex items-start sm:items-center gap-2.5">
-            <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-xs shrink-0">
+        <section
+          aria-label="Active resident cases summary"
+          className="bg-paper-2 border border-rule rounded-xl p-3 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-ink"
+        >
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 bg-paper-3 text-ink rounded-lg border border-rule shrink-0">
               <Share2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold flex items-center gap-2">
-                <span>MDRRMO Resident Incident Reports Graph Network</span>
-                <span className="bg-orange-200 text-orange-950 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  {graphData.nodes.filter(n => n.type === 'case').length} Resident Cases
+              <div className="font-semibold flex items-center gap-2">
+                <span>MDRRMO resident incident reports graph network</span>
+                <span className="bg-paper-3 text-ink text-[11px] px-2 py-0.5 rounded-full border border-rule font-medium">
+                  <span className="font-mono tabular-nums">{graphData.nodes.filter(n => n.type === 'case').length}</span> resident cases
                 </span>
               </div>
-              <p className="text-[11px] text-amber-900/80 mt-0.5">
-                Visualizing cases reported by residents from each barangay flowing directly into the MDRRMO Operations & Command Center.
+              <p className="text-xs text-muted mt-0.5">
+                Visualizing cases reported by residents from each barangay flowing directly into the MDRRMO operations and command center.
               </p>
             </div>
           </div>
@@ -389,15 +401,16 @@ export const GraphNetworkView: React.FC = () => {
           <div className="flex items-center gap-2 self-end md:self-auto">
             {activeCasesList[0] && (
               <button
+                type="button"
                 onClick={() => setSelectedCaseId(activeCasesList[0].id)}
-                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[11px] transition shadow-2xs cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 bg-accent hover:bg-accent/90 active:bg-accent text-accent-ink rounded-lg font-semibold text-xs transition-colors shadow-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Case {activeCasesList[0].id}</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-        </div>
+        </section>
       )}
 
       {/* RENDER GEOSPATIAL GRAPH RADAR ON LEAFLET OPENSTREETMAP */}
@@ -422,48 +435,54 @@ export const GraphNetworkView: React.FC = () => {
         />
       ) : (
         /* RENDER TOPOLOGICAL ORBIT NODE-LINK GRAPH */
-        <>
+        <div className="space-y-4">
           {/* Header & Metrics */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <section
+            aria-label="Graph algorithm overview"
+            className="bg-paper p-4 rounded-xl border border-rule shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3"
+          >
             <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-indigo-600" />
-                B-CONNECT Graph Algorithm & Incident Relationship Engine
+              <h2 className="text-base sm:text-lg font-bold text-ink flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-accent" />
+                <span>Incident relationship network and entity graph</span>
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Topological relationship mapping, shortest path BFS tracing, multi-case party clustering, and inter-agency bridge detection.
+              <p className="text-xs text-muted mt-0.5">
+                Topological relationship mapping, shortest path BFS tracing, multi-case party clustering, and agency referral flows.
               </p>
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center gap-3 text-xs bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+            <div className="flex flex-wrap items-center gap-3 text-xs bg-paper-2 px-3 py-2 rounded-lg border border-rule">
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />
-                <span className="text-slate-600 font-medium">Resident Cases ({graphData.nodes.filter(n => n.type === 'case').length})</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
+                <span className="text-muted font-medium">Resident cases (<span className="font-mono tabular-nums">{graphData.nodes.filter(n => n.type === 'case').length}</span>)</span>
               </div>
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-600 inline-block" />
-                <span className="text-slate-600 font-medium">Resident Reporters ({graphData.nodes.filter(n => n.type === 'person').length})</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-warning inline-block" />
+                <span className="text-muted font-medium">Resident reporters (<span className="font-mono tabular-nums">{graphData.nodes.filter(n => n.type === 'person').length}</span>)</span>
               </div>
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-full bg-orange-600 inline-block" />
-                <span className="text-slate-700 font-bold">MDRRMO (1)</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-error inline-block" />
+                <span className="text-ink font-semibold">MDRRMO (<span className="font-mono tabular-nums">1</span>)</span>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Mode Bar & Controls */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+          <section
+            aria-label="Graph search and viewport controls"
+            className="bg-paper p-3 rounded-xl border border-rule shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs"
+          >
             <div className="flex flex-wrap items-center gap-2">
               {/* Search */}
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-2.5" />
                 <input
                   type="text"
-                  placeholder="Search case or person..."
+                  placeholder="Search case or person…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 pr-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-300 focus:bg-white text-xs w-48"
+                  className="pl-8 pr-2.5 py-1.5 bg-paper-2 rounded-lg border border-rule text-ink placeholder:text-muted focus:bg-paper focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden text-xs w-48"
                 />
               </div>
 
@@ -471,16 +490,17 @@ export const GraphNetworkView: React.FC = () => {
               <select
                 value={selectedNodeType}
                 onChange={(e) => setSelectedNodeType(e.target.value)}
-                className="p-1.5 bg-slate-50 rounded-lg border border-slate-300 font-medium text-xs"
+                className="p-1.5 bg-paper-2 rounded-lg border border-rule font-medium text-xs text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
               >
-                <option value="ALL">All Entity Types</option>
-                <option value="agency">MDRRMO</option>
-                <option value="case">Resident Cases</option>
-                <option value="person">Resident Reporters</option>
+                <option value="ALL">All entity types</option>
+                <option value="agency">MDRRMO hub</option>
+                <option value="case">Resident cases</option>
+                <option value="person">Resident reporters</option>
               </select>
 
               {/* Pathfinding Toggle */}
               <button
+                type="button"
                 onClick={() => {
                   setPathfindingMode(!pathfindingMode);
                   if (pathfindingMode) {
@@ -489,64 +509,72 @@ export const GraphNetworkView: React.FC = () => {
                     setEndNodeId('');
                   }
                 }}
-                className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${pathfindingMode
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
+                  pathfindingMode
+                    ? 'bg-warning text-ink shadow-xs'
+                    : 'bg-paper-2 hover:bg-paper-3 text-ink border border-rule'
+                }`}
               >
                 <Route className="w-3.5 h-3.5" />
-                {pathfindingMode ? 'Trace Path Active' : 'Trace Relationship Path'}
+                <span>{pathfindingMode ? 'Trace path active' : 'Trace relationship path'}</span>
               </button>
             </div>
 
             {/* Canvas Controls */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+              <div className="flex items-center bg-paper-2 rounded-lg p-0.5 border border-rule">
                 <button
+                  type="button"
                   onClick={() => setZoomLevel((z) => Math.min(2, z + 0.15))}
-                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-                  title="Zoom In"
+                  className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 rounded transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+                  title="Zoom in"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setZoomLevel((z) => Math.max(0.4, z - 0.15))}
-                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-                  title="Zoom Out"
+                  className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 rounded transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+                  title="Zoom out"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={resetView}
-                  className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-white transition"
-                  title="Reset View"
+                  className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 rounded transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+                  title="Reset view"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="text-[11px] text-slate-500 font-medium pl-2 border-l border-slate-200">
-                <strong>{filteredNodes.length}</strong> Nodes • <strong>{filteredEdges.length}</strong> Edges • <strong>{graphData.clusters.length}</strong> Clusters
+              <div className="text-[11px] text-muted font-medium pl-2 border-l border-rule flex items-center gap-2">
+                <span><strong className="font-mono tabular-nums text-ink">{filteredNodes.length}</strong> nodes</span>
+                <span className="text-muted/40">/</span>
+                <span><strong className="font-mono tabular-nums text-ink">{filteredEdges.length}</strong> edges</span>
+                <span className="text-muted/40">/</span>
+                <span><strong className="font-mono tabular-nums text-ink">{graphData.clusters.length}</strong> clusters</span>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Pathfinding Selection Bar */}
           {pathfindingMode && (
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="bg-paper-2 border border-rule p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="font-bold text-amber-900 flex items-center gap-1.5">
-                  <Route className="w-4 h-4 text-amber-600" />
-                  BFS Shortest Path Algorithm:
+                <span className="font-semibold text-ink flex items-center gap-1.5">
+                  <Route className="w-4 h-4 text-warning" />
+                  <span>BFS shortest path algorithm:</span>
                 </span>
 
                 <div className="flex items-center gap-2">
                   <select
                     value={startNodeId}
                     onChange={(e) => setStartNodeId(e.target.value)}
-                    className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
+                    className="p-1.5 bg-paper rounded-lg border border-rule font-medium text-xs text-ink max-w-[200px] focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
                   >
-                    <option value="">-- Select Origin Node --</option>
+                    <option value="">Origin node</option>
                     {graphData.nodes.map((n) => (
                       <option key={n.id} value={n.id}>
                         {n.label} ({n.type})
@@ -554,14 +582,14 @@ export const GraphNetworkView: React.FC = () => {
                     ))}
                   </select>
 
-                  <ArrowRight className="w-4 h-4 text-amber-600" />
+                  <ArrowRight className="w-3.5 h-3.5 text-muted" />
 
                   <select
                     value={endNodeId}
                     onChange={(e) => setEndNodeId(e.target.value)}
-                    className="p-1.5 bg-white rounded border border-amber-300 font-medium text-xs max-w-[200px]"
+                    className="p-1.5 bg-paper rounded-lg border border-rule font-medium text-xs text-ink max-w-[200px] focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
                   >
-                    <option value="">-- Select Target Node --</option>
+                    <option value="">Target node</option>
                     {graphData.nodes.map((n) => (
                       <option key={n.id} value={n.id}>
                         {n.label} ({n.type})
@@ -572,16 +600,16 @@ export const GraphNetworkView: React.FC = () => {
               </div>
 
               {computedPath ? (
-                <div className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  Path Discovered: {computedPath.totalDistance} degrees of separation ({computedPath.nodeIds.length} hops)
+                <div className="text-xs font-semibold text-accent bg-paper px-2.5 py-1 rounded-lg border border-rule flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                  <span>Path discovered: <span className="font-mono tabular-nums">{computedPath.totalDistance}</span> degrees of separation (<span className="font-mono tabular-nums">{computedPath.nodeIds.length}</span> hops)</span>
                 </div>
               ) : (startNodeId && endNodeId) ? (
-                <div className="text-xs text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+                <div className="text-xs text-error bg-paper px-2.5 py-1 rounded-lg border border-rule">
                   No connected path found between selected entities
                 </div>
               ) : (
-                <span className="text-[11px] text-amber-700">Click any 2 nodes or choose from dropdowns</span>
+                <span className="text-xs text-muted">Click any 2 nodes or choose from dropdowns</span>
               )}
             </div>
           )}
@@ -590,42 +618,46 @@ export const GraphNetworkView: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* SVG Graph Canvas */}
             <div
-              className="lg:col-span-2 bg-slate-900 rounded-xl border border-slate-800 shadow-inner flex flex-col overflow-hidden relative min-h-[580px]"
+              className="lg:col-span-2 bg-paper-2 rounded-xl border border-rule shadow-inner flex flex-col overflow-hidden relative min-h-[580px]"
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
               {/* Top Canvas Bar */}
-              <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-950/60 backdrop-blur-xs z-10">
-                <h4 className="font-bold text-xs text-slate-200 uppercase tracking-tight flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                  Interactive Entity Relationship Network
-                </h4>
+              <div className="p-3 border-b border-rule flex justify-between items-center bg-paper z-10">
+                <h3 className="font-semibold text-xs text-ink flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-accent" />
+                  <span>Interactive entity relationship network</span>
+                </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 bg-blue-950 text-blue-300 font-semibold rounded border border-blue-800 flex items-center gap-1">
-                    <Move className="w-3 h-3" /> Drag Nodes to Reposition
+                  <span className="text-[11px] px-2 py-0.5 bg-paper-2 text-muted font-medium rounded border border-rule flex items-center gap-1">
+                    <Move className="w-3 h-3" />
+                    <span>Drag nodes to reposition</span>
                   </span>
                 </div>
               </div>
 
               {/* SVG Canvas Area */}
-              <div className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing" onMouseDown={handleStartPan}>
-                {/* Dark Grid Background */}
-                <div
-                  id="graph-canvas-bg"
-                  className="absolute inset-0 opacity-20 pointer-events-auto"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, #475569 1px, transparent 1px)',
-                    backgroundSize: '24px 24px'
-                  }}
-                />
-
+              <div
+                className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
+                onMouseDown={handleStartPan}
+              >
                 <svg
                   ref={svgRef}
                   id="bconnect-graph-svg"
+                  aria-label="Interactive entity relationship network diagram"
+                  role="img"
                   viewBox="0 0 800 600"
                   className="w-full h-full min-h-[520px] select-none relative z-10"
                 >
+                  <defs>
+                    <pattern id="graph-grid-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+                      <circle cx="12" cy="12" r="1" fill="var(--color-rule)" />
+                    </pattern>
+                  </defs>
+
+                  <rect width="100%" height="100%" fill="url(#graph-grid-dots)" />
+
                   <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomLevel})`}>
                     {/* Edges Layer */}
                     <g className="edges">
@@ -646,20 +678,20 @@ export const GraphNetworkView: React.FC = () => {
                         const isConnectedToSelected = selectedNode &&
                           (selectedNode.id === edge.source || selectedNode.id === edge.target);
 
-                        let strokeColor = '#334155'; // Default dark slate
+                        let strokeColor = 'var(--color-rule)';
                         let strokeWidth = 1.2;
-                        let strokeOpacity = 0.45;
+                        let strokeOpacity = 0.6;
 
                         if (isPathEdge) {
-                          strokeColor = '#fbbf24'; // Amber Gold
+                          strokeColor = 'var(--color-warning)';
                           strokeWidth = 3.5;
                           strokeOpacity = 1;
                         } else if (isClusterEdge) {
-                          strokeColor = '#818cf8'; // Indigo
+                          strokeColor = 'var(--color-accent)';
                           strokeWidth = 2.5;
                           strokeOpacity = 0.95;
                         } else if (isConnectedToSelected) {
-                          strokeColor = '#60a5fa'; // Blue
+                          strokeColor = 'var(--color-focus)';
                           strokeWidth = 2.5;
                           strokeOpacity = 0.9;
                         }
@@ -681,7 +713,7 @@ export const GraphNetworkView: React.FC = () => {
                                 x={(pos1.x + pos2.x) / 2}
                                 y={(pos1.y + pos2.y) / 2 - 4}
                                 textAnchor="middle"
-                                className="text-[8px] fill-amber-300 font-bold bg-slate-900 select-none"
+                                className="text-[9px] fill-ink font-semibold select-none"
                               >
                                 {edge.label}
                               </text>
@@ -718,14 +750,14 @@ export const GraphNetworkView: React.FC = () => {
                             className="cursor-pointer group"
                             opacity={isDimmed ? 0.25 : 1}
                           >
-                            {/* Glowing Ring for Selected or Path Node */}
+                            {/* Ring for Selected or Path Node */}
                             {(isSelected || isInPath) && (
                               <circle
-                                r={nodeSize + 7}
+                                r={nodeSize + 6}
                                 fill="none"
-                                stroke={isInPath ? '#fbbf24' : '#3b82f6'}
+                                stroke={isInPath ? 'var(--color-warning)' : 'var(--color-focus)'}
                                 strokeWidth="2"
-                                className="animate-pulse"
+                                className="motion-safe:animate-pulse"
                               />
                             )}
 
@@ -733,15 +765,15 @@ export const GraphNetworkView: React.FC = () => {
                             <circle
                               r={nodeSize}
                               fill={fill}
-                              stroke={isSelected ? '#ffffff' : '#1e293b'}
+                              stroke={isSelected ? 'var(--color-paper)' : 'var(--color-paper-3)'}
                               strokeWidth={isSelected ? 2.5 : 1.5}
-                              className="transition-transform group-hover:scale-125 shadow-lg"
+                              className="transition-transform group-hover:scale-115 shadow-xs"
                             />
 
                             {/* Node Center Icon / Mark */}
                             {node.type === 'agency' && (
-                              <text y={4} textAnchor="middle" className="text-[9px] fill-white font-bold pointer-events-none select-none">
-                                ★
+                              <text y={4} textAnchor="middle" className="text-[10px] fill-paper font-bold pointer-events-none select-none">
+                                H
                               </text>
                             )}
 
@@ -749,19 +781,18 @@ export const GraphNetworkView: React.FC = () => {
                             <text
                               y={nodeSize + 13}
                               textAnchor="middle"
-                              className={`text-[10px] select-none font-bold ${isSelected || isInPath
-                                  ? 'fill-amber-300 font-extrabold drop-shadow-md'
-                                  : 'fill-slate-200'
-                                }`}
+                              className={`text-[10px] select-none font-semibold ${
+                                isSelected || isInPath ? 'fill-ink font-bold' : 'fill-ink-2'
+                              }`}
                             >
-                              {node.label.length > 22 ? node.label.substring(0, 20) + '...' : node.label}
+                              {node.label.length > 22 ? node.label.substring(0, 20) + '…' : node.label}
                             </text>
 
                             {node.subLabel && (
                               <text
                                 y={nodeSize + 23}
                                 textAnchor="middle"
-                                className="text-[8px] fill-slate-400 select-none font-medium"
+                                className="text-[9px] fill-muted select-none font-medium"
                               >
                                 {node.subLabel}
                               </text>
@@ -773,11 +804,20 @@ export const GraphNetworkView: React.FC = () => {
                   </g>
                 </svg>
 
-                {/* Floating Guide at Bottom Left */}
-                <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-xs border border-slate-800 p-2.5 rounded-lg text-[10px] space-y-1 shadow-lg z-20 text-slate-300">
-                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-orange-600"></span> MDRRMO</div>
-                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Case Incident</div>
-                  <div className="flex items-center gap-2 font-medium"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Resident Reporter</div>
+                {/* Guide at Bottom Left */}
+                <div className="absolute bottom-3 left-3 bg-paper border border-rule p-2.5 rounded-lg text-xs space-y-1 shadow-xs z-20 text-ink">
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-error inline-block" />
+                    <span>MDRRMO hub</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-accent inline-block" />
+                    <span>Case incident</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-warning inline-block" />
+                    <span>Resident reporter</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -786,15 +826,17 @@ export const GraphNetworkView: React.FC = () => {
             <div className="space-y-4">
               {/* Path Trace Explanation Card */}
               {computedPath && (
-                <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3 shadow-sm">
+                <div className="bg-paper rounded-xl border border-rule p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-xs text-amber-900 uppercase flex items-center gap-1.5">
-                      <Route className="w-4 h-4 text-amber-600" />
-                      Relationship Path Trace Result
-                    </h4>
+                    <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                      <Route className="w-4 h-4 text-warning" />
+                      <span>Relationship path trace result</span>
+                    </h3>
                     <button
+                      type="button"
                       onClick={() => setComputedPath(null)}
-                      className="text-amber-700 hover:text-amber-900 text-xs"
+                      className="text-muted hover:text-ink text-xs p-1 rounded focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer"
+                      title="Clear path"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -805,13 +847,13 @@ export const GraphNetworkView: React.FC = () => {
                       const fromNode = graphData.nodes.find(n => n.id === hop.fromNodeId);
                       const toNode = graphData.nodes.find(n => n.id === hop.toNodeId);
                       return (
-                        <div key={idx} className="p-2.5 bg-white rounded-lg border border-amber-200 text-xs space-y-1">
-                          <div className="flex items-center justify-between font-bold text-slate-800">
-                            <span>Hop {idx + 1}: {fromNode?.label || hop.fromNodeId}</span>
-                            <ArrowRight className="w-3 h-3 text-amber-600" />
+                        <div key={idx} className="p-2.5 bg-paper-2 rounded-lg border border-rule text-xs space-y-1">
+                          <div className="flex items-center justify-between font-semibold text-ink">
+                            <span>Hop <span className="font-mono tabular-nums">{idx + 1}</span>: {fromNode?.label || hop.fromNodeId}</span>
+                            <ArrowRight className="w-3 h-3 text-muted" />
                             <span>{toNode?.label || hop.toNodeId}</span>
                           </div>
-                          <div className="text-[10px] text-amber-800 font-mono bg-amber-100/50 px-1.5 py-0.5 rounded inline-block">
+                          <div className="text-[11px] text-muted font-medium bg-paper px-2 py-0.5 rounded border border-rule inline-block">
                             Relationship: {hop.edgeLabel} ({hop.edgeType})
                           </div>
                         </div>
@@ -823,74 +865,76 @@ export const GraphNetworkView: React.FC = () => {
 
               {/* Selected Node Inspector */}
               {selectedNode ? (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="bg-paper rounded-xl border border-rule shadow-xs p-4 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-rule">
                     <div className="flex items-center space-x-2">
                       <span
-                        className="w-3 h-3 rounded-full"
+                        className="w-2.5 h-2.5 rounded-full"
                         style={{ backgroundColor: getNodeColor(selectedNode) }}
                       />
-                      <span className="font-bold text-xs uppercase text-slate-500">
-                        {selectedNode.type} Entity
+                      <span className="font-semibold text-xs text-muted capitalize">
+                        {selectedNode.type} entity
                       </span>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setSelectedNode(null)}
-                      className="text-slate-400 hover:text-slate-600 text-xs font-semibold"
+                      className="text-muted hover:text-ink text-xs font-medium cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden"
                     >
-                      Clear Selection
+                      Clear selection
                     </button>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900">{selectedNode.label}</h3>
+                    <h3 className="font-bold text-sm text-ink">{selectedNode.label}</h3>
                     {selectedNode.subLabel && (
-                      <p className="text-xs text-slate-500 mt-0.5">{selectedNode.subLabel}</p>
+                      <p className="text-xs text-muted mt-0.5">{selectedNode.subLabel}</p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-paper-2 p-2.5 rounded-lg border border-rule">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Connections</span>
-                      <span className="font-mono font-bold text-slate-800">{selectedNode.degree || 0} links</span>
+                      <span className="text-[11px] text-muted block font-medium">Connections</span>
+                      <span className="font-semibold text-ink"><span className="font-mono tabular-nums">{selectedNode.degree || 0}</span> links</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Classification</span>
-                      <span className="font-medium text-slate-700 capitalize">{selectedNode.type}</span>
+                      <span className="text-[11px] text-muted block font-medium">Classification</span>
+                      <span className="font-semibold text-ink capitalize">{selectedNode.type}</span>
                     </div>
                   </div>
 
                   {selectedNode.rawCase && (
-                    <div className="pt-1 space-y-2">
+                    <div className="pt-1">
                       <button
+                        type="button"
                         onClick={() => setSelectedCaseId(selectedNode.rawCase!.id)}
-                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow transition"
+                        className="w-full py-2 bg-accent hover:bg-accent/90 active:bg-accent text-accent-ink rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Open Full Incident Dossier ({selectedNode.rawCase.id})
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        <span className="whitespace-nowrap">View case dossier</span>
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center text-xs text-slate-500">
+                <div className="bg-paper-2 rounded-xl border border-rule p-4 text-center text-xs text-muted">
                   Select any node in the graph to inspect connections, degrees, and linked case dossiers.
                 </div>
               )}
 
               {/* Identified Multi-Case Clusters */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+              <div className="bg-paper rounded-xl border border-rule shadow-xs p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-indigo-600" />
-                    Multi-Case Clusters & Linked Parties
+                  <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-accent" />
+                    <span>Multi-case clusters and linked parties</span>
                   </h3>
-                  <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-                    {graphData.clusters.length} Found
+                  <span className="text-[11px] bg-paper-2 text-muted font-medium px-2 py-0.5 rounded-full border border-rule">
+                    <span className="font-mono tabular-nums">{graphData.clusters.length}</span> found
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted">
                   Graph algorithm identified repeat individuals, shared incidents, and correlated dispute patterns across Roxas.
                 </p>
 
@@ -904,19 +948,20 @@ export const GraphNetworkView: React.FC = () => {
                           setSelectedCluster(isSelectedCluster ? null : cluster);
                           setSelectedNode(null);
                         }}
-                        className={`p-3 rounded-lg border transition cursor-pointer space-y-1.5 ${isSelectedCluster
-                            ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-200'
-                            : 'bg-slate-50 hover:bg-indigo-50/40 border-slate-200'
-                          }`}
+                        className={`p-3 rounded-lg border transition-colors cursor-pointer space-y-1.5 ${
+                          isSelectedCluster
+                            ? 'bg-paper-3 border-accent ring-1 ring-accent'
+                            : 'bg-paper-2 hover:bg-paper-3 border-rule'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-indigo-950">{cluster.title || cluster.label}</span>
-                          <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold">
-                            {cluster.caseIds?.length || cluster.nodeIds.length} Linked
+                          <span className="font-semibold text-xs text-ink">{cluster.title || cluster.label}</span>
+                          <span className="text-[11px] bg-paper text-muted px-2 py-0.5 rounded font-medium border border-rule">
+                            <span className="font-mono tabular-nums">{cluster.caseIds?.length || cluster.nodeIds.length}</span> linked
                           </span>
                         </div>
 
-                        <p className="text-[11px] text-slate-600 leading-snug">
+                        <p className="text-xs text-muted leading-relaxed">
                           {cluster.description}
                         </p>
 
@@ -924,11 +969,12 @@ export const GraphNetworkView: React.FC = () => {
                           {(cluster.caseIds || []).map((caseId) => (
                             <button
                               key={caseId}
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedCaseId(caseId);
                               }}
-                              className="text-[10px] font-mono font-bold bg-white text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 cursor-pointer shadow-2xs"
+                              className="text-xs font-mono tabular-nums font-semibold bg-paper text-accent px-2 py-0.5 rounded border border-rule hover:bg-paper-3 cursor-pointer shadow-2xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {caseId}
                             </button>
@@ -941,9 +987,8 @@ export const GraphNetworkView: React.FC = () => {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 };
-

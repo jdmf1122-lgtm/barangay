@@ -3,37 +3,32 @@ import {
   X, 
   FileText, 
   Clock, 
-  ArrowRightLeft, 
-  FileCheck2, 
-  Upload, 
   CheckCircle, 
   AlertTriangle, 
   Building2, 
-  Shield, 
   Calendar, 
   Printer, 
   Paperclip, 
-  MessageSquare,
-  AlertCircle,
-  Landmark,
-  Layers,
-  Sparkles,
-  Trash2,
-  MapPin,
-  User,
-  Car,
-  Activity
+  AlertCircle, 
+  Landmark, 
+  Trash2, 
+  MapPin, 
+  User, 
+  Car, 
+  Activity,
+  AlertOctagon,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { StatusBadge, PriorityBadge, OfficialBadge } from '../common/StatusBadge';
-import { CaseStatus, TimelineEvent, AGENCIES_LIST } from '../../types';
+import { CaseStatus } from '../../types';
 import { formatDate, formatDateShort } from '../../utils/reportGenerators';
 import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
 
 export const CaseDetailModal: React.FC = () => {
   const { currentUser } = useAuth();
-  const { selectedCase, setSelectedCaseId, updateCaseStatus, addCaseTimelineEvent, recordLguInterventionAction, deleteCase } = useCases();
+  const { selectedCase, setSelectedCaseId, updateCaseStatus, recordLguInterventionAction, deleteCase } = useCases();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
   
@@ -74,35 +69,36 @@ export const CaseDetailModal: React.FC = () => {
     return (
       <div 
         id="case-detail-modal-backdrop" 
-        className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 bg-ink/75 flex items-center justify-center p-4"
       >
-        <div className="bg-white text-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border-2 border-rose-500 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-gradient-to-r from-rose-700 to-red-800 text-white p-4 flex items-center justify-between">
+        <div className="bg-paper text-ink w-full max-w-lg rounded-xl shadow-xs border border-rule overflow-hidden">
+          <div className="bg-paper-2 border-b border-rule text-ink p-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-6 h-6 text-amber-300" />
+              <AlertTriangle className="w-5 h-5 text-warning" />
               <div>
-                <span className="text-[10px] uppercase font-black tracking-widest bg-rose-900/80 px-2 py-0.5 rounded text-rose-200">
-                  SECURITY & PRIVACY FIREWALL
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-error/15 text-error border border-error/30">
+                  Jurisdictional access restricted
                 </span>
-                <h3 className="font-extrabold text-sm sm:text-base">
-                  403 JURISDICTIONAL ACCESS RESTRICTED
+                <h3 className="font-bold text-sm sm:text-base text-ink mt-0.5">
+                  403 Access restricted
                 </h3>
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setSelectedCaseId(null)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-paper-3 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="p-6 space-y-4 text-xs">
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2 text-rose-900">
-              <p className="font-bold leading-relaxed">
+            <div className="p-4 bg-paper-2 border border-rule rounded-xl space-y-2 text-ink">
+              <p className="font-semibold leading-relaxed">
                 You do not have authorization to view this incident docket ({selectedCase.id}).
               </p>
-              <p className="text-rose-700 leading-relaxed text-[11px]">
+              <p className="text-muted leading-relaxed text-xs">
                 {isBarangayOfficer ? (
                   <>
                     Pursuant to <strong>Republic Act 7160 (Local Government Code)</strong> and the <strong>Data Privacy Act of 2012 (RA 10173)</strong>, Barangay Officials of <strong>Barangay {currentUser.barangay}</strong> are strictly restricted from accessing confidential blotter entries and dockets of other barangays (<strong>Barangay {selectedCase.barangay}</strong>).
@@ -115,22 +111,23 @@ export const CaseDetailModal: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-slate-500 font-bold block">Case Location</span>
-                <span className="font-bold text-slate-800">Brgy. {selectedCase.barangay}</span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 bg-paper-2 border border-rule rounded-lg">
+                <span className="text-muted font-medium block">Case location</span>
+                <span className="font-semibold text-ink">Brgy. {selectedCase.barangay}</span>
               </div>
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-slate-500 font-bold block">Your Assigned Barangay</span>
-                <span className="font-bold text-emerald-700">Brgy. {currentUser.barangay || 'San Aquilino'}</span>
+              <div className="p-2.5 bg-paper-2 border border-rule rounded-lg">
+                <span className="text-muted font-medium block">Your assigned barangay</span>
+                <span className="font-semibold text-accent">Brgy. {currentUser.barangay || 'San Aquilino'}</span>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => setSelectedCaseId(null)}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition cursor-pointer shadow-sm"
+              className="w-full py-2.5 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule font-semibold rounded-lg transition-colors cursor-pointer shadow-xs focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
             >
-              Return to Safe Ledger View
+              <span className="whitespace-nowrap">Return to ledger</span>
             </button>
           </div>
         </div>
@@ -150,8 +147,6 @@ export const CaseDetailModal: React.FC = () => {
     setStatusChangeRemarks('');
   };
 
-
-
   const handlePrintDossier = () => {
     window.print();
   };
@@ -159,43 +154,43 @@ export const CaseDetailModal: React.FC = () => {
   return (
     <div 
       id="case-detail-modal-backdrop" 
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-ink/75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
     >
       <div 
         id="case-dossier-card" 
-        className="bg-white text-slate-900 w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]"
+        className="bg-paper text-ink w-full max-w-5xl rounded-xl shadow-xs border border-rule overflow-hidden flex flex-col max-h-[92dvh]"
       >
         {/* Modal Top Bar */}
-        <div className="bg-slate-900 text-white px-3.5 sm:px-5 py-2.5 sm:py-3.5 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
+        <div className="bg-paper-2 text-ink px-4 sm:px-5 py-3 flex items-center justify-between border-b border-rule flex-shrink-0">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <span className="font-mono text-xs sm:text-sm font-bold bg-blue-600 px-2 py-0.5 rounded text-white flex-shrink-0">
+            <span className="font-mono text-xs sm:text-sm font-semibold bg-paper border border-rule px-2 py-0.5 rounded text-ink flex-shrink-0 num">
               {selectedCase.id}
             </span>
             <div className="min-w-0">
-              <h2 className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight truncate max-w-[170px] sm:max-w-md">
+              <h2 className="font-bold text-xs sm:text-sm md:text-base text-ink tracking-tight truncate max-w-[170px] sm:max-w-md">
                 {selectedCase.title}
               </h2>
-              <div className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
+              <div className="text-xs text-muted flex items-center gap-2 truncate">
                 <span>Incident #{selectedCase.incidentId}</span>
-                <span>•</span>
-                <span>Brgy. {selectedCase.barangay}</span>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline">Reported: {formatDate(selectedCase.dateReported)}</span>
+                <span>, Brgy. {selectedCase.barangay}</span>
+                <span className="hidden sm:inline num">({formatDate(selectedCase.dateReported)})</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 ml-2">
             <button
+              type="button"
               onClick={handlePrintDossier}
-              title="Print Case Dossier"
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer"
+              title="Print case dossier"
+              className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 active:bg-paper rounded transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
             >
               <Printer className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => setSelectedCaseId(null)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer"
+              className="p-1.5 text-muted hover:text-ink hover:bg-paper-3 active:bg-paper rounded transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
@@ -203,7 +198,7 @@ export const CaseDetailModal: React.FC = () => {
         </div>
 
         {/* Quick Action Strip */}
-        <div className="bg-slate-50 px-5 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="bg-paper px-5 py-2.5 border-b border-rule flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={selectedCase.status} />
             <PriorityBadge priority={selectedCase.priority} />
@@ -211,9 +206,9 @@ export const CaseDetailModal: React.FC = () => {
               <OfficialBadge officialType={selectedCase.officialInvolvedType} />
             )}
             {isConsolidatedCase(selectedCase) && (
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full font-bold text-[10px] flex items-center gap-1 shadow-xs">
-                <CheckCircle className="w-3 h-3 text-emerald-600" />
-                <span>Single Unified Report (Auto-Consolidated)</span>
+              <span className="px-2 py-0.5 bg-paper-2 border border-rule rounded-full font-semibold text-[10px] text-ink flex items-center gap-1 shadow-2xs">
+                <CheckCircle className="w-3 h-3 text-success" />
+                <span>Single unified report (Auto-consolidated)</span>
               </span>
             )}
           </div>
@@ -222,35 +217,37 @@ export const CaseDetailModal: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               id="btn-update-case-status"
+              type="button"
               onClick={() => {
                 setSelectedNewStatus(selectedCase.status);
                 setIsStatusModalOpen(true);
               }}
-              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold transition cursor-pointer"
+              className="px-2.5 py-1 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded-lg text-xs font-semibold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
             >
-              Update Status
+              <span className="whitespace-nowrap">Update status</span>
             </button>
           </div>
         </div>
 
         {/* Navigation Tabs within Case Dossier */}
-        <div className="px-5 border-b border-slate-200 bg-white flex space-x-4 text-xs font-semibold overflow-x-auto">
+        <div className="px-5 border-b border-rule bg-paper flex space-x-4 text-xs font-semibold overflow-x-auto">
           {[
-            { id: 'overview', label: 'Case Overview', count: undefined },
-            { id: 'timeline', label: 'Chronological Timeline', count: selectedCase.timeline?.length || 0 }
+            { id: 'overview', label: 'Case overview', count: undefined },
+            { id: 'timeline', label: 'Chronological timeline', count: selectedCase.timeline?.length || 0 }
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`py-2.5 border-b-2 transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              type="button"
+              onClick={() => setActiveTab(t.id as 'overview' | 'timeline')}
+              className={`py-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden ${
                 activeTab === t.id
-                  ? 'border-blue-600 text-blue-700 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-accent text-accent font-bold'
+                  : 'border-transparent text-muted hover:text-ink'
               }`}
             >
               <span>{t.label}</span>
               {t.count !== undefined && (
-                <span className="px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px]">
+                <span className="px-1.5 py-0.2 bg-paper-2 text-ink border border-rule rounded text-[10px] num">
                   {t.count}
                 </span>
               )}
@@ -265,17 +262,17 @@ export const CaseDetailModal: React.FC = () => {
             <div className="space-y-6">
               {/* Auto-Consolidated Single Report Banner */}
               {isConsolidatedCase(selectedCase) && (
-                <div id="case-auto-deduplicated-callout" className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-2 border-emerald-400 rounded-xl p-4 space-y-2 text-emerald-950 shadow-xs">
+                <div id="case-auto-deduplicated-callout" className="bg-paper-2 border border-rule rounded-xl p-4 space-y-2 text-ink shadow-xs">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-emerald-900">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div className="flex items-center gap-2 font-semibold text-xs sm:text-sm text-ink">
+                      <CheckCircle className="w-4 h-4 text-success shrink-0" />
                       <span>Unified Report (Auto-Deduplicated & Consolidated Docket)</span>
                     </div>
-                    <span className="bg-emerald-600 text-white text-[9px] uppercase font-black px-2 py-0.5 rounded-full">
-                      1 Report Retained
+                    <span className="bg-paper border border-rule text-ink text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                      1 report retained
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                  <p className="text-xs text-muted leading-relaxed">
                     The system detected multiple reports for this incident with slight variations in details. Duplicate submissions were automatically removed and all information, photos, and records were merged into this single official dossier to prevent confusion and duplicate dispatch by MDRRMO and the Barangay.
                   </p>
                 </div>
@@ -283,119 +280,119 @@ export const CaseDetailModal: React.FC = () => {
 
               {/* MDRRMO-to-LGU Automatic Escalation Callout & LGU Intervention Desk */}
               {selectedCase.isEscalatedToLgu && (
-                <div id="case-escalated-lgu-callout" className="bg-gradient-to-br from-rose-50 to-amber-50 border-2 border-rose-500 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+                <div id="case-escalated-lgu-callout" className="bg-paper-2 border-2 border-error rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 text-rose-900 font-extrabold text-sm">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
-                      <span>🚨 ESCALATED TO LGU: MDRRMO Non-Response Timeout Exceeded</span>
+                    <div className="flex items-center gap-2 text-error font-bold text-sm">
+                      <AlertOctagon className="w-4 h-4 text-error shrink-0" />
+                      <span>Escalated to LGU: MDRRMO non-response timeout exceeded</span>
                     </div>
-                    <span className="px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded-full uppercase">
-                      Urgent Action Required
+                    <span className="px-2.5 py-0.5 bg-error/15 border border-error/30 text-error text-[10px] font-semibold rounded-full">
+                      Urgent action required
                     </span>
                   </div>
 
-                  <p className="text-xs text-rose-800 leading-relaxed font-medium">
+                  <p className="text-xs text-ink leading-relaxed">
                     This emergency report was automatically escalated to the <strong>LGU Executive Office</strong> because the MDRRMO did not acknowledge, respond to, or update the incident within the statutory response threshold (<strong>{selectedCase.escalationElapsedStr || 'Over 2 hours'}</strong>).
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-white p-3.5 rounded-lg border border-rose-200 text-[11px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-paper p-3.5 rounded-lg border border-rule text-xs">
                     <div>
-                      <span className="text-slate-500 block">Date & Time Escalated:</span>
-                      <strong className="text-slate-800">{formatDate(selectedCase.escalatedAt)}</strong>
+                      <span className="text-muted block">Date and time escalated:</span>
+                      <strong className="text-ink font-semibold num">{formatDate(selectedCase.escalatedAt)}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Time Elapsed without MDRRMO:</span>
-                      <strong className="text-rose-700 font-mono font-bold">{selectedCase.escalationElapsedStr || '2+ Hours'}</strong>
+                      <span className="text-muted block">Time elapsed without MDRRMO:</span>
+                      <strong className="text-error font-mono font-semibold num">{selectedCase.escalationElapsedStr || '2+ Hours'}</strong>
                     </div>
                     <div className="sm:col-span-2">
-                      <span className="text-slate-500 block">Designated LGU SMS Dispatch Status:</span>
-                      <span className="font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>SMS Notification Delivered to {selectedCase.escalationSmsRecipient || 'LGU Officials'} ({selectedCase.escalationSmsRecipientPhone || 'Designated Phone'})</span>
+                      <span className="text-muted block">Designated LGU SMS dispatch status:</span>
+                      <span className="font-semibold text-accent flex items-center gap-1 mt-0.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-accent shrink-0" />
+                        <span>SMS notification delivered to {selectedCase.escalationSmsRecipient || 'LGU Officials'} ({selectedCase.escalationSmsRecipientPhone || 'Designated Phone'})</span>
                       </span>
                     </div>
                     <div className="sm:col-span-2">
-                      <span className="text-slate-500 block">Recommended Action:</span>
-                      <span className="font-bold text-rose-800">LGU intervention/review required</span>
+                      <span className="text-muted block">Recommended action:</span>
+                      <span className="font-semibold text-error">LGU intervention and review required</span>
                     </div>
                   </div>
 
                   {/* If LGU directive has already been recorded */}
                   {selectedCase.lguActionTaken && (
-                    <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-3 text-xs text-emerald-950 space-y-1">
-                      <div className="font-bold flex items-center gap-1.5 text-emerald-800">
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
-                        <span>Recorded LGU Directive: {selectedCase.lguActionTaken}</span>
+                    <div className="bg-paper border border-rule rounded-lg p-3 text-xs text-ink space-y-1">
+                      <div className="font-semibold flex items-center gap-1.5 text-accent">
+                        <CheckCircle className="w-4 h-4 text-accent" />
+                        <span>Recorded LGU directive: {selectedCase.lguActionTaken}</span>
                       </div>
                       {selectedCase.lguInterventionNotes && (
-                        <p className="text-[11px] text-emerald-900 leading-relaxed italic bg-white/70 p-2 rounded border border-emerald-200">
+                        <p className="text-xs text-muted leading-relaxed italic bg-paper-2 p-2 rounded border border-rule">
                           "{selectedCase.lguInterventionNotes}"
                         </p>
                       )}
-                      <div className="text-[10px] text-emerald-700 pt-1 border-t border-emerald-200 flex justify-between">
-                        <span>Issued by: <strong>{selectedCase.lguActionPersonnel || 'LGU Authorized Personnel'}</strong></span>
-                        <span>Date: {formatDate(selectedCase.lguActionDate)}</span>
+                      <div className="text-[11px] text-muted pt-1 border-t border-rule flex justify-between">
+                        <span>Issued by: <strong className="text-ink">{selectedCase.lguActionPersonnel || 'LGU Authorized Personnel'}</strong></span>
+                        <span className="num">Date: {formatDate(selectedCase.lguActionDate)}</span>
                       </div>
                     </div>
                   )}
 
                   {/* LGU Executive Intervention Action Desk (Authorized for LGU Personnel) */}
                   {(currentUser?.agencyType === 'LGU' || currentUser?.role === 'LGU_ADMINISTRATOR' || currentUser?.role === 'LGU_OFFICER') && (
-                    <form onSubmit={handleLguInterventionSubmit} className="bg-white p-4 rounded-xl border-2 border-emerald-500 space-y-3 shadow-xs">
-                      <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
-                        <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                          <Landmark className="w-4 h-4 text-emerald-700" />
-                          <span>LGU Executive Intervention & Decision Desk</span>
+                    <form onSubmit={handleLguInterventionSubmit} className="bg-paper p-4 rounded-xl border border-accent space-y-3 shadow-xs">
+                      <div className="flex items-center justify-between border-b border-rule pb-2">
+                        <h4 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                          <Landmark className="w-4 h-4 text-accent" />
+                          <span>LGU executive intervention and decision desk</span>
                         </h4>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          Authorized Action
+                        <span className="text-[10px] font-semibold text-accent bg-paper-2 px-2 py-0.5 rounded border border-rule">
+                          Authorized action
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                      <p className="text-xs text-muted leading-relaxed">
                         The system has notified the LGU of this unresolved emergency. As authorized LGU personnel, determine and issue the appropriate official response below:
                       </p>
 
                       <div>
-                        <label className="text-[11px] font-bold text-slate-800 block mb-1">Select LGU Action to Take *</label>
+                        <label className="text-xs font-semibold text-ink block mb-1">Select LGU action to take *</label>
                         <select
                           value={lguActionType}
-                          onChange={(e) => setLguActionType(e.target.value as any)}
-                          className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-lg border border-slate-300 font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                          onChange={(e) => setLguActionType(e.target.value as 'Under Review' | 'MDRRMO Mobilized' | 'Municipal Team Dispatched' | 'Resolved by LGU' | 'Dismissed')}
+                          className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
                         >
-                          <option value="MDRRMO Mobilized">🚨 Direct MDRRMO Immediate Mobilization & Rescue</option>
-                          <option value="Municipal Team Dispatched">🚒 Dispatch Municipal Response / Traffic / Health Team</option>
-                          <option value="Under Review">📋 Mark Under Formal LGU Executive Review & Investigation</option>
-                          <option value="Resolved by LGU">✅ Resolve & Conclude under Municipal LGU Directives</option>
-                          <option value="Dismissed">⚠️ Inquire & Conclude (No Further Municipal Action Required)</option>
+                          <option value="MDRRMO Mobilized">Direct MDRRMO immediate mobilization and rescue</option>
+                          <option value="Municipal Team Dispatched">Dispatch municipal response, traffic, or health team</option>
+                          <option value="Under Review">Mark under formal LGU executive review and investigation</option>
+                          <option value="Resolved by LGU">Resolve and conclude under municipal LGU directives</option>
+                          <option value="Dismissed">Inquire and conclude (no further municipal action required)</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="text-[11px] font-bold text-slate-800 block mb-1">Official LGU Directive / Intervention Notes *</label>
+                        <label className="text-xs font-semibold text-ink block mb-1">Official LGU directive or intervention notes *</label>
                         <textarea
                           required
                           rows={2}
                           value={lguDirectiveNotes}
                           onChange={(e) => setLguDirectiveNotes(e.target.value)}
-                          placeholder="State the formal directive, orders given to MDRRMO/Municipal responders, or terms of LGU intervention..."
-                          className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                          placeholder="State the formal directive, orders given to MDRRMO or municipal responders, or terms of LGU intervention..."
+                          className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
                         />
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
                         {isLguActionSubmitted ? (
-                          <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 animate-in fade-in">
-                            <CheckCircle className="w-4 h-4 text-emerald-600" />
-                            Official Directive recorded & audit logged!
+                          <span className="text-xs font-semibold text-accent flex items-center gap-1">
+                            <CheckCircle className="w-4 h-4 text-accent" />
+                            <span>Official directive recorded and audit logged</span>
                           </span>
-                        ) : <span className="text-[10px] text-slate-400">Action will be logged in system audit trail</span>}
+                        ) : <span className="text-[10px] text-muted">Action will be logged in system audit trail</span>}
 
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                          className="px-4 py-2 bg-accent hover:bg-accent/90 active:bg-accent/80 text-accent-ink rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
                         >
                           <CheckCircle className="w-4 h-4" />
-                          <span>Submit Official LGU Action</span>
+                          <span className="whitespace-nowrap">Submit LGU action</span>
                         </button>
                       </div>
                     </form>
@@ -405,34 +402,32 @@ export const CaseDetailModal: React.FC = () => {
 
               {/* Official Involvement Neutrality Callout */}
               {selectedCase.isInvolvingOfficial && (
-                <div className="bg-rose-50 border border-rose-200 rounded-lg p-3.5 space-y-1">
-                  <div className="flex items-center space-x-2 text-rose-800 font-bold text-xs">
-                    <AlertCircle className="w-4 h-4 text-rose-600" />
-                    <span>Special Classification: Complaint Involving Public Official</span>
+                <div className="bg-paper-2 border border-rule rounded-lg p-3.5 space-y-1">
+                  <div className="flex items-center space-x-2 text-ink font-semibold text-xs">
+                    <AlertCircle className="w-4 h-4 text-warning" />
+                    <span>Special classification: complaint involving public official</span>
                   </div>
-                  <p className="text-[11px] text-rose-700 leading-relaxed">
+                  <p className="text-xs text-muted leading-relaxed">
                     This inquiry involves <strong>{selectedCase.officialInvolvedName || selectedCase.officialInvolvedPosition}</strong> ({selectedCase.officialInvolvedAgency}). As per DILG protocols, the record is maintained under neutral administrative classification without presumed guilt, subject to formal conciliation and MLGOO oversight.
                   </p>
                 </div>
               )}
 
-
-
               {/* PRIMARY ACCIDENT & CASE OVERVIEW CARD */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5 shadow-xs">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="bg-paper rounded-xl border border-rule p-5 sm:p-6 space-y-5 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                      <FileText className="w-5 h-5 text-emerald-600" />
+                    <div className="w-10 h-10 rounded-lg bg-paper-2 text-accent border border-rule flex items-center justify-center font-bold">
+                      <FileText className="w-5 h-5 text-accent" />
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight">
+                      <h3 className="font-bold text-sm sm:text-base text-ink tracking-tight">
                         {selectedCase.title}
                       </h3>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-slate-700">{selectedCase.category || 'Accident Incident'}</span>
-                        <span>•</span>
-                        <span className="font-mono text-blue-700 font-semibold">{selectedCase.id}</span>
+                      <div className="text-xs text-muted flex items-center gap-2 mt-0.5">
+                        <span className="font-medium text-ink">{selectedCase.category || 'Accident incident'}</span>
+                        <span>·</span>
+                        <span className="font-mono text-accent font-semibold num">{selectedCase.id}</span>
                       </div>
                     </div>
                   </div>
@@ -445,104 +440,104 @@ export const CaseDetailModal: React.FC = () => {
 
                 {/* Key Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span>Incident Location</span>
+                  <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                    <div className="text-muted font-medium text-xs flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-warning shrink-0" />
+                      <span>Incident location</span>
                     </div>
-                    <div className="font-bold text-slate-800 text-xs">
+                    <div className="font-semibold text-ink text-xs">
                       {selectedCase.sitio ? `Sitio ${selectedCase.sitio}, ` : ''}Brgy. {selectedCase.barangay}
                     </div>
                     {selectedCase.specificLocation && (
-                      <div className="text-[11px] text-slate-500 truncate" title={selectedCase.specificLocation}>
+                      <div className="text-xs text-muted truncate" title={selectedCase.specificLocation}>
                         {selectedCase.specificLocation}
                       </div>
                     )}
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                      <span>Date of Accident</span>
+                  <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                    <div className="text-muted font-medium text-xs flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span>Date of accident</span>
                     </div>
-                    <div className="font-bold text-slate-800 text-xs">
+                    <div className="font-semibold text-ink text-xs num">
                       {selectedCase.incidentDate || formatDate(selectedCase.dateReported)}
                     </div>
-                    <div className="text-[11px] text-slate-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
+                    <div className="text-xs text-muted flex items-center gap-1 num">
+                      <Clock className="w-3 h-3 text-muted" />
                       <span>{selectedCase.incidentTime || 'No specified time'}</span>
                     </div>
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>Reported By</span>
+                  <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                    <div className="text-muted font-medium text-xs flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span>Reported by</span>
                     </div>
-                    <div className="font-bold text-slate-800 text-xs">
-                      {selectedCase.reporterName || 'Resident Citizen (Roxas)'}
+                    <div className="font-semibold text-ink text-xs">
+                      {selectedCase.reporterName || 'Resident citizen (Roxas)'}
                     </div>
-                    <div className="text-[11px] text-emerald-700 font-medium">
-                      {selectedCase.isCitizenReport ? 'Citizen Portal Report' : 'Verified Resident'}
+                    <div className="text-xs text-muted font-medium">
+                      {selectedCase.isCitizenReport ? 'Citizen portal report' : 'Verified resident'}
                     </div>
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                    <div className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>MDRRMO Response</span>
+                  <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                    <div className="text-muted font-medium text-xs flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-warning shrink-0" />
+                      <span>MDRRMO response</span>
                     </div>
-                    <div className="font-bold text-xs">
+                    <div className="font-semibold text-xs">
                       {selectedCase.emergencyFirstRespondersDispatched ? (
-                        <span className="text-emerald-700 flex items-center gap-1">
+                        <span className="text-accent flex items-center gap-1">
                           <CheckCircle className="w-3.5 h-3.5" />
-                          Responders Dispatched
+                          <span>Responders dispatched</span>
                         </span>
                       ) : (
-                        <span className="text-amber-700 flex items-center gap-1">
+                        <span className="text-muted flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
-                          {selectedCase.status === 'Resolved' ? 'Completed' : 'Standby / For Dispatch'}
+                          <span>{selectedCase.status === 'Resolved' ? 'Completed' : 'Standby for dispatch'}</span>
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-xs text-muted">
                       {selectedCase.respondingAmbulanceUnit || 'MDRRMO Roxas Command'}
                     </div>
                   </div>
                 </div>
 
                 {/* Narrative / Description */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-slate-500" />
-                    Incident Narrative / Summary
+                <div className="space-y-2 pt-2 border-t border-rule">
+                  <h4 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-muted" />
+                    <span>Incident narrative and summary</span>
                   </h4>
-                  <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">
+                  <div className="bg-paper-2 p-4 rounded-lg border border-rule text-xs text-ink leading-relaxed font-normal whitespace-pre-wrap">
                     {selectedCase.initialNarrative || selectedCase.description || 'No additional narrative recorded.'}
                   </div>
                 </div>
 
                 {/* Additional Accident Specifics (Vehicles / Hospital) */}
                 {(selectedCase.accidentVehicleDetails || selectedCase.hospitalTransported) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-rule">
                     {selectedCase.accidentVehicleDetails && (
-                      <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-1">
-                        <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Car className="w-3.5 h-3.5 text-blue-600" />
-                          Vehicles Involved
+                      <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                        <span className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                          <Car className="w-3.5 h-3.5 text-muted" />
+                          <span>Vehicles involved</span>
                         </span>
-                        <p className="text-xs text-blue-950 font-medium">
+                        <p className="text-xs text-muted font-medium">
                           {selectedCase.accidentVehicleDetails}
                         </p>
                       </div>
                     )}
                     {selectedCase.hospitalTransported && (
-                      <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-100 space-y-1">
-                        <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-purple-600" />
-                          Hospital / Transport Facility
+                      <div className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-1">
+                        <span className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-muted" />
+                          <span>Hospital or transport facility</span>
                         </span>
-                        <p className="text-xs text-purple-950 font-medium">
+                        <p className="text-xs text-muted font-medium">
                           {selectedCase.hospitalTransported}
                         </p>
                       </div>
@@ -553,10 +548,10 @@ export const CaseDetailModal: React.FC = () => {
 
               {/* Evidence & Attached Photos */}
               {selectedCase.imageUrls && selectedCase.imageUrls.length > 0 && (
-                <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Paperclip className="w-4 h-4 text-emerald-600" />
-                    Attached Evidence / Photos
+                <div className="bg-paper rounded-xl border border-rule p-4 space-y-3 shadow-xs">
+                  <h3 className="font-semibold text-ink text-xs flex items-center gap-1.5">
+                    <Paperclip className="w-4 h-4 text-muted" />
+                    <span>Attached evidence and photos</span>
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {selectedCase.imageUrls.map((url, i) => (
@@ -565,58 +560,55 @@ export const CaseDetailModal: React.FC = () => {
                         href={url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="block rounded-lg overflow-hidden border border-slate-200 hover:border-emerald-500 transition shadow-xs w-32 h-32 sm:w-40 sm:h-40 bg-slate-50 relative group"
+                        className="block rounded-lg overflow-hidden border border-rule hover:border-accent transition-colors shadow-xs w-32 h-32 sm:w-40 sm:h-40 bg-paper-2 relative group focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden"
                       >
                         <img 
                           src={url} 
                           alt={`Evidence ${i + 1}`} 
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                          <span className="text-white text-xs font-bold bg-black/50 px-2 py-1 rounded">View Full</span>
+                        <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-paper text-xs font-semibold bg-ink/75 px-2 py-1 rounded whitespace-nowrap">View full</span>
                         </div>
                       </a>
                     ))}
                   </div>
                 </div>
               )}
-
             </div>
           )}
 
           {/* TAB 2: TIMELINE */}
           {activeTab === 'timeline' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                    Full Case Chronology & Audit Chain
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Every action, hearing, referral, and status update</p>
-                </div>
+              <div>
+                <h3 className="font-semibold text-ink text-xs">
+                  Full case chronology and audit chain
+                </h3>
+                <p className="text-xs text-muted">Every action, hearing, referral, and status update</p>
               </div>
 
-              <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+              <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-px before:bg-rule">
                 {(!selectedCase.timeline || selectedCase.timeline.length === 0) ? (
-                  <div className="text-slate-400 py-4">No timeline events recorded.</div>
+                  <div className="text-muted py-4">No timeline events recorded.</div>
                 ) : (
                   selectedCase.timeline.map((event, idx) => (
                     <div key={event.id ? `${event.id}-${idx}` : `event-${idx}`} className="relative group">
-                      <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white bg-blue-600 ring-2 ring-blue-100 shadow" />
-                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
+                      <div className="absolute -left-6 top-1 w-3 h-3 rounded-full border-2 border-paper bg-accent shadow-xs" />
+                      <div className="bg-paper-2 p-3 rounded-lg border border-rule space-y-1">
                         <div className="flex flex-wrap items-center justify-between gap-1">
-                          <span className="font-bold text-xs text-slate-900">{event.title}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="font-semibold text-xs text-ink">{event.title}</span>
+                          <span className="text-xs text-muted font-mono num">
                             {formatDate(event.timestamp)}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-700">{event.description}</p>
-                        <div className="text-[10px] text-slate-500 flex items-center gap-2 pt-1 border-t border-slate-200/60">
-                          <span className="font-medium text-slate-700">Action by: {event.actorName}</span>
-                          <span>•</span>
+                        <p className="text-xs text-muted">{event.description}</p>
+                        <div className="text-[11px] text-muted flex items-center gap-2 pt-1 border-t border-rule">
+                          <span className="font-medium text-ink">Action by: {event.actorName}</span>
+                          <span>·</span>
                           <span>{event.actorRole}</span>
-                          <span>•</span>
-                          <span className="text-blue-700 font-semibold">{event.actorAgency}</span>
+                          <span>·</span>
+                          <span className="text-accent font-semibold">{event.actorAgency}</span>
                         </div>
                       </div>
                     </div>
@@ -625,13 +617,11 @@ export const CaseDetailModal: React.FC = () => {
               </div>
             </div>
           )}
-
-
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
-          <span>Last Updated: {formatDate(selectedCase.dateLastUpdated)}</span>
+        <div className="bg-paper-2 px-5 py-3 border-t border-rule flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs text-muted">
+          <span className="num">Last updated: {formatDate(selectedCase.dateLastUpdated)}</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -641,17 +631,18 @@ export const CaseDetailModal: React.FC = () => {
                   setSelectedCaseId(null);
                 }
               }}
-              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-paper hover:bg-paper-3 active:bg-paper-2 text-error border border-rule rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
               title="Delete this case permanently"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Case</span>
+              <span className="whitespace-nowrap">Delete case</span>
             </button>
             <button
+              type="button"
               onClick={() => setSelectedCaseId(null)}
-              className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded font-semibold transition cursor-pointer"
+              className="px-4 py-1.5 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded-lg font-semibold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
             >
-              Close Dossier
+              <span className="whitespace-nowrap">Close dossier</span>
             </button>
           </div>
         </div>
@@ -659,40 +650,36 @@ export const CaseDetailModal: React.FC = () => {
 
       {/* SUB-MODAL 1: STATUS CHANGE */}
       {isStatusModalOpen && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <form onSubmit={handleStatusSubmit} className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-auto">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-60 bg-ink/75 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <form onSubmit={handleStatusSubmit} className="bg-paper rounded-xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-xs border border-rule my-auto">
+            <div className="flex items-start justify-between border-b border-rule pb-3">
               <div>
-                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  Update Case Status
+                <h3 className="font-bold text-base text-ink flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-accent" />
+                  <span>Update case status</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5 font-mono">
-                  {selectedCase.id} • {selectedCase.title}
+                <p className="text-xs text-muted mt-0.5">
+                  <span className="font-mono num">{selectedCase.id}</span> · {selectedCase.title}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsStatusModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition"
+                className="text-muted hover:text-ink p-1 rounded-lg hover:bg-paper-3 active:bg-paper-2 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Selected Status Visual Banner */}
-            <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
-              selectedNewStatus === 'Resolved'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-slate-50 border-slate-200 text-slate-800'
-            }`}>
-              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-current opacity-80" />
+            <div className="p-3 rounded-lg border border-rule bg-paper-2 text-xs flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-accent" />
               <div>
-                <div className="font-bold">
-                  {selectedNewStatus === 'Resolved' && '✅ Case Outcome: RESOLVED / SETTLED (Completed)'}
-                  {selectedNewStatus === 'Unresolved' && '🆕 Status: Unresolved Incident'}
+                <div className="font-semibold text-ink">
+                  {selectedNewStatus === 'Resolved' && 'Case outcome: Resolved and settled (Completed)'}
+                  {selectedNewStatus === 'Unresolved' && 'Status: Unresolved incident'}
                 </div>
-                <p className="text-[11px] opacity-90 mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   {selectedNewStatus === 'Resolved'
                     ? 'The case will be marked completed. Automatically counted toward the Official Governance & LTIA Resolution Rate.'
                     : 'The case remains unresolved.'}
@@ -701,66 +688,64 @@ export const CaseDetailModal: React.FC = () => {
             </div>
             
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
-                <span>Select New Case Status *</span>
+              <label className="text-xs font-semibold text-ink block mb-1.5">
+                Select new case status *
               </label>
               <select
                 value={selectedNewStatus}
                 onChange={(e) => setSelectedNewStatus(e.target.value as CaseStatus)}
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule text-ink font-medium focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden transition-colors cursor-pointer disabled:opacity-50"
               >
-                <option value="Unresolved">🆕 Unresolved</option>
-                <option value="Resolved">✅ Resolved (Amicable Settlement / Solved)</option>
+                <option value="Unresolved">Unresolved incident</option>
+                <option value="Resolved">Resolved (Amicable settlement or solved)</option>
               </select>
             </div>
 
             {/* Mandatory Reason Input */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
-                Mandatory Reason for Status Change *
+              <label className="text-xs font-semibold text-ink block mb-1">
+                Mandatory reason for status change *
               </label>
               <textarea
                 required
                 rows={2}
-                placeholder="e.g. Complainant and respondent reached an agreement before the Lupon and signed the settlement document."
+                placeholder="e.g., Complainant and respondent reached an agreement before the Lupon and signed the settlement document."
                 value={statusChangeReason}
                 onChange={(e) => setStatusChangeReason(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden transition-colors disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Additional Remarks / Terms of Agreement (Optional)</label>
+              <label className="text-xs font-semibold text-ink block mb-1">Additional remarks or terms of agreement (Optional)</label>
               <textarea
                 placeholder="Optional details of the agreement, conditions, next hearing date, or specific instructions..."
                 value={statusChangeRemarks}
                 onChange={(e) => setStatusChangeRemarks(e.target.value)}
                 rows={2}
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden transition-colors disabled:opacity-50"
               />
             </div>
 
-            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-rule">
               <button
                 type="button"
                 onClick={() => setIsStatusModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                className="px-4 py-2 text-xs font-semibold text-muted hover:text-ink hover:bg-paper-3 active:bg-paper-2 rounded-lg transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
               >
-                Cancel
+                <span className="whitespace-nowrap">Cancel</span>
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                className="px-5 py-2 bg-accent hover:bg-accent/90 active:bg-accent/80 text-accent-ink rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden disabled:opacity-50 whitespace-nowrap"
               >
                 <CheckCircle className="w-4 h-4" />
-                Save & Record Audit Entry
+                <span className="whitespace-nowrap">Save audit entry</span>
               </button>
             </div>
           </form>
         </div>
       )}
-
-
     </div>
   );
 };

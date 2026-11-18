@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -285,91 +286,84 @@ export const EmergencyAccidentAlarmModal: React.FC = () => {
       : `ALERT: Emergency Incident reported at Roxas on ${new Date().toLocaleDateString()} by Resident Citizen. Please verify and respond.`);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-150">
       <div
         id="emergency-accident-alarm-modal"
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-[350px] sm:max-w-[390px] bg-white rounded-lg shadow-2xl p-6 border border-slate-200/80 flex flex-col gap-3 font-sans animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[350px] sm:max-w-[420px] bg-paper text-ink rounded-lg shadow-card p-6 border border-rule flex flex-col gap-3 font-sans animate-in zoom-in-95 duration-150"
       >
-        {/* Header: Red Triangle Icon & Two-line Title */}
+        {/* Header: Warning icon & Title */}
         <div className="flex items-start gap-3.5">
           <div className="shrink-0 mt-0.5">
-            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2.2L1.2 21.4C1.0 21.8 1.3 22.3 1.8 22.3H22.2C22.7 22.3 23.0 21.8 22.8 21.4L12 2.2Z"
-                fill="#D32F2F"
-              />
-              <rect x="11.1" y="8" width="1.8" height="6.2" rx="0.9" fill="#FFFFFF" />
-              <circle cx="12" cy="17.2" r="1.1" fill="#FFFFFF" />
-            </svg>
+            <AlertTriangle className="w-8 h-8 text-error" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-[21px] font-normal text-slate-800 leading-tight">
-              Emergency alert:
+            <h2 className="text-sm font-medium text-muted leading-tight">
+              Emergency alert
             </h2>
-            <h3 className="text-[21px] font-bold text-slate-900 leading-tight">
-              Extreme
+            <h3 className="text-base font-bold text-ink leading-tight">
+              Extreme incident
             </h3>
           </div>
         </div>
 
         {/* Content Body: MDRRMO (Timestamp) and Alert text */}
-        <div className="text-slate-800 text-[14px] sm:text-[15px] leading-relaxed font-normal space-y-2 pt-1">
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+        <div className="text-ink text-xs leading-relaxed font-normal space-y-2 pt-1">
+          <div className="flex items-center justify-between gap-2 border-b border-rule pb-1.5">
             <div className="flex items-center gap-2">
-              <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain shadow-2xs border border-orange-200" />
-              <p className="font-bold text-slate-900 text-xs sm:text-sm">
+              <img src="/mdrrmo_logo.png" alt="MDRRMO" className="w-5 h-5 rounded-full object-contain border border-rule bg-paper" />
+              <p className="font-semibold text-ink text-xs">
                 MDRRMO ({formatTimestampHeader(activeEmergencyNotif.timestamp)})
               </p>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">
-              IN-SYSTEM SMS ALERT
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-paper-2 text-warning border border-rule">
+              In-system alert
             </span>
           </div>
 
-          <div className="bg-slate-50/80 rounded-md p-3 border border-slate-200/60 font-mono text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap selection:bg-orange-200">
+          <div className="bg-paper-2 rounded-md p-3 border border-rule font-outlier text-xs text-ink leading-relaxed whitespace-pre-wrap">
             {smsMessage}
           </div>
 
           {/* Active resend notice */}
           {resendStatus.isActive && (
-            <div className="text-[11px] text-amber-900 bg-amber-50 rounded px-2.5 py-1.5 border border-amber-200/70 flex items-center justify-between mt-2">
+            <div className="text-xs text-ink bg-paper-2 rounded-md px-2.5 py-1.5 border border-rule flex items-center justify-between mt-2">
               <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                <span>In-System Alert • Dispatch Broadcast Active</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-warning motion-safe:animate-pulse" />
+                <span>In-system alert • dispatch broadcast active</span>
               </span>
               {resendStatus.resendCount > 0 && (
-                <span className="font-mono text-amber-950 font-bold">
+                <span className="font-semibold text-ink num">
                   Cycle #{resendStatus.resendCount}
                 </span>
               )}
             </div>
           )}
 
-          <p className="text-[10px] text-slate-400 italic">
+          <p className="text-xs text-muted">
             Automated in-system incident alert (SMS-style dispatch format for MDRRMO Command Center).
           </p>
         </div>
 
-        {/* Bottom Actions: Right-aligned OK button */}
+        {/* Bottom Actions: Right-aligned buttons */}
         <div className="flex items-center justify-end gap-2 pt-3">
           {relatedCase && (
             <button
               id="btn-alarm-view-case"
               onClick={handleViewCase}
-              className="px-2.5 py-1 text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition cursor-pointer tracking-wider uppercase"
+              className="px-3 py-1.5 text-xs font-semibold text-muted hover:text-ink hover:bg-paper-2 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              VIEW DOCKET
+              View docket
             </button>
           )}
           <button
             id="btn-alarm-mark-seen-responded"
             onClick={handleMarkSeenAndResponded}
             disabled={isSeenAndResponded}
-            className="px-4 py-1.5 text-sm sm:text-base font-bold text-[#00796B] hover:text-[#004D40] hover:bg-emerald-50 rounded transition cursor-pointer tracking-wide active:scale-95 uppercase font-sans"
+            className="px-4 py-1.5 text-xs font-semibold bg-accent text-accent-ink hover:opacity-90 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSeenAndResponded ? 'ACKNOWLEDGED' : 'OK'}
+            {isSeenAndResponded ? 'Acknowledged' : 'Acknowledge'}
           </button>
         </div>
       </div>

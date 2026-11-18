@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
 import { 
-  Settings, 
   Building2, 
-  Shield, 
-  Landmark, 
-  CheckCircle2, 
   Users, 
-  Database, 
   RotateCcw, 
   Download, 
   Server,
-  Key,
   UserPlus,
-  UserCheck,
   Trash2,
   Edit3,
   Clock,
   PhoneCall,
-  AlertTriangle,
   Siren,
-  CheckCircle,
-  ShieldAlert
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -33,8 +24,8 @@ import {
 } from '../../utils/escalationService';
 
 export const SystemAdminView: React.FC = () => {
-  const { users, currentUser, setCurrentUser, resetToDefaults, deleteUser, clearAllUsers } = useAuth();
-  const { cases, auditLogs, escalateIncidentToLgu, createCase } = useCases();
+  const { users, currentUser, resetToDefaults, deleteUser, clearAllUsers } = useAuth();
+  const { cases, auditLogs, escalateIncidentToLgu } = useCases();
   const { setIsCreateAccountModalOpen, openEditAccountModal } = useUI();
 
   const [escalationConfig, setEscalationConfigState] = useState<EscalationConfig>(() => getEscalationConfig());
@@ -80,7 +71,7 @@ export const SystemAdminView: React.FC = () => {
         testCaseData
       );
 
-      setSimulationNotice(`🚨 Escalation Triggered! Incident #${testCaseId} has been escalated to LGU. SMS dispatched to ${escalationConfig.designatedLguName} (${escalationConfig.designatedLguPhone}). Check the LGU Executive Dashboard.`);
+      setSimulationNotice(`Escalation triggered: Incident #${testCaseId} has been escalated to LGU. SMS dispatched to ${escalationConfig.designatedLguName} (${escalationConfig.designatedLguPhone}). Check the LGU Executive Dashboard.`);
     } finally {
       setIsSimulating(false);
     }
@@ -108,102 +99,85 @@ export const SystemAdminView: React.FC = () => {
 
   return (
     <div id="system-admin-view" className="space-y-6">
-      {/* Top Banner with Official Agency Seal & Dynamic Palette */}
-      <div className={`text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 relative overflow-hidden ${
-        isMdrrmo
-          ? 'bg-gradient-to-r from-[#0a1628] via-[#142642] to-[#1c1208] border-orange-500/80 ring-1 ring-amber-400/30'
-          : 'bg-gradient-to-r from-[#0b3d1f] via-[#0f532a] to-[#082e16] border-amber-400/80 ring-1 ring-amber-300/30'
-      }`}>
-        {/* Subtle background seal watermark */}
-        <img
-          src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
-          alt=""
-          className={`absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 ${
-            isMdrrmo ? 'drop-shadow-[0_0_15px_rgba(249,115,22,0.25)]' : 'drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]'
-          }`}
-        />
-
+      {/* Top Banner with Official Agency Seal */}
+      <section
+        aria-label="System administration header"
+        className="bg-paper border border-rule rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden"
+      >
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
-          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 flex-shrink-0 flex items-center justify-center ${
-            isMdrrmo ? 'border-orange-500 ring-2 ring-amber-400/50' : 'border-amber-400 ring-2 ring-[#0f532a]/60'
-          }`}>
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-paper-2 border border-rule p-1.5 shrink-0 flex items-center justify-center">
             <img
               src={isMdrrmo ? '/mdrrmo_logo.png' : '/lgu_logo.png'}
-              alt={isMdrrmo ? 'MDRRMO Roxas Official Seal' : 'Municipal Government of Roxas Official Seal'}
-              className="w-full h-full object-contain rounded-xl"
+              alt={isMdrrmo ? 'MDRRMO Roxas official seal' : 'Municipal Government of Roxas official seal'}
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
           <div>
-            <div className={`inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs font-bold border shadow-xs mb-1.5 ${
-              isMdrrmo
-                ? 'bg-[#06101e]/90 text-amber-300 border-orange-500/60'
-                : 'bg-[#062612]/90 text-amber-300 border-amber-400/60'
-            }`}>
-              <Server className="w-3.5 h-3.5 text-amber-400" />
-              <span>Master Governance Node & Agency Control</span>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paper-2 text-ink text-xs font-semibold border border-rule">
+                <Server className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span>Master governance node & agency control</span>
+              </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-tight drop-shadow-xs">
+            <h2 className="text-lg sm:text-xl font-semibold text-ink tracking-tight leading-tight">
               System Administration & Inter-Agency Node Configuration
             </h2>
-            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
-              Managing agency access credentials, 5 barangay master registries, graph relationship engine configs, and data retention policies for Roxas, Oriental Mindoro.
+            <p className="text-xs text-muted mt-1 max-w-2xl leading-relaxed">
+              Managing agency access credentials, 20 barangay master registries, graph relationship engine configs, and data retention policies for Roxas, Oriental Mindoro.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 z-10">
           <button
+            type="button"
             id="btn-admin-create-account-top"
             onClick={() => setIsCreateAccountModalOpen(true)}
-            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 border-amber-200 ${
-              isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'
-            }`}
+            className="px-3.5 py-2 bg-accent text-accent-ink hover:opacity-90 active:scale-[0.98] transition-opacity rounded-lg text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <UserPlus className={`w-4 h-4 ${isMdrrmo ? 'text-[#0a1628]' : 'text-[#082e16]'}`} />
+            <UserPlus className="w-4 h-4" />
             <span>Create Account</span>
           </button>
           <button
+            type="button"
             onClick={handleExportFullJson}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs border ${
-              isMdrrmo
-                ? 'bg-[#06101e]/90 hover:bg-[#12284c] text-amber-200 border-orange-500/60'
-                : 'bg-[#062612]/90 hover:bg-[#0b3d1f] text-amber-200 border-amber-400/60'
-            }`}
+            className="px-3 py-2 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-lg text-xs font-semibold transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-3.5 h-3.5 text-amber-400" />
-            <span>Export System JSON Backup</span>
+            <Download className="w-3.5 h-3.5 text-muted" />
+            <span className="whitespace-nowrap">Export JSON backup</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               if (confirm('Are you sure you want to reset all data back to the default seed state?')) {
                 resetToDefaults();
               }
             }}
-            className="px-3.5 py-2 bg-rose-700/90 hover:bg-rose-600 text-white rounded-xl text-xs font-bold border border-rose-500/60 shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-2 bg-paper-2 hover:bg-paper-3 text-error border border-rule rounded-lg text-xs font-semibold transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Seed Data</span>
           </button>
         </div>
-      </div>
+      </section>
 
       {/* MDRRMO to LGU Automatic Escalation Policy & Threshold Configuration */}
-      <div id="escalation-policy-config-card" className="bg-white rounded-xl border-2 border-emerald-500/80 shadow-md p-5 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <section id="escalation-policy-config-card" aria-label="Escalation policy configuration" className="bg-paper rounded-xl border border-rule shadow-xs p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rule pb-4">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-800 border border-emerald-200">
-              <Clock className="w-5 h-5 text-emerald-700" />
+            <div className="p-2.5 bg-paper-2 rounded-xl text-accent border border-rule">
+              <Clock className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
-                  Automatic Incident Escalation Policy (MDRRMO ➔ LGU)
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-bold text-sm sm:text-base text-ink">
+                  Automatic incident escalation policy (MDRRMO to LGU)
                 </h3>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                  Active Statutory Daemon
+                <span className="text-xs font-medium text-accent bg-paper-2 px-2.5 py-0.5 rounded-full border border-rule">
+                  Active statutory daemon
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+              <p className="text-xs text-muted mt-1 max-w-3xl leading-relaxed">
                 Monitors all emergency reports submitted to MDRRMO. If MDRRMO does not acknowledge, respond to, or update the report within the configured deadline, the system automatically escalates the case to the LGU Executive Office and dispatches an automated SMS alert to designated LGU officials.
               </p>
             </div>
@@ -213,60 +187,60 @@ export const SystemAdminView: React.FC = () => {
             type="button"
             disabled={isSimulating}
             onClick={handleSimulateEscalation}
-            className="self-start sm:self-auto px-3.5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap"
+            className="self-start sm:self-auto px-3.5 py-2 bg-paper-2 hover:bg-paper-3 text-error border border-rule disabled:opacity-50 rounded-lg text-xs font-bold shadow-xs transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             title="Simulate MDRRMO response deadline timeout and trigger immediate auto-escalation to LGU"
           >
-            <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
+            <Siren className="w-4 h-4 text-error" />
             <span>{isSimulating ? 'Simulating...' : 'Simulate Timeout & Escalate'}</span>
           </button>
         </div>
 
         {simulationNotice && (
-          <div className="bg-emerald-50 border-2 border-emerald-400 text-emerald-950 p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="bg-paper-2 border border-rule text-ink p-3 rounded-lg text-xs font-semibold flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle className="w-4 h-4 text-accent shrink-0" />
               <span>{simulationNotice}</span>
             </div>
             <button 
               type="button"
               onClick={() => setSimulationNotice(null)}
-              className="text-emerald-700 hover:text-emerald-900 font-bold text-xs cursor-pointer"
+              className="text-muted hover:text-ink font-bold text-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
-              ✕
+              &times;
             </button>
           </div>
         )}
 
         <form onSubmit={handleSaveEscalationConfig} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 1. Configurable Response Threshold */}
+            {/* 1. Configurable Response Threshold without Emojis (Gate 30a) */}
             <div>
-              <label className="text-xs font-bold text-slate-800 block mb-1">
-                MDRRMO Response Deadline Threshold *
+              <label className="text-xs font-semibold text-ink block mb-1">
+                MDRRMO response deadline threshold *
               </label>
               <select
                 value={escalationConfig.thresholdMinutes}
                 onChange={(e) => setEscalationConfigState(prev => ({ ...prev, thresholdMinutes: Number(e.target.value) }))}
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <option value={1}>⚡ 1 Minute (Live Testing & Quick Demo Mode)</option>
-                <option value={5}>⏱️ 5 Minutes (Fast Verification Mode)</option>
-                <option value={60}>⏱️ 1 Hour (60 minutes)</option>
-                <option value={120}>⏱️ 2 Hours (120 minutes) — Standard Default</option>
-                <option value={150}>⏱️ 2.5 Hours (150 minutes)</option>
-                <option value={180}>⏱️ 3 Hours (180 minutes) — Maximum Window</option>
+                <option value={1}>1 minute (Testing and quick demo mode)</option>
+                <option value={5}>5 minutes (Fast verification mode)</option>
+                <option value={60}>1 hour (60 minutes)</option>
+                <option value={120}>2 hours (120 minutes) — Standard default</option>
+                <option value={150}>2.5 hours (150 minutes)</option>
+                <option value={180}>3 hours (180 minutes) — Maximum window</option>
               </select>
-              <span className="text-[10px] text-slate-500 mt-1 block">
+              <span className="text-xs text-muted mt-1 block">
                 {escalationConfig.thresholdMinutes <= 5 
-                  ? '⚡ Test mode selected: ideal for demonstrating escalation immediately.'
+                  ? 'Testing mode selected for immediate escalation demonstration.'
                   : 'Statutory 2–3 hour window for MDRRMO emergency triage response.'}
               </span>
             </div>
 
             {/* 2. Designated LGU Official Name */}
             <div>
-              <label className="text-xs font-bold text-slate-800 block mb-1">
-                Designated LGU Official Recipient *
+              <label className="text-xs font-semibold text-ink block mb-1">
+                Designated LGU official recipient *
               </label>
               <input
                 type="text"
@@ -274,15 +248,15 @@ export const SystemAdminView: React.FC = () => {
                 value={escalationConfig.designatedLguName}
                 onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguName: e.target.value }))}
                 placeholder="e.g. Atty. Clarissa Reyes"
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule font-medium text-ink placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">Official authorized to receive escalation notifications.</span>
+              <span className="text-xs text-muted mt-1 block">Official authorized to receive escalation notifications.</span>
             </div>
 
             {/* 3. Designated LGU Official Role */}
             <div>
-              <label className="text-xs font-bold text-slate-800 block mb-1">
-                Official Designation / Title *
+              <label className="text-xs font-semibold text-ink block mb-1">
+                Official designation / title *
               </label>
               <input
                 type="text"
@@ -290,16 +264,16 @@ export const SystemAdminView: React.FC = () => {
                 value={escalationConfig.designatedLguRole}
                 onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguRole: e.target.value }))}
                 placeholder="e.g. Municipal Administrator"
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule font-medium text-ink placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">Municipal governance position.</span>
+              <span className="text-xs text-muted mt-1 block">Municipal governance position.</span>
             </div>
 
             {/* 4. Designated Official SMS Phone */}
             <div>
-              <label className="text-xs font-bold text-slate-800 block mb-1 flex items-center gap-1">
-                <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Designated SMS Alert Number *</span>
+              <label className="text-xs font-semibold text-ink block mb-1 flex items-center gap-1">
+                <PhoneCall className="w-3.5 h-3.5 text-accent" />
+                <span>Designated SMS alert number *</span>
               </label>
               <input
                 type="tel"
@@ -307,84 +281,84 @@ export const SystemAdminView: React.FC = () => {
                 value={escalationConfig.designatedLguPhone}
                 onChange={(e) => setEscalationConfigState(prev => ({ ...prev, designatedLguPhone: e.target.value }))}
                 placeholder="e.g. 0920-988-4411"
-                className="w-full p-2.5 text-xs bg-slate-50 hover:bg-white rounded-xl border border-slate-300 font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                className="w-full p-2.5 text-xs bg-paper-2 hover:bg-paper-3 rounded-lg border border-rule font-mono font-medium tabular-nums text-ink placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">Receives automated carrier SMS on deadline breach.</span>
+              <span className="text-xs text-muted mt-1 block">Receives automated carrier SMS on deadline breach.</span>
             </div>
           </div>
 
           {/* SMS Broadcast Format Preview Box */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">
-              Standard Carrier SMS Payload Preview:
+          <div className="p-3.5 bg-paper-2 rounded-lg border border-rule text-xs space-y-1.5">
+            <span className="text-xs font-semibold text-muted block">
+              Standard carrier SMS payload preview:
             </span>
-            <p className="font-mono text-[11px] text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200/80 leading-relaxed select-all">
+            <p className="text-xs text-ink bg-paper p-3 rounded-md border border-rule leading-relaxed select-all">
               URGENT ALERT: Incident #[ID] reported at [LOCATION] has not received a response or acknowledgment from the MDRRMO for more than {(escalationConfig.thresholdMinutes / 60).toFixed(1)} hours. LGU intervention is required. Please review the incident and take the appropriate action immediately. [Details: Type: [EMERGENCY] | Date/Time: [TIMESTAMP] | Current Status: Escalated to LGU | Recommended Action: LGU intervention/review required]
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-2 border-t border-rule">
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-xs font-semibold text-ink cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={escalationConfig.enabled}
                   onChange={(e) => setEscalationConfigState(prev => ({ ...prev, enabled: e.target.checked }))}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                  className="rounded text-accent focus-visible:ring-focus w-4 h-4 cursor-pointer"
                 />
-                <span>Enable Automated MDRRMO-to-LGU Escalation & SMS Broadcasts</span>
+                <span>Enable automated MDRRMO-to-LGU escalation and SMS broadcasts</span>
               </label>
               {isSavedNotice && (
-                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 animate-in fade-in">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  Policy Saved!
+                <span className="text-xs font-semibold text-accent flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Policy saved!
                 </span>
               )}
             </div>
 
             <button
               type="submit"
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="px-4 py-2 bg-accent text-accent-ink hover:opacity-90 active:scale-[0.98] transition-opacity rounded-lg text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Save Escalation Policy</span>
             </button>
           </div>
         </form>
-      </div>
+      </section>
 
       {/* 4 Connected Agencies Grid */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-        <h3 className="font-bold text-sm text-slate-900">
+      <section aria-label="Integrated agencies" className="bg-paper rounded-xl border border-rule shadow-xs p-5 space-y-4">
+        <h3 className="font-bold text-sm text-ink">
           Integrated Government Agencies (Roxas, Oriental Mindoro)
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {AGENCIES_LIST.map((ag) => (
-            <div key={ag.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+            <div key={ag.id} className="p-3.5 bg-paper-2 rounded-lg border border-rule space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">{ag.name}</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-bold text-ink">{ag.name}</span>
+                <span className="w-2 h-2 rounded-full bg-accent" />
               </div>
-              <p className="text-[11px] text-slate-500">{ag.description}</p>
-              <div className="pt-2 border-t border-slate-200/60 text-[10px] text-slate-600 flex justify-between">
-                <span>Scope: <strong>{ag.jurisdictionScope}</strong></span>
-                <span className="text-emerald-700 font-bold">Live Gateway</span>
+              <p className="text-xs text-muted leading-relaxed">{ag.description}</p>
+              <div className="pt-2 border-t border-rule text-xs text-muted flex justify-between">
+                <span>Scope: <strong className="text-ink">{ag.jurisdictionScope}</strong></span>
+                <span className="text-accent font-semibold">Live gateway</span>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Registered User Accounts */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <section aria-label="Registered user accounts" className="bg-paper rounded-xl border border-rule shadow-xs p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-blue-600" />
+            <h3 className="font-bold text-sm text-ink flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-accent" />
               Authorized Multi-Agency Personnel & Officer Accounts ({(users || []).length} Active)
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               Role-based access credentials mapped to Philippine public safety and local governance statutes
             </p>
           </div>
@@ -399,46 +373,49 @@ export const SystemAdminView: React.FC = () => {
                     clearAllUsers();
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold shadow-2xs transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-paper-2 hover:bg-paper-3 text-error border border-rule rounded-lg text-xs font-bold shadow-xs transition-colors active:scale-[0.98] cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete All Accounts</span>
               </button>
             )}
 
             <button
               id="btn-admin-create-account"
+              type="button"
               onClick={() => setIsCreateAccountModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent text-accent-ink hover:opacity-90 active:scale-[0.98] transition-opacity rounded-lg text-xs font-bold shadow-xs cursor-pointer self-start sm:self-auto whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Create New Officer Account</span>
+              <span className="whitespace-nowrap">New officer account</span>
             </button>
           </div>
         </div>
 
         {(!users || users.length === 0) ? (
-          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mx-auto">
+          <div className="p-6 rounded-xl bg-paper-2 border border-rule text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-paper text-muted flex items-center justify-center mx-auto border border-rule">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-800">No Registered Accounts</h4>
-              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              <h4 className="text-sm font-bold text-ink">No registered accounts</h4>
+              <p className="text-xs text-muted mt-1 max-w-md mx-auto">
                 All previous accounts have been deleted. You can create new officer accounts now or restore defaults.
               </p>
             </div>
             <div className="flex items-center justify-center gap-2 pt-2">
               <button
+                type="button"
                 onClick={() => setIsCreateAccountModalOpen(true)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 bg-accent text-accent-ink hover:opacity-90 active:scale-[0.98] transition-opacity rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Add New Account</span>
               </button>
               <button
+                type="button"
                 onClick={() => resetToDefaults()}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 bg-paper hover:bg-paper-3 text-ink border border-rule rounded-lg text-xs font-bold transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset Seed Accounts</span>
@@ -447,56 +424,58 @@ export const SystemAdminView: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs divide-y divide-slate-200">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
+            <table className="w-full text-left text-xs divide-y divide-rule">
+              <thead className="bg-paper-2 text-muted font-medium text-xs">
                 <tr>
                   <th className="py-2.5 px-3">User ID</th>
-                  <th className="py-2.5 px-3">Official Name</th>
-                  <th className="py-2.5 px-3">Position / Designation</th>
+                  <th className="py-2.5 px-3">Official name</th>
+                  <th className="py-2.5 px-3">Position / designation</th>
                   <th className="py-2.5 px-3">Agency</th>
-                  <th className="py-2.5 px-3">Role Tier</th>
+                  <th className="py-2.5 px-3">Role tier</th>
                   <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-rule">
                 {(users || []).map((u) => {
                   const isActive = currentUser && u.id === currentUser.id;
                   return (
-                    <tr key={u.id} className={`hover:bg-slate-50 transition ${isActive ? 'bg-blue-50/50' : ''}`}>
-                      <td className="py-2.5 px-3 font-mono font-bold text-blue-700">{u.id}</td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-900 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
+                    <tr key={u.id} className={`hover:bg-paper-2 transition-colors ${isActive ? 'bg-paper-2 font-medium' : ''}`}>
+                      <td className="py-2.5 px-3 font-mono font-bold text-accent tabular-nums">{u.id}</td>
+                      <td className="py-2.5 px-3 font-semibold text-ink flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-paper-3 text-ink flex items-center justify-center font-bold text-xs">
                           {(u.name || 'U').charAt(0)}
                         </div>
                         <span>{u.name || 'Unnamed User'}</span>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-700">{u.position}</td>
-                      <td className="py-2.5 px-3 text-slate-600">
-                        <span className="font-medium text-slate-800">{u.agencyName}</span>
-                        {u.barangay && <span className="text-[10px] text-sky-700 block font-semibold">Brgy. {u.barangay}</span>}
+                      <td className="py-2.5 px-3 text-ink">{u.position}</td>
+                      <td className="py-2.5 px-3 text-muted">
+                        <span className="font-medium text-ink">{u.agencyName}</span>
+                        {u.barangay && <span className="text-xs text-accent block font-semibold">Brgy. {u.barangay}</span>}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] font-bold text-purple-800">{u.role}</td>
+                      <td className="py-2.5 px-3 font-mono text-xs font-bold text-ink">{u.role}</td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {isActive ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                              Logged In
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent bg-paper-2 px-2 py-0.5 rounded border border-rule">
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                              Logged in
                             </span>
                           ) : (
-                            <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5">
+                            <span className="text-xs text-muted font-medium px-2 py-0.5">
                               Offline
                             </span>
                           )}
                           <button
+                            type="button"
                             id={`btn-admin-edit-${u.id}`}
                             title={`Rename / Edit account of ${u.name}`}
                             onClick={() => openEditAccountModal(u)}
-                            className="p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
+                            className="p-1 rounded text-muted hover:text-ink hover:bg-paper-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
                             id={`btn-admin-delete-${u.id}`}
                             title={`Delete account of ${u.name}`}
                             onClick={() => {
@@ -504,7 +483,7 @@ export const SystemAdminView: React.FC = () => {
                                 deleteUser(u.id);
                               }
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            className="p-1 rounded text-muted hover:text-error hover:bg-paper-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -517,25 +496,24 @@ export const SystemAdminView: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </section>
 
       {/* 20 Barangays Master List */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
-        <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-          <Building2 className="w-4 h-4 text-sky-700" />
+      <section aria-label="Master barangay registry" className="bg-paper rounded-xl border border-rule shadow-xs p-5 space-y-3">
+        <h3 className="font-bold text-sm text-ink flex items-center gap-1.5">
+          <Building2 className="w-4 h-4 text-accent" />
           Master Barangay Registry ({ROXAS_BARANGAYS.length} Barangays of Roxas, Oriental Mindoro)
         </h3>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {ROXAS_BARANGAYS.map((b) => (
-            <div key={b} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-              <span className="text-xs font-bold text-slate-800 block truncate">Barangay {b}</span>
-              <span className="text-[10px] text-emerald-600 font-medium">● Unit Active</span>
+            <div key={b} className="p-3 bg-paper-2 rounded-lg border border-rule text-center">
+              <span className="text-xs font-bold text-ink block truncate">Barangay {b}</span>
+              <span className="text-xs text-accent font-medium">Unit active</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
-

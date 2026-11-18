@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import {
   ShieldAlert,
-  FileCheck,
   Clock,
   ArrowUpRight,
-  AlertTriangle,
-  CheckCircle,
   FileText,
   Siren,
-  Ambulance,
   Activity,
   MapPin,
-  Radio,
   Check,
   Timer,
-  AlertOctagon
+  AlertOctagon,
+  Radio
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCases } from '../../hooks/useCases';
@@ -35,7 +31,7 @@ export const MdrrmoDashboard: React.FC = () => {
 
   const currentBarangay = currentUser?.barangay;
   const [barangayFilter, setBarangayFilter] = useState<string>('ALL');
-  const [timeTick, setTimeTick] = useState(Date.now());
+  const [, setTimeTick] = useState(Date.now());
 
   React.useEffect(() => {
     const timer = setInterval(() => setTimeTick(Date.now()), 15000);
@@ -95,8 +91,8 @@ export const MdrrmoDashboard: React.FC = () => {
     startSmsResendInterval(payload, users, 30000);
 
     triggerNotification(
-      `🚨 EMERGENCY ALERT: Vehicular Collision in Roxas`,
-      `SIMULATED CRASH DISPATCH: Motorcycle vs Tricycle severe collision logged. Automated SMS broadcast dispatched to MDRRMO account. Re-sending at regular intervals until Marked as Seen/Responded (SMS text only)!`,
+      'EMERGENCY ALERT: Vehicular Collision in Roxas',
+      'SIMULATED CRASH DISPATCH: Motorcycle vs Tricycle severe collision logged. Automated SMS broadcast dispatched to MDRRMO account. Re-sending at regular intervals until Marked as Seen/Responded (SMS text only).',
       'pending_alert',
       testCaseId,
       'MDRRMO',
@@ -115,71 +111,73 @@ export const MdrrmoDashboard: React.FC = () => {
   return (
     <div id="mdrrmo-dashboard-view" className="space-y-6">
       {/* Top Banner with Official MDRRMO Seal */}
-      <div className="bg-gradient-to-r from-[#0a1628] via-[#142642] to-[#1c1208] text-white rounded-2xl p-4 sm:p-5 shadow-lg border-2 border-orange-500/80 ring-1 ring-amber-400/30 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        {/* Subtle background seal watermark */}
-        <img
-          src="/mdrrmo_logo.png"
-          alt=""
-          className="absolute -right-6 -bottom-6 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110 drop-shadow-[0_0_15px_rgba(249,115,22,0.25)]"
-        />
-
-        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 z-10">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 shadow-md border-2 border-orange-500 ring-2 ring-amber-400/50 flex-shrink-0 flex items-center justify-center">
+      <section
+        aria-label="MDRRMO operations overview"
+        className="bg-paper border border-rule rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden"
+      >
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-paper-2 border border-rule p-1.5 shrink-0 flex items-center justify-center">
             <img
               src="/mdrrmo_logo.png"
-              alt="MDRRMO Roxas Official Seal"
-              className="w-full h-full object-contain rounded-xl"
+              alt="MDRRMO Roxas official seal"
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
           <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#06101e]/90 text-amber-300 text-xs font-bold border border-orange-500/60 shadow-xs">
-                <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
-                <span>MDRRMO Roxas • Emergency Medical & Rescue Operations</span>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paper-2 border border-rule text-ink text-xs font-medium">
+                <ShieldAlert className="w-3.5 h-3.5 text-warning" />
+                <span>MDRRMO Roxas · Emergency medical and rescue operations</span>
               </div>
             </div>
-            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight drop-shadow-xs">
-              {isOfficer ? 'MDRRMO Incident Response & Triage Operations' : 'MDRRMO Disaster Risk & Emergency Incident Operations'}
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink leading-tight">
+              {isOfficer ? 'MDRRMO incident response and triage operations' : 'MDRRMO disaster risk and emergency incident operations'}
             </h2>
-            <p className="text-xs text-amber-100/90 mt-1 max-w-2xl leading-relaxed">
-              <span className="text-amber-300 font-bold tracking-wide">PROTECT &bull; SERVE &bull; RESCUE &bull; THAT YOU MAY LIVE</span> &bull; <span className="text-orange-100/90">MUNICIPALITY OF ROXAS</span>
+            <p className="text-xs text-muted mt-1 leading-relaxed">
+              <span>Protect, serve, rescue, that you may live</span> · <span>Municipality of Roxas, Oriental Mindoro</span>
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto z-10">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 w-full md:w-auto">
           <button
             id="btn-mdrrmo-test-alarm"
+            type="button"
             onClick={handleTestAccidentAlarm}
-            className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl text-xs font-black shadow-md border border-red-400/60 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none px-4 py-2 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded-lg text-xs font-semibold shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             title="Simulate incoming accident report to test automated in-system SMS-style dispatch popup"
           >
-            <Siren className="w-4 h-4 text-amber-200 animate-pulse" />
-            <span>🚨 Test SMS Alert</span>
+            <Siren className="w-4 h-4 text-warning" />
+            <span>Test SMS alert</span>
           </button>
           <button
             id="btn-mdrrmo-view-annual"
+            type="button"
             onClick={() => setActiveTab('annual_narrative')}
-            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-[#0a1628] rounded-xl text-xs font-black shadow-md border border-amber-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            className="w-full sm:w-auto px-4 py-2 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded-lg text-xs font-semibold shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <FileText className="w-4 h-4 text-[#0a1628]" />
-            <span>Logs</span>
+            <FileText className="w-4 h-4 text-muted" />
+            <span>Incident logs</span>
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Live Incoming Resident Incident Reports Alert Banner */}
       {incomingResidentAlerts.length > 0 && (
-        <div id="mdrrmo-live-incoming-alerts" className="bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 animate-in fade-in duration-300">
+        <section
+          id="mdrrmo-live-incoming-alerts"
+          aria-label="Live resident emergency alerts"
+          className="bg-paper-2 border-2 border-error rounded-xl p-4 sm:p-5 shadow-xs space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0 inline-block"></span>
-              <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
-                🚨 Live Resident Reports Received ({incomingResidentAlerts.length})
+              <span className="w-2.5 h-2.5 rounded-full bg-error shrink-0 inline-block" />
+              <h3 className="text-sm font-bold text-ink">
+                Live resident reports received ({incomingResidentAlerts.length})
               </h3>
             </div>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 bg-rose-200 text-rose-900 rounded-full">
-              Real-Time Push Connected
+            <span className="text-[11px] font-medium px-2.5 py-0.5 bg-paper border border-rule text-ink rounded-full">
+              Real-time push connected
             </span>
           </div>
 
@@ -190,168 +188,172 @@ export const MdrrmoDashboard: React.FC = () => {
               const isOverdue = elapsed.minutes >= escalationConfig.thresholdMinutes;
 
               return (
-                <div key={c.id} className="bg-white border-2 border-rose-200 rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
+                <div key={c.id} className="bg-paper border border-rule rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded">
+                      <span className="font-mono text-xs font-semibold px-1.5 py-0.5 bg-paper-2 border border-rule text-ink rounded num">
                         #{c.id}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="text-xs text-muted flex items-center gap-1 num">
+                        <Clock className="w-3 h-3 text-muted" />
                         {formatDateShort(c.dateReported)}
                       </span>
                     </div>
-                    <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{c.title}</h4>
-                    <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
-                      <span className="truncate">Brgy. {c.barangay} • {c.specificLocation}</span>
+                    <h4 className="text-xs font-bold text-ink line-clamp-1">{c.title}</h4>
+                    <p className="text-xs text-muted flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3 text-warning shrink-0" />
+                      <span className="truncate">Brgy. {c.barangay} · {c.specificLocation}</span>
                     </p>
                     {c.reporterName && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">
-                        Reported by resident: <strong className="text-slate-700">{c.reporterName}</strong>
+                      <p className="text-xs text-muted mt-0.5">
+                        Reported by resident: <strong className="text-ink font-semibold">{c.reporterName}</strong>
                       </p>
                     )}
 
                     {/* Response Timer & Escalation Monitor */}
-                    <div className={`mt-2.5 p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1.5 ${c.isEscalatedToLgu
-                        ? 'bg-rose-100/90 border-rose-300 text-rose-950 font-bold'
+                    <div className={`mt-2.5 p-2 rounded-lg border text-xs flex items-center justify-between gap-1.5 ${
+                      c.isEscalatedToLgu
+                        ? 'bg-error/10 border-error/30 text-error font-semibold'
                         : isOverdue
-                          ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
+                          ? 'bg-error/10 border-error/30 text-error font-semibold'
                           : remainingMins <= 30
-                            ? 'bg-amber-50 border-amber-300 text-amber-900 font-medium'
-                            : 'bg-slate-50 border-slate-200 text-slate-700'
-                      }`}>
+                            ? 'bg-warning/10 border-warning/30 text-ink font-medium'
+                            : 'bg-paper-2 border-rule text-muted'
+                    }`}>
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <Timer className={`w-3.5 h-3.5 shrink-0 ${c.isEscalatedToLgu || isOverdue ? 'text-rose-600' : 'text-amber-600'}`} />
+                        <Timer className={`w-3.5 h-3.5 shrink-0 ${c.isEscalatedToLgu || isOverdue ? 'text-error' : 'text-warning'}`} />
                         <span className="truncate">
                           {c.isEscalatedToLgu ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
-                              <span>🚨 Escalated to LGU ({elapsed.displayStr} elapsed)</span>
+                              <AlertOctagon className="w-3.5 h-3.5 text-error shrink-0" />
+                              <span>Escalated to LGU ({elapsed.displayStr} elapsed)</span>
                             </span>
                           ) : isOverdue ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>
-                              <span>⚠️ Deadline reached ({elapsed.displayStr} elapsed) • Escalating to LGU</span>
+                              <AlertOctagon className="w-3.5 h-3.5 text-error shrink-0" />
+                              <span>Deadline reached ({elapsed.displayStr} elapsed), escalating to LGU</span>
                             </span>
                           ) : (
-                            <span>Timer: <strong>{elapsed.displayStr}</strong> • Escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins / 60)}h ${remainingMins % 60}m` : `${remainingMins}m`}</span>
+                            <span>Timer: <strong className="num">{elapsed.displayStr}</strong> (escalates to LGU in {remainingMins >= 60 ? `${Math.floor(remainingMins / 60)}h ${remainingMins % 60}m` : `${remainingMins}m`})</span>
                           )}
                         </span>
                       </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white font-mono font-bold shrink-0 border border-slate-200">
-                        Limit: {escalationConfig.thresholdMinutes >= 60 ? `${escalationConfig.thresholdMinutes / 60}h` : `${escalationConfig.thresholdMinutes}m`}
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-paper text-muted shrink-0 border border-rule">
+                        Limit: <span className="font-mono text-ink font-medium num">{escalationConfig.thresholdMinutes >= 60 ? `${escalationConfig.thresholdMinutes / 60}h` : `${escalationConfig.thresholdMinutes}m`}</span>
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-2 mt-3 pt-2 border-t border-rule">
                     <button
+                      type="button"
                       onClick={() => setSelectedCaseId(c.id)}
-                      className="flex-1 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                      className="flex-1 py-1.5 px-3 bg-paper-2 hover:bg-paper-3 active:bg-paper text-ink border border-rule rounded-lg text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 whitespace-nowrap"
                     >
-                      <span>View Report</span>
-                      <ArrowUpRight className="w-3 h-3" />
+                      <span>View report</span>
+                      <ArrowUpRight className="w-3 h-3 text-muted" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => markIncidentAsSeenAndResponded(c.id)}
-                      className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                      className="flex-1 py-1.5 px-3 bg-accent hover:bg-accent/90 active:bg-accent/80 text-accent-ink rounded-lg text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 whitespace-nowrap"
                       title="Acknowledge incident to halt LGU escalation timer and stop sirens"
                     >
                       <Check className="w-3 h-3" />
-                      <span>Acknowledge (Halt Timer)</span>
+                      <span className="whitespace-nowrap">Acknowledge alert</span>
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Total Logged</p>
-          <h3 className="text-3xl font-black mt-1 text-slate-900">{totalIncidents}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-semibold">
-            <span>All Incidents</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+      <section aria-label="Incident metrics summary" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Total logged</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-ink num">{totalIncidents}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>All incidents</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Vehicular Crashes</p>
-          <h3 className="text-3xl font-black mt-1 text-amber-600">{accidentCases.length}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-amber-600 font-semibold">
-            <span>Road Incidents</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Vehicular crashes</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-warning num">{accidentCases.length}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>Road incidents</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Ambulance Trips</p>
-          <h3 className="text-3xl font-black mt-1 text-rose-600">{ambulanceDispatches.length}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-rose-600 font-semibold">
-            <span>Rescue Dispatched</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Ambulance trips</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-error num">{ambulanceDispatches.length}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>Rescue dispatched</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Active Investigations</p>
-          <h3 className="text-3xl font-black mt-1 text-sky-600">{pendingCount}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-sky-600 font-semibold">
-            <span>Ongoing Triage</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Active investigations</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-accent num">{pendingCount}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>Ongoing triage</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Resolved / Cleared</p>
-          <h3 className="text-3xl font-black mt-1 text-emerald-600">{resolvedCount}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-emerald-600 font-semibold">
-            <span>Closed Cases</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Resolved or cleared</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-success num">{resolvedCount}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>Closed cases</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Urgent Severity</p>
-          <h3 className="text-3xl font-black mt-1 text-red-600">{urgentCrashes.length}</h3>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-red-600 font-semibold">
-            <span>High Risk / Trauma</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+        <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs">
+          <p className="text-xs text-muted font-medium">Urgent severity</p>
+          <div className="text-2xl sm:text-3xl font-bold mt-1 text-error num">{urgentCrashes.length}</div>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted">
+            <span>High risk and trauma</span>
+            <div className="h-px flex-1 bg-rule" />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Incident & Dispatch Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+      <section aria-label="Incident dispatch queue" className="bg-paper rounded-xl border border-rule shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-orange-600" />
-            <h3 className="text-sm font-bold text-slate-900">
-              Active Incident Stream & Dispatch Queue
+            <Activity className="w-4 h-4 text-warning" />
+            <h3 className="text-sm font-bold text-ink">
+              Active incident stream and dispatch queue
             </h3>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <select
               value={barangayFilter}
               onChange={(e) => setBarangayFilter(e.target.value)}
-              className="py-1 px-2.5 bg-slate-50 hover:bg-white text-slate-800 text-xs font-bold rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+              className="py-1.5 px-3 bg-paper-2 hover:bg-paper-3 text-ink text-xs font-medium rounded-lg border border-rule focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden cursor-pointer disabled:opacity-50"
               title="Filter incident queue by barangay"
             >
-              <option value="ALL">All Roxas Barangays ({ROXAS_BARANGAYS.length})</option>
+              <option value="ALL">All Roxas barangays ({ROXAS_BARANGAYS.length})</option>
               {ROXAS_BARANGAYS.map((b) => (
                 <option key={b} value={b}>Brgy. {b}</option>
               ))}
             </select>
             <button
+              type="button"
               onClick={() => setActiveTab('cases')}
-              className="text-xs font-bold text-orange-700 hover:text-orange-800 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-accent hover:underline active:opacity-70 flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-hidden whitespace-nowrap"
             >
-              <span>View All</span>
+              <span>View all cases</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -359,54 +361,54 @@ export const MdrrmoDashboard: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200/60 uppercase text-[10px] tracking-wider">
+            <thead className="bg-paper-2 text-muted font-semibold border-b border-rule text-xs">
               <tr>
-                <th className="py-3 px-4">Case #</th>
-                <th className="py-3 px-4">Incident Title</th>
+                <th className="py-3 px-4">Case number</th>
+                <th className="py-3 px-4">Incident title</th>
                 <th className="py-3 px-4">Location (Barangay)</th>
-                <th className="py-3 px-4">Responding Unit</th>
+                <th className="py-3 px-4">Responding unit</th>
                 <th className="py-3 px-4">Priority</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-rule font-medium">
               {mdrrmoCases.slice(0, 8).map((c) => (
                 <tr
                   key={c.id}
                   onClick={() => setSelectedCaseId(c.id)}
-                  className="hover:bg-orange-50/40 transition cursor-pointer"
+                  className="hover:bg-paper-2 transition-colors cursor-pointer"
                 >
-                  <td className="py-3 px-4 font-mono font-bold text-orange-950">
+                  <td className="py-3 px-4 text-ink">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span>{c.caseNumber || c.id}</span>
+                      <span className="font-mono font-semibold num">{c.caseNumber || c.id}</span>
                       {c.isEscalatedToLgu && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white shadow-xs" title="Automatically escalated to LGU due to MDRRMO non-response timeout">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
-                          <span>LGU Escalated</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-error/15 text-error border border-error/30" title="Automatically escalated to LGU due to MDRRMO non-response timeout">
+                          <span className="w-1.5 h-1.5 rounded-full bg-error shrink-0" />
+                          <span>LGU escalated</span>
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <div className="font-semibold text-ink flex items-center gap-1.5">
                       <span>{c.title}</span>
                       {isConsolidatedCase(c) && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          ✓ Single Report (Consolidated)
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-paper-2 text-ink border border-rule">
+                          Unified report
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-500 line-clamp-1">{c.description}</div>
+                    <div className="text-xs text-muted line-clamp-1 mt-0.5">{c.description}</div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold">
-                      <MapPin className="w-3 h-3 text-slate-500" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-paper-2 text-ink text-xs font-medium">
+                      <MapPin className="w-3 h-3 text-muted" />
                       Brgy. {c.barangay}
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="text-[11px] text-slate-700">
+                    <span className="text-xs text-ink">
                       {c.respondingAmbulanceUnit || c.assignedPersonnel || 'MDRRMO Operations'}
                     </span>
                   </td>
@@ -416,22 +418,22 @@ export const MdrrmoDashboard: React.FC = () => {
                   <td className="py-3 px-4">
                     <StatusBadge status={c.status} />
                   </td>
-                  <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                  <td className="py-3 px-4 text-muted font-mono text-xs num">
                     {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}
                   </td>
                 </tr>
               ))}
               {mdrrmoCases.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400">
-                    No active incident records found.
+                  <td colSpan={7} className="text-center py-10 text-muted">
+                    No active incident records found for this filter.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

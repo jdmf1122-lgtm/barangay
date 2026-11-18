@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Layers, 
-  FileText, 
   Download, 
-  Printer, 
-  Calendar, 
-  Building2, 
-  Shield, 
-  Landmark, 
-  CheckCircle,
-  FileSpreadsheet
+  Printer
 } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { exportToCsv, formatDateShort } from '../../utils/reportGenerators';
@@ -56,28 +49,30 @@ export const StandardReportsView: React.FC = () => {
   return (
     <div id="standard-reports-view" className="space-y-4">
       {/* Header */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-paper p-4 rounded-xl border border-rule shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-700" />
+          <h2 className="text-base sm:text-lg font-bold text-ink flex items-center gap-2">
+            <Layers className="w-5 h-5 text-accent" />
             Standard Governance & Operational Reports
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Routine administrative summaries for desk officers, Liga ng mga Barangay, and Mayor's Office.
+          <p className="text-xs text-muted mt-0.5">
+            Routine administrative summaries for desk officers, Liga ng mga Barangay, and Mayor’s Office.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleExportCsv}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 bg-paper-2 hover:bg-paper-3 text-ink rounded-lg text-xs font-semibold border border-rule transition-colors active:scale-[0.98] flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-muted" />
             Export Selected CSV
           </button>
           <button
+            type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-1.5 bg-accent hover:opacity-90 active:scale-[0.98] text-accent-ink rounded-lg text-xs font-bold shadow-xs transition-opacity flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Printer className="w-3.5 h-3.5" />
             Print Report
@@ -86,19 +81,20 @@ export const StandardReportsView: React.FC = () => {
       </div>
 
       {/* Report Switcher Tabs */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2 text-xs font-semibold">
+      <div className="bg-paper p-2.5 rounded-xl border border-rule shadow-xs flex flex-wrap gap-2 text-xs font-semibold">
         {[
-          { id: 'DAILY', label: 'Daily Incident Report' },
-          { id: 'QUARTERLY_KP', label: 'Quarterly Barangay Justice Compliance' },
-          { id: 'MONTHLY', label: `Monthly ${ROXAS_BARANGAYS.length}-Barangay Comparative Summary` }
+          { id: 'DAILY', label: 'Daily incident report' },
+          { id: 'QUARTERLY_KP', label: 'Quarterly barangay justice compliance' },
+          { id: 'MONTHLY', label: `Monthly ${ROXAS_BARANGAYS.length}-barangay comparative summary` }
         ].map((t) => (
           <button
             key={t.id}
+            type="button"
             onClick={() => setReportType(t.id as any)}
-            className={`px-3 py-2 rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 disabled:cursor-not-allowed ${
               reportType === t.id
-                ? 'bg-blue-600 text-white font-bold shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-accent text-accent-ink font-bold shadow-xs'
+                : 'bg-paper-2 text-muted hover:text-ink hover:bg-paper-3'
             }`}
           >
             {t.label}
@@ -107,14 +103,14 @@ export const StandardReportsView: React.FC = () => {
       </div>
 
       {/* Report Table Display */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <div className="bg-paper rounded-xl border border-rule shadow-xs p-5 space-y-4">
         {reportType === 'DAILY' && (
           <div>
-            <h3 className="font-bold text-sm text-slate-900 mb-1">Daily Master Incident Report</h3>
-            <p className="text-xs text-slate-500 mb-3">All records logged in sequence across Roxas</p>
+            <h3 className="font-bold text-sm text-ink mb-1">Daily master incident report</h3>
+            <p className="text-xs text-muted mb-3">All records logged in sequence across Roxas</p>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs divide-y divide-slate-200">
-                <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
+              <table className="w-full text-left text-xs divide-y divide-rule">
+                <thead className="bg-paper-2 text-muted text-xs font-medium">
                   <tr>
                     <th className="py-2.5 px-3">Case ID</th>
                     <th className="py-2.5 px-3">Date</th>
@@ -124,18 +120,18 @@ export const StandardReportsView: React.FC = () => {
                     <th className="py-2.5 px-3">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-rule">
                   {cases.map((c) => (
                     <tr
                       key={c.id}
                       onClick={() => setSelectedCaseId(c.id)}
-                      className="hover:bg-slate-50 cursor-pointer"
+                      className="hover:bg-paper-2 transition-colors cursor-pointer"
                     >
-                      <td className="py-2 px-3 font-mono font-bold text-blue-700">{c.id}</td>
-                      <td className="py-2 px-3 text-slate-500">{formatDateShort(c.dateReported)}</td>
-                      <td className="py-2 px-3 font-medium text-slate-800">Brgy. {c.barangay}</td>
-                      <td className="py-2 px-3 font-medium text-slate-900">{c.title}</td>
-                      <td className="py-2 px-3 text-slate-600">{c.category}</td>
+                      <td className="py-2 px-3 font-mono font-bold text-accent">{c.id}</td>
+                      <td className="py-2 px-3 text-muted tabular-nums">{formatDateShort(c.dateReported)}</td>
+                      <td className="py-2 px-3 font-medium text-ink">Brgy. {c.barangay}</td>
+                      <td className="py-2 px-3 font-medium text-ink">{c.title}</td>
+                      <td className="py-2 px-3 text-muted">{c.category}</td>
                       <td className="py-2 px-3"><StatusBadge status={c.status} size="sm" /></td>
                     </tr>
                   ))}
@@ -147,22 +143,22 @@ export const StandardReportsView: React.FC = () => {
 
         {reportType === 'QUARTERLY_KP' && (
           <div>
-            <h3 className="font-bold text-sm text-slate-900 mb-1">
-              Quarterly Barangay Justice Performance Matrix (RA 7160)
+            <h3 className="font-bold text-sm text-ink mb-1">
+              Quarterly barangay justice performance matrix (RA 7160)
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Conciliation and mediation output across all {ROXAS_BARANGAYS.length} Barangays</p>
+            <p className="text-xs text-muted mb-3">Conciliation and mediation output across all {ROXAS_BARANGAYS.length} Barangays</p>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs divide-y divide-slate-200">
-                <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
+              <table className="w-full text-left text-xs divide-y divide-rule">
+                <thead className="bg-paper-2 text-muted text-xs font-medium">
                   <tr>
                     <th className="py-2.5 px-3">Barangay</th>
-                    <th className="py-2.5 px-3">Total Disputes</th>
-                    <th className="py-2.5 px-3">Amicably Settled</th>
+                    <th className="py-2.5 px-3">Total disputes</th>
+                    <th className="py-2.5 px-3">Amicably settled</th>
                     <th className="py-2.5 px-3">Pending Lupon</th>
-                    <th className="py-2.5 px-3">Settlement Rate</th>
+                    <th className="py-2.5 px-3">Settlement rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-rule">
                   {ROXAS_BARANGAYS.map((bgy) => {
                     const bCases = cases.filter((c) => c.barangay === bgy);
                     const settled = bCases.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length;
@@ -170,12 +166,12 @@ export const StandardReportsView: React.FC = () => {
                     const rate = bCases.length > 0 ? Math.round((settled / bCases.length) * 100) : 0;
 
                     return (
-                      <tr key={bgy} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 font-bold text-slate-800">Brgy. {bgy}</td>
-                        <td className="py-2.5 px-3 font-mono">{bCases.length}</td>
-                        <td className="py-2.5 px-3 font-mono text-emerald-700 font-bold">{settled}</td>
-                        <td className="py-2.5 px-3 font-mono text-amber-700">{pending}</td>
-                        <td className="py-2.5 px-3 font-bold text-blue-800">
+                      <tr key={bgy} className="hover:bg-paper-2 transition-colors">
+                        <td className="py-2.5 px-3 font-bold text-ink">Brgy. {bgy}</td>
+                        <td className="py-2.5 px-3 font-mono tabular-nums text-ink">{bCases.length}</td>
+                        <td className="py-2.5 px-3 font-mono tabular-nums text-accent font-bold">{settled}</td>
+                        <td className="py-2.5 px-3 font-mono tabular-nums text-muted">{pending}</td>
+                        <td className="py-2.5 px-3 font-bold tabular-nums text-ink">
                           {bCases.length > 0 ? `${rate}%` : '—'}
                         </td>
                       </tr>
@@ -187,21 +183,20 @@ export const StandardReportsView: React.FC = () => {
           </div>
         )}
 
-
         {reportType === 'MONTHLY' && (
           <div>
-            <h3 className="font-bold text-sm text-slate-900 mb-1">
-              Monthly {ROXAS_BARANGAYS.length}-Barangay Incident Distribution
+            <h3 className="font-bold text-sm text-ink mb-1">
+              Monthly {ROXAS_BARANGAYS.length}-barangay incident distribution
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Cross-barangay incident metrics for executive planning</p>
+            <p className="text-xs text-muted mb-3">Cross-barangay incident metrics for executive planning</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {ROXAS_BARANGAYS.map((bgy) => {
                 const bCount = cases.filter((c) => c.barangay === bgy).length;
                 return (
-                  <div key={bgy} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <span className="font-bold text-xs text-slate-800 block">Brgy. {bgy}</span>
-                    <span className="text-xl font-black text-blue-800 mt-1 block">{bCount}</span>
-                    <span className="text-[10px] text-slate-400">Total recorded reports</span>
+                  <div key={bgy} className="p-3 bg-paper-2 rounded-lg border border-rule">
+                    <span className="font-bold text-xs text-ink block">Brgy. {bgy}</span>
+                    <span className="text-xl font-bold tabular-nums text-accent mt-1 block">{bCount}</span>
+                    <span className="text-xs text-muted">Total recorded reports</span>
                   </div>
                 );
               })}

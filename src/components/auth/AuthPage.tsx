@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ShieldAlert,
-  Building2,
-  Landmark,
   UserPlus,
   LogIn,
   Mail,
@@ -13,18 +10,16 @@ import {
   ChevronDown,
   Check,
   User,
-  ArrowRight,
   Moon,
   Sun,
   ShieldCheck,
-  Sparkles,
   X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { AgencyType, UserRole, ROXAS_BARANGAYS, User as UserType } from '../../types';
-import { MDRRMO_FIXED_USER, LGU_FIXED_USER } from '../../data/seedData';
+import { useUI } from '../../hooks/useUI';
+import { AgencyType, ROXAS_BARANGAYS, User as UserType } from '../../types';
 
-const POSITION_SUGGESTIONS: Record<AgencyType, string[]> = {
+export const POSITION_SUGGESTIONS: Record<AgencyType, string[]> = {
   RESIDENT: [
     'Verified Resident Citizen',
     'Homeowner / Resident Complainant',
@@ -54,119 +49,20 @@ const POSITION_SUGGESTIONS: Record<AgencyType, string[]> = {
   ]
 };
 
-// 3D Emerald Flame / Ribbon Emblem SVG matching the user's reference image
-export const GreenRibbonEmblem: React.FC<{ className?: string }> = ({ className = "w-20 h-20" }) => {
-  return (
-    <svg
-      viewBox="0 0 120 120"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        {/* Soft 3D Drop Shadows */}
-        <filter id="shadow-deep" x="-20%" y="-20%" width="150%" height="150%">
-          <feDropShadow dx="-1" dy="6" stdDeviation="4.5" floodColor="#023b2c" floodOpacity="0.4" />
-        </filter>
-        <filter id="shadow-mid" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="-1" dy="5" stdDeviation="4" floodColor="#047857" floodOpacity="0.35" />
-        </filter>
-        <filter id="shadow-top" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="3.5" floodColor="#059669" floodOpacity="0.25" />
-        </filter>
-
-        {/* 1. Top Ribbon: Frosty Pearlescent Mint to White Glass Highlight */}
-        <linearGradient id="topRibbonGrad" x1="0.2" y1="0" x2="0.8" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
-          <stop offset="35%" stopColor="#e6fcf5" />
-          <stop offset="70%" stopColor="#99f6e4" />
-          <stop offset="100%" stopColor="#5eead4" />
-        </linearGradient>
-
-        {/* 2. Middle Ribbon: Electric Glowing Emerald */}
-        <linearGradient id="midRibbonGrad" x1="0.1" y1="0.1" x2="0.9" y2="0.9">
-          <stop offset="0%" stopColor="#34d399" />
-          <stop offset="45%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
-
-        {/* 3. Bottom Ribbon: Deep Rich Jade & Deep Forest Teal */}
-        <linearGradient id="botRibbonGrad" x1="0.1" y1="0" x2="0.8" y2="1">
-          <stop offset="0%" stopColor="#059669" />
-          <stop offset="50%" stopColor="#047857" />
-          <stop offset="100%" stopColor="#023d2e" />
-        </linearGradient>
-
-        {/* Specular Curved Highlight */}
-        <linearGradient id="specularSheen" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="40%" stopColor="#ffffff" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      {/* Layer 3: Bottom Deep Jade Ribbon */}
-      <g filter="url(#shadow-deep)">
-        <path
-          d="M 44 54 C 54 48 68 54 66 69 C 64 82 48 94 40 99 C 37 101 34 98 35 94 C 38 84 34 65 44 54 Z"
-          fill="url(#botRibbonGrad)"
-        />
-        {/* Specular rim */}
-        <path
-          d="M 44 56 C 51 51 63 56 62 67 C 60 77 47 87 41 93 C 40 85 37 69 44 56 Z"
-          fill="url(#specularSheen)"
-          opacity="0.3"
-        />
-      </g>
-
-      {/* Layer 2: Middle Vibrant Emerald Ribbon */}
-      <g filter="url(#shadow-mid)">
-        <path
-          d="M 52 32 C 63 26 78 33 78 48 C 78 63 58 76 51 81 C 48 83 45 81 46 77 C 50 64 45 44 52 32 Z"
-          fill="url(#midRibbonGrad)"
-        />
-        {/* Specular rim */}
-        <path
-          d="M 53 34 C 61 29 73 35 73 47 C 73 59 57 69 52 75 C 51 66 48 44 53 34 Z"
-          fill="url(#specularSheen)"
-          opacity="0.45"
-        />
-      </g>
-
-      {/* Layer 1: Top Crystal White/Mint Ribbon */}
-      <g filter="url(#shadow-top)">
-        <path
-          d="M 62 10 C 74 7 88 15 88 30 C 88 44 72 55 65 61 C 63 63 60 61 61 57 C 64 47 57 23 62 10 Z"
-          fill="url(#topRibbonGrad)"
-        />
-        {/* Bright gloss edge */}
-        <path
-          d="M 64 12 C 73 10 84 17 84 29 C 84 40 71 49 66 54 C 64 47 60 25 64 12 Z"
-          fill="url(#specularSheen)"
-          opacity="0.8"
-        />
-      </g>
-    </svg>
-  );
-};
-
 export const AuthPage: React.FC = () => {
-  const { login, loginWithCredentials, registerUser, users } = useAuth();
+  const { login, loginWithCredentials, registerUser } = useAuth();
 
   // Mode: 'login' | 'register'
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Ambient lighting / theme toggle
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDark, toggleTheme } = useUI();
 
   // Remember Me checkbox
   const [rememberMe, setRememberMe] = useState(false);
 
   // Forgot Password modal
   const [showForgotModal, setShowForgotModal] = useState(false);
-
-  // Quick action feedback
-  const [quickActionNotice, setQuickActionNotice] = useState<string | null>(null);
 
   // Login Form States
   const [loginIdentifier, setLoginIdentifier] = useState<string>('');
@@ -187,6 +83,7 @@ export const AuthPage: React.FC = () => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
   const [regAgreeTerms, setRegAgreeTerms] = useState(true);
+  const [regError, setRegError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -201,8 +98,6 @@ export const AuthPage: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isBarangayDropdownOpen]);
-
-  const [regError, setRegError] = useState<string | null>(null);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,541 +166,508 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  // Quick Agency Demo Access shortcuts (corresponding to fixed accounts)
-  const handleQuickRoleAccess = (type: 'RESIDENT' | 'MDRRMO' | 'LGU') => {
-    if (type === 'MDRRMO') {
-      const fixedMdr = (users || []).find((u) => u.email?.toLowerCase() === 'mdrrmoroxas@gmail.com') || MDRRMO_FIXED_USER;
-      setLoginIdentifier(fixedMdr.email);
-      setLoginPasscode('mdrrmo2026');
-      login(fixedMdr);
-      return;
-    }
-
-    if (type === 'LGU') {
-      const fixedLgu = (users || []).find((u) => u.email?.toLowerCase() === 'lguroxas@gmail.com') || LGU_FIXED_USER;
-      setLoginIdentifier(fixedLgu.email);
-      setLoginPasscode('lguroxas2026');
-      login(fixedLgu);
-      return;
-    }
-
-    // Resident Citizen fast login
-    const existingRes = (users || []).find((u) => u.agencyType === 'RESIDENT');
-    if (existingRes) {
-      setLoginIdentifier(existingRes.email || existingRes.badgeOrIdNumber || existingRes.name);
-      setLoginPasscode(existingRes.passcode || '');
-      login(existingRes);
-      return;
-    }
-
-    const demoRes: UserType = {
-      id: 'USR-RES-DEMO',
-      name: 'Maria Santos (Resident Citizen)',
-      role: 'RESIDENT',
-      agencyType: 'RESIDENT',
-      agencyName: 'Barangay San Aquilino Resident Citizen',
-      barangay: 'San Aquilino',
-      position: 'Verified Resident Citizen',
-      badgeOrIdNumber: 'RES-SAQ-2026',
-      email: 'resident.roxas@orientalmindoro.ph',
-      avatarUrl: '/bconnect_logo_transparent.png'
-    };
-    login(demoRes);
-  };
-
   return (
     <div
       id="auth-portal-page"
-      className={`min-h-screen relative overflow-hidden flex flex-col justify-between selection:bg-emerald-600 selection:text-white transition-colors duration-500 ${
-        isDarkMode ? 'bg-[#0f1d16] text-emerald-50' : 'neo-bg-soft text-slate-800'
-      }`}
+      className="min-h-screen flex flex-col justify-between selection:bg-accent selection:text-accent-ink transition-colors duration-200 bg-paper text-ink"
     >
       {/* =========================================================================
-          Decorative Soft 3D Neomorphic Geometry & Incident Report Background Murals
+          Top Bar: Official Municipal Header & Accessibility Actions
           ========================================================================= */}
-
-      {/* Top Left: Concentric Neomorphic Ring Contour */}
-      <div
-        className="absolute -top-24 -left-24 w-80 h-80 rounded-full border-[22px] border-emerald-100/60 pointer-events-none neo-ring-decor hidden sm:block opacity-75"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -top-12 -left-12 w-48 h-48 rounded-full border-[12px] border-emerald-50/80 pointer-events-none hidden sm:block opacity-60"
-        aria-hidden="true"
-      />
-
-      {/* Mid Right: Floating Soft 3D Mint Sphere */}
-      <div
-        className="absolute top-1/4 -right-12 w-32 h-32 rounded-full bg-gradient-to-br from-[#ffffff] via-[#e2f3e8] to-[#c7e9d4] pointer-events-none neo-sphere-decor hidden md:block opacity-85 transform hover:scale-105 transition-transform"
-        aria-hidden="true"
-      />
-
-      {/* Bottom Left: Embossed Arc */}
-      <div
-        className="absolute -bottom-20 -left-16 w-64 h-64 rounded-full border-[20px] border-emerald-100/50 pointer-events-none neo-ring-decor hidden sm:block opacity-65"
-        aria-hidden="true"
-      />
-
-      {/* Bottom Right: Neomorphic Curved Wave with Typography */}
-      <div
-        className="absolute -bottom-10 -right-10 w-60 h-60 rounded-tl-[100px] bg-gradient-to-tl from-[#e4f2e9] via-[#edf7f1] to-transparent pointer-events-none hidden lg:flex flex-col items-center justify-center p-8 text-right select-none opacity-80"
-        aria-hidden="true"
-      >
-        <div className="absolute bottom-10 right-10 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-900/60 leading-tight">
-          <div>MORE</div>
-          <div>THAN</div>
-          <div>A PORTAL</div>
-          <div className="w-5 h-[2px] bg-emerald-600/40 mt-1.5 ml-auto"></div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          Top Bar: Discreet Government Header & Dark Mode Button
-          ========================================================================= */}
-      <div className="w-full max-w-6xl mx-auto px-6 pt-6 flex items-center justify-between z-20">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-white/90 p-0.5 flex items-center justify-center shadow-xs border border-emerald-200/80">
-            <img
-              src="/bconnect_logo_transparent.png"
-              alt="B-CONNECT Logo"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div>
-            <span className={`font-extrabold text-xs sm:text-sm tracking-tight ${isDarkMode ? 'text-emerald-100' : 'text-emerald-950'}`}>
-              B-CONNECT
-            </span>
-            <span className="text-[10px] ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-              Roxas, Oriental Mindoro
-            </span>
-          </div>
-        </div>
-
-        {/* Top Right: Theme Mode Neomorphic Squircle Toggle */}
-        <button
-          type="button"
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          title={isDarkMode ? 'Switch to Bright Mode' : 'Switch to Ambient Night'}
-          className="w-11 h-11 rounded-2xl neo-squircle-btn flex items-center justify-center text-emerald-900 cursor-pointer transition-transform"
-        >
-          {isDarkMode ? (
-            <Sun className="w-5 h-5 text-amber-500 transition-transform" />
-          ) : (
-            <Moon className="w-5 h-5 text-emerald-800 transition-transform" />
-          )}
-        </button>
-      </div>
-
-      {/* =========================================================================
-          Central Hero Container (The Neomorphic Card)
-          ========================================================================= */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8 z-10">
-        <div
-          className={`w-full max-w-[440px] rounded-[38px] sm:rounded-[44px] p-7 sm:p-9 transition-all duration-300 ${
-            isDarkMode
-              ? 'bg-[#152a20] border border-emerald-800/40 shadow-2xl shadow-emerald-950/80 text-emerald-100'
-              : 'neo-card text-slate-800'
-          }`}
-        >
-          {/* Official B-CONNECT Emblem in Neomorphic Squircle Frame */}
-          <div className="flex justify-center mb-5">
-            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[30px] neo-badge-frame flex items-center justify-center p-2.5 relative group transition-all duration-300 hover:scale-[1.04] ${
-              isDarkMode 
-                ? 'bg-white/95 shadow-2xl shadow-emerald-950/60 ring-2 ring-emerald-500/20' 
-                : 'bg-white/95 shadow-md shadow-emerald-900/5 ring-1 ring-emerald-100'
-            }`}>
+      <header className="w-full border-b border-rule bg-paper-2">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-paper p-1 flex items-center justify-center border border-rule">
               <img
                 src="/bconnect_logo_transparent.png"
-                alt="B-CONNECT Official Logo"
-                className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+                alt="B-CONNECT Municipal Seal"
+                className="w-full h-full object-contain"
               />
             </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-ink">
+                  B-CONNECT
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-sm bg-paper-3 text-ink-2 font-medium border border-rule">
+                  Official Portal
+                </span>
+              </div>
+              <p className="text-xs text-muted">
+                Municipality of Roxas, Oriental Mindoro
+              </p>
+            </div>
           </div>
 
-          {/* Title and Subtitle */}
-          <div className="text-center mb-6">
-            <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
-              isDarkMode ? 'text-white drop-shadow-xs' : 'text-[#0c2e1f]'
-            }`}>
-              {authMode === 'login' ? 'Welcome Back' : 'Resident Portal'}
-            </h2>
-            <p className={`text-xs sm:text-sm font-medium mt-1 ${
-              isDarkMode ? 'text-emerald-200/90' : 'text-slate-500'
-            }`}>
-              {authMode === 'login' ? 'Sign in to continue' : 'Register as a Resident Citizen of Roxas'}
-            </p>
-          </div>
-
-          {/* Quick Tab Switcher (Soft Neomorphic Pill) */}
-          <div className="neo-tab-pill rounded-full p-1 flex items-center mb-6">
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-block text-xs text-muted">
+              Emergency Hotline: 911 / (043) 289-2026
+            </span>
             <button
-              id="tab-btn-login"
               type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setLoginError(null);
-              }}
-              className={`flex-1 py-2 rounded-full font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                authMode === 'login'
-                  ? 'neo-tab-active text-emerald-900 font-extrabold'
-                  : 'text-slate-500 hover:text-emerald-950'
-              }`}
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-9 h-9 rounded-md border border-rule bg-paper flex items-center justify-center text-ink cursor-pointer hover:bg-paper-3 transition-colors focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Log In</span>
-            </button>
-            <button
-              id="tab-btn-register"
-              type="button"
-              onClick={() => {
-                setAuthMode('register');
-                setRegError(null);
-              }}
-              className={`flex-1 py-2 rounded-full font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                authMode === 'register'
-                  ? 'neo-tab-active text-emerald-900 font-extrabold'
-                  : 'text-slate-500 hover:text-emerald-950'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Resident Register</span>
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" />
+              ) : (
+                <Moon className="w-4 h-4 text-ink-2" aria-hidden="true" />
+              )}
             </button>
           </div>
+        </div>
+      </header>
 
-          {/* Feedback Notices */}
-          {loginError && authMode === 'login' && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2 font-medium">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-              <span>{loginError}</span>
+      {/* =========================================================================
+          Central Stage Container: 2-Column Responsive Civic Workbench
+          ========================================================================= */}
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Column: Context & Authority */}
+          <section className="lg:col-span-7 space-y-6">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-sm bg-paper-3 text-ink-2 border border-rule">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true"></span>
+                Active municipal emergency dispatch network
+              </span>
+              <h1 className="text-display font-display font-bold tracking-tight text-ink leading-tight">
+                Emergency Dispatch & Case Governance
+              </h1>
+              <p className="lead text-ink-2 max-w-xl">
+                Unified emergency dispatch and municipal oversight across all 20 Roxas barangays.
+              </p>
             </div>
-          )}
 
-          {regError && authMode === 'register' && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2 font-medium">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-              <span>{regError}</span>
+            {/* Jurisdiction Notice */}
+            <div className="text-xs text-muted pt-2 border-t border-rule space-y-1">
+              <p>
+                Coverage: Bagumbayan, Cantil, Dangay, Happy Valley, Libertad, Mabuhay, Marfcoc, Odiong, Paclasan, San Aquilino, San Isidro, San Jose, San Mariano, San Mateo, San Rafael, San Vicente, Santo Niño, Victoria, Villa Hermosa, Little Tanauan.
+              </p>
+              <p>
+                Compliance: Automatic escalation monitoring compliant with DILG governance protocols.
+              </p>
             </div>
-          )}
+          </section>
 
-          {quickActionNotice && (
-            <div className="mb-4 p-2.5 bg-emerald-100 border border-emerald-300 rounded-2xl text-emerald-900 text-xs flex items-center gap-2 font-bold">
-              <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-              <span>{quickActionNotice}</span>
-            </div>
-          )}
-
-          {/* =====================================================================
-              TAB 1: SIGN IN (LOG IN)
-              ===================================================================== */}
-          {authMode === 'login' ? (
-            <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
-              {/* Username or Email Input */}
-              <div className="neo-input-pill rounded-full flex items-center px-4 py-3.5 gap-3">
-                <User className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
-                <input
-                  id="input-login-email"
-                  name="user_login_credential_field"
-                  type="text"
-                  autoComplete="off"
-                  readOnly
-                  onFocus={(e) => { e.target.readOnly = false; }}
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  placeholder="Username or Email"
-                  value={loginIdentifier}
-                  onChange={(e) => setLoginIdentifier(e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                />
+          {/* Right Column: High-Density Authentication & Registration Workbench */}
+          <section className="lg:col-span-5">
+            <div className="p-6 sm:p-7 rounded-card border border-rule bg-paper-2 shadow-card space-y-5">
+              
+              {/* Header inside form card */}
+              <div className="space-y-1 pb-3 border-b border-rule">
+                <h2 className="text-lg font-bold text-ink">
+                  {authMode === 'login' ? 'Portal Sign In' : 'Resident Citizen Registration'}
+                </h2>
+                <p className="text-xs text-muted">
+                  {authMode === 'login'
+                    ? 'Enter official credentials to access your agency workspace'
+                    : 'Register as a certified resident of Roxas, Oriental Mindoro'}
+                </p>
               </div>
 
-              {/* Password Input with Eye Toggle */}
-              <div className="neo-input-pill rounded-full flex items-center px-4 py-3.5 gap-3">
-                <KeyRound className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
-                <input
-                  id="input-login-passcode"
-                  name="user_password_credential_field"
-                  type={showLoginPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  readOnly
-                  onFocus={(e) => { e.target.readOnly = false; }}
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  placeholder="Password"
-                  value={loginPasscode}
-                  onChange={(e) => setLoginPasscode(e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                />
+              {/* Mode Switcher Tabs */}
+              <div className="p-1 rounded-md bg-paper border border-rule flex items-center">
                 <button
+                  id="tab-btn-login"
                   type="button"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  className="text-slate-400 hover:text-emerald-700 transition cursor-pointer p-0.5"
-                  title={showLoginPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {/* Remember Me & Forgot Password Row */}
-              <div className="flex items-center justify-between pt-1 px-1">
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <div
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer ${
-                      rememberMe
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'neo-checkbox-custom'
-                    }`}
-                  >
-                    {rememberMe && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-600">
-                    Remember Me
-                  </span>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => setShowForgotModal(true)}
-                  className="text-xs sm:text-sm font-bold text-emerald-600 hover:text-emerald-800 transition cursor-pointer"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-
-              {/* Green Gradient Pill Action Button */}
-              <button
-                id="btn-submit-login"
-                type="submit"
-                className="neo-btn-pill w-full py-4 px-6 rounded-full flex items-center justify-center relative font-bold text-base text-white tracking-wide cursor-pointer group mt-2"
-              >
-                <span>Login</span>
-                <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center absolute right-3 shadow-inner group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight className="w-4 h-4 text-white stroke-[2.5]" />
-                </div>
-              </button>
-            </form>
-          ) : (
-            /* =====================================================================
-                TAB 2: REGISTER (SIGN UP - RESIDENT CITIZENS ONLY)
-                ===================================================================== */
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              {/* Barangay Dropdown (from all 20 Roxas barangays) */}
-              <div className="relative" ref={barangayDropdownRef}>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 px-1 mb-1">
-                  Home Barangay in Roxas (Pumili ng Barangay)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIsBarangayDropdownOpen((prev) => !prev)}
-                  className="neo-input-pill w-full rounded-full px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between cursor-pointer"
-                >
-                  <span className="truncate">Barangay {regBarangay}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-emerald-700 transition-transform ${
-                      isBarangayDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-
-                {isBarangayDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-emerald-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto py-1 divide-y divide-emerald-50">
-                    {ROXAS_BARANGAYS.map((b) => (
-                      <button
-                        key={b}
-                        type="button"
-                        onClick={() => {
-                          setRegBarangay(b);
-                          setRegBadge(`RES-${b.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
-                          setIsBarangayDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-xs text-left flex items-center justify-between hover:bg-emerald-50 cursor-pointer ${
-                          regBarangay === b ? 'bg-emerald-50 text-emerald-900 font-bold' : 'text-slate-700'
-                        }`}
-                      >
-                        <span>Barangay {b}</span>
-                        {regBarangay === b && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Full Name Input */}
-              <div className="neo-input-pill rounded-full flex items-center px-4 py-3 gap-3">
-                <User className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
-                <input
-                  type="text"
-                  placeholder="Official Full Name"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                />
-              </div>
-
-              {/* Email Address */}
-              <div className="neo-input-pill rounded-full flex items-center px-4 py-3 gap-3">
-                <Mail className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
-                <input
-                  type="email"
-                  placeholder="Email Address (e.g. resident@gmail.com)"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                />
-              </div>
-
-              {/* Password & Confirm Password */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="neo-input-pill rounded-full flex items-center px-3.5 py-3 gap-2">
-                  <KeyRound className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <input
-                    type={showRegPassword ? 'text' : 'password'}
-                    placeholder="Password"
-                    value={regPasscode}
-                    onChange={(e) => setRegPasscode(e.target.value)}
-                    className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowRegPassword(!showRegPassword)}
-                    className="text-slate-400 hover:text-emerald-700 cursor-pointer"
-                  >
-                    {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-
-                <div className="neo-input-pill rounded-full flex items-center px-3.5 py-3 gap-2">
-                  <KeyRound className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <input
-                    type={showRegConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm"
-                    value={regConfirmPasscode}
-                    onChange={(e) => setRegConfirmPasscode(e.target.value)}
-                    className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
-                    className="text-slate-400 hover:text-emerald-700 cursor-pointer"
-                  >
-                    {showRegConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Data Privacy Agreement Checkbox */}
-              <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1 px-1">
-                <div
-                  onClick={() => setRegAgreeTerms(!regAgreeTerms)}
-                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
-                    regAgreeTerms ? 'bg-emerald-600 text-white shadow-xs' : 'neo-checkbox-custom'
+                  onClick={() => {
+                    setAuthMode('login');
+                    setLoginError(null);
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-focus ${
+                    authMode === 'login'
+                      ? 'bg-paper-3 text-ink shadow-xs border border-rule'
+                      : 'text-muted hover:text-ink'
                   }`}
                 >
-                  {regAgreeTerms && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                </div>
-                <span className="text-[11px] font-medium text-slate-600">
-                  I certify that I am a resident of Roxas, Oriental Mindoro and agree to Data Privacy terms.
-                </span>
-              </label>
+                  <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Sign In</span>
+                </button>
+                <button
+                  id="tab-btn-register"
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setRegError(null);
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-focus ${
+                    authMode === 'register'
+                      ? 'bg-paper-3 text-ink shadow-xs border border-rule'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  <UserPlus className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Resident Register</span>
+                </button>
+              </div>
 
-              {/* Green Gradient Pill Submit Button */}
-              <button
-                id="btn-submit-register"
-                type="submit"
-                className="neo-btn-pill w-full py-4 px-6 rounded-full flex items-center justify-center relative font-bold text-base text-white tracking-wide cursor-pointer group mt-2"
-              >
-                <span>Register as Resident</span>
-                <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center absolute right-3 shadow-inner group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight className="w-4 h-4 text-white stroke-[2.5]" />
-                </div>
-              </button>
-            </form>
-          )}
-
-
-          {/* =====================================================================
-              Footer Slogan: COMMUNITY • SERVICE • PROGRESS
-              ===================================================================== */}
-          <div className="text-center mt-7 pt-2">
-            <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.28em] text-slate-400 select-none">
-              Community &bull; Service &bull; Progress
-            </p>
-
-            {/* Bottom Switcher Helper */}
-            <div className="mt-4 text-xs font-semibold text-slate-500">
-              {authMode === 'login' ? (
-                <div>
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMode('register');
-                      setLoginError(null);
-                    }}
-                    className="text-emerald-700 hover:text-emerald-900 font-extrabold underline cursor-pointer"
-                  >
-                    Register here &rarr;
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMode('login');
-                      setRegError(null);
-                    }}
-                    className="text-emerald-700 hover:text-emerald-900 font-extrabold underline cursor-pointer"
-                  >
-                    Sign In here &rarr;
-                  </button>
+              {/* Status Feedback */}
+              {loginError && authMode === 'login' && (
+                <div className="p-3 bg-paper-3 border border-error/40 text-error rounded-md text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-error" aria-hidden="true" />
+                  <span>{loginError}</span>
                 </div>
               )}
+
+              {regError && authMode === 'register' && (
+                <div className="p-3 bg-paper-3 border border-error/40 text-error rounded-md text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-error" aria-hidden="true" />
+                  <span>{regError}</span>
+                </div>
+              )}
+
+              {/* =================================================================
+                  TAB 1: SIGN IN (LOG IN)
+                  ================================================================= */}
+              {authMode === 'login' ? (
+                <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
+                  {/* Identifier Field */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="input-login-email"
+                      className="block text-xs font-semibold text-ink-2"
+                    >
+                      Username, Email, or Badge ID
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-muted absolute left-3 top-3" aria-hidden="true" />
+                      <input
+                        id="input-login-email"
+                        name="user_login_credential_field"
+                        type="text"
+                        autoComplete="off"
+                        readOnly
+                        onFocus={(e) => { e.target.readOnly = false; }}
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        placeholder="e.g. mdrrmoroxas@gmail.com"
+                        value={loginIdentifier}
+                        onChange={(e) => setLoginIdentifier(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="input-login-passcode"
+                        className="block text-xs font-semibold text-ink-2"
+                      >
+                        Passcode
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotModal(true)}
+                        className="text-xs text-accent hover:underline cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-muted absolute left-3 top-3" aria-hidden="true" />
+                      <input
+                        id="input-login-passcode"
+                        name="user_password_credential_field"
+                        type={showLoginPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        readOnly
+                        onFocus={(e) => { e.target.readOnly = false; }}
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        placeholder="••••••••"
+                        value={loginPasscode}
+                        onChange={(e) => setLoginPasscode(e.target.value)}
+                        className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        aria-label={showLoginPassword ? 'Hide passcode' : 'Show passcode'}
+                        className="absolute right-2.5 top-2.5 text-muted hover:text-ink cursor-pointer p-0.5 focus-visible:outline-2 focus-visible:outline-focus"
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="w-4 h-4" aria-hidden="true" />
+                        ) : (
+                          <Eye className="w-4 h-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me */}
+                  <div className="pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={() => setRememberMe(!rememberMe)}
+                        onClick={() => setRememberMe(!rememberMe)}
+                        className="w-4 h-4 rounded-sm border-rule text-accent focus:ring-focus cursor-pointer"
+                      />
+                      <span className="text-xs text-ink-2">
+                        Keep me signed in on this workstation
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Submit Action */}
+                  <button
+                    id="btn-submit-login"
+                    type="submit"
+                    className="w-full py-2.5 px-4 rounded-md bg-accent text-accent-ink font-semibold text-xs sm:text-sm hover:opacity-95 active:scale-[0.99] transition-opacity cursor-pointer focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Sign in to portal
+                  </button>
+
+                  <p className="text-xs text-center text-muted pt-1">
+                    Don’t have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('register');
+                        setLoginError(null);
+                      }}
+                      className="text-accent font-semibold hover:underline cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                    >
+                      Register as resident
+                    </button>
+                  </p>
+                </form>
+              ) : (
+                /* =================================================================
+                    TAB 2: REGISTER (SIGN UP - RESIDENT CITIZENS ONLY)
+                    ================================================================= */
+                <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                  {/* Barangay Dropdown */}
+                  <div className="space-y-1 relative" ref={barangayDropdownRef}>
+                    <label className="block text-xs font-semibold text-ink-2">
+                      Home Barangay in Roxas
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsBarangayDropdownOpen((prev) => !prev)}
+                      className="w-full px-3 py-2 text-xs sm:text-sm bg-paper text-ink border border-rule rounded-md flex items-center justify-between cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                    >
+                      <span>Barangay {regBarangay}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-muted transition-transform duration-150 ${
+                          isBarangayDropdownOpen ? 'rotate-180' : ''
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {isBarangayDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-paper border border-rule max-h-48 overflow-y-auto py-1 divide-y divide-rule">
+                        {ROXAS_BARANGAYS.map((b) => (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => {
+                              setRegBarangay(b);
+                              setRegBadge(`RES-${b.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`);
+                              setIsBarangayDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between hover:bg-paper-3 cursor-pointer ${
+                              regBarangay === b ? 'bg-paper-3 text-ink font-bold' : 'text-ink-2'
+                            }`}
+                          >
+                            <span>Barangay {b}</span>
+                            {regBarangay === b && <Check className="w-3.5 h-3.5 text-accent" aria-hidden="true" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Full Name */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-ink-2">
+                      Official Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-muted absolute left-3 top-2.5" aria-hidden="true" />
+                      <input
+                        type="text"
+                        placeholder="e.g. Juan dela Cruz"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-ink-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-muted absolute left-3 top-2.5" aria-hidden="true" />
+                      <input
+                        type="email"
+                        placeholder="resident@gmail.com"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Passcode & Confirmation */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-ink-2">
+                        Passcode
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showRegPassword ? 'text' : 'password'}
+                          placeholder="At least 6 chars"
+                          value={regPasscode}
+                          onChange={(e) => setRegPasscode(e.target.value)}
+                          className="w-full pl-3 pr-8 py-2 text-xs bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegPassword(!showRegPassword)}
+                          aria-label={showRegPassword ? 'Hide passcode' : 'Show passcode'}
+                          className="absolute right-2 top-2 text-muted hover:text-ink cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                        >
+                          {showRegPassword ? (
+                            <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-ink-2">
+                        Confirm
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showRegConfirmPassword ? 'text' : 'password'}
+                          placeholder="Re-type passcode"
+                          value={regConfirmPasscode}
+                          onChange={(e) => setRegConfirmPasscode(e.target.value)}
+                          className="w-full pl-3 pr-8 py-2 text-xs bg-paper text-ink border border-rule rounded-md focus:border-focus focus:outline-none focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                          aria-label={showRegConfirmPassword ? 'Hide passcode' : 'Show passcode'}
+                          className="absolute right-2 top-2 text-muted hover:text-ink cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                        >
+                          {showRegConfirmPassword ? (
+                            <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Privacy Agreement */}
+                  <div className="pt-1">
+                    <label className="flex items-start gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={regAgreeTerms}
+                        onChange={() => setRegAgreeTerms(!regAgreeTerms)}
+                        onClick={() => setRegAgreeTerms(!regAgreeTerms)}
+                        className="mt-0.5 w-4 h-4 rounded-sm border-rule text-accent focus:ring-focus cursor-pointer"
+                      />
+                      <span className="text-xs text-muted leading-tight">
+                        I certify that I am a resident of Roxas, Oriental Mindoro and accept statutory data privacy terms.
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Submit Registration */}
+                  <button
+                    id="btn-submit-register"
+                    type="submit"
+                    className="w-full whitespace-nowrap py-2.5 px-4 rounded-md bg-accent text-accent-ink font-semibold text-xs sm:text-sm hover:opacity-95 active:scale-[0.99] transition-opacity cursor-pointer focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Register resident
+                  </button>
+
+                  <p className="text-xs text-center text-muted pt-1">
+                    Already registered?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('login');
+                        setRegError(null);
+                      }}
+                      className="text-accent font-semibold hover:underline cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
+                    >
+                      Sign in
+                    </button>
+                  </p>
+                </form>
+              )}
             </div>
-          </div>
+          </section>
         </div>
       </main>
 
       {/* =========================================================================
           Bottom Legal & Government Compliance Footer
           ========================================================================= */}
-      <footer className="py-3 px-6 text-center text-[11px] text-slate-500 font-medium z-10">
-        B-CONNECT Multi-Agency Network &bull; Municipality of Roxas, Oriental Mindoro
+      <footer className="w-full border-t border-rule bg-paper-2 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted">
+          <span>
+            B-CONNECT Multi-Agency Incident & Case Tracking System
+          </span>
+          <span>
+            Local Government Unit of Roxas, Oriental Mindoro
+          </span>
+        </div>
       </footer>
 
       {/* =========================================================================
           Forgot Password Modal Helper
           ========================================================================= */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[32px] p-6 max-w-sm w-full neo-card relative animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-paper-2 rounded-card p-6 max-w-sm w-full border border-rule shadow-card relative">
             <button
               type="button"
               onClick={() => setShowForgotModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+              aria-label="Close modal"
+              className="absolute top-4 right-4 text-muted hover:text-ink cursor-pointer p-1 focus-visible:outline-2 focus-visible:outline-focus"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 neo-badge-frame">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-md bg-paper border border-rule text-accent flex items-center justify-center mb-4">
+              <ShieldCheck className="w-5 h-5" aria-hidden="true" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Password Recovery</h3>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              For security compliance, passwords are reset via the Roxas Municipal IT Administrator or through your registered department head.
+            <h3 className="text-base font-bold text-ink">
+              Official Password Recovery
+            </h3>
+            <p className="text-xs text-muted mt-2 leading-relaxed">
+              In compliance with local government data integrity policies, credentials can be reset through your designated Barangay IT Officer or by coordinating with the Roxas Municipal IT Operations Desk.
             </p>
-            <div className="mt-3 p-3 bg-emerald-50/80 rounded-xl text-xs text-emerald-900 border border-emerald-200">
-              <strong>Official Assistance:</strong>{' '}
-              <span>Please coordinate with your agency administrator or IT department to request a password reset.</span>
+            <div className="mt-3 p-3 bg-paper rounded-md text-xs text-ink-2 border border-rule">
+              <span className="font-semibold text-ink">Assistance Desk:</span>{' '}
+              <span>Contact the Municipal Administrator’s Office or MDRRMO Dispatch Desk for emergency credential verification.</span>
             </div>
             <button
               type="button"
-              onClick={() => {
-                setShowForgotModal(false);
-              }}
-              className="mt-5 w-full py-3 neo-btn-pill text-white text-xs font-bold rounded-full cursor-pointer"
+              onClick={() => { setShowForgotModal(false); }}
+              className="mt-4 w-full py-2 bg-paper-3 text-ink text-xs font-semibold rounded-md border border-rule hover:bg-paper cursor-pointer focus-visible:outline-2 focus-visible:outline-focus"
             >
-              Close
+              Close dialog
             </button>
           </div>
         </div>

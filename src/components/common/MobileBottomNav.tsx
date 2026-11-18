@@ -3,10 +3,8 @@ import {
   LayoutDashboard,
   FileSpreadsheet,
   Plus,
-  Compass,
   Menu,
   Clock,
-  UserCheck,
   BookOpenCheck,
   Eye,
   Share2
@@ -34,7 +32,7 @@ export const MobileBottomNav: React.FC = () => {
       <nav
         id="bconnect-mobile-bottom-nav"
         aria-label="Mobile Bottom Navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around select-none"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule px-2 py-1 flex items-center justify-around select-none transition-colors"
         style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
       >
         {/* 1. Citizen Hub */}
@@ -45,16 +43,16 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('dashboard');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'dashboard' || activeTab === 'resident_portal'
-              ? 'text-emerald-700 font-bold'
-              : 'text-slate-500 hover:text-emerald-800'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
-          <div className={`p-1 rounded-xl transition ${activeTab === 'dashboard' || activeTab === 'resident_portal' ? 'bg-emerald-50' : ''}`}>
+          <div className={`p-1 rounded-md transition-colors ${activeTab === 'dashboard' || activeTab === 'resident_portal' ? 'bg-paper-2 text-accent' : ''}`}>
             <LayoutDashboard className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Citizen Hub</span>
+          <span className="text-xs mt-0.5 leading-tight">Citizen hub</span>
         </button>
 
         {/* 2. Report Incident (Prominent Action) */}
@@ -65,16 +63,16 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('submit_report');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'submit_report'
-              ? 'text-emerald-700 font-bold'
-              : 'text-slate-600 hover:text-emerald-800'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 active:scale-95 transition">
+          <div className="w-8 h-8 rounded-full bg-accent text-accent-ink flex items-center justify-center transition-colors">
             <Plus className="w-5 h-5 stroke-[2.5]" />
           </div>
-          <span className="text-[10px] mt-0.5 font-bold leading-tight">Report</span>
+          <span className="text-xs mt-0.5 font-semibold leading-tight">Report</span>
         </button>
 
         {/* 3. My Reports */}
@@ -85,16 +83,16 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('my_reports');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'my_reports'
-              ? 'text-emerald-700 font-bold'
-              : 'text-slate-500 hover:text-emerald-800'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
-          <div className={`p-1 rounded-xl transition ${activeTab === 'my_reports' ? 'bg-emerald-50' : ''}`}>
+          <div className={`p-1 rounded-md transition-colors ${activeTab === 'my_reports' ? 'bg-paper-2 text-accent' : ''}`}>
             <Clock className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">My Reports</span>
+          <span className="text-xs mt-0.5 leading-tight">My reports</span>
         </button>
 
         {/* 4. Menu Drawer Toggle */}
@@ -102,29 +100,28 @@ export const MobileBottomNav: React.FC = () => {
           id="mobile-nav-drawer-toggle"
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             isMobileMenuOpen
-              ? 'text-emerald-700 font-bold'
-              : 'text-slate-500 hover:text-emerald-800'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
-          <div className={`p-1 rounded-xl transition ${isMobileMenuOpen ? 'bg-emerald-50' : ''}`}>
+          <div className={`p-1 rounded-md transition-colors ${isMobileMenuOpen ? 'bg-paper-2 text-accent' : ''}`}>
             <Menu className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Menu</span>
+          <span className="text-xs mt-0.5 leading-tight">Menu</span>
         </button>
       </nav>
     );
   }
 
   // LGU Executive / Municipal Administration View (Dashboard, Transparency, Narrative, Menu)
-  // Spec: Remove "GIS Map" and "New (+)" for LGU on mobile since LGU focuses on executive governance and oversight
   if (isLgu) {
     return (
       <nav
         id="bconnect-mobile-bottom-nav"
         aria-label="Mobile Bottom Navigation - LGU"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-emerald-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-3 py-1.5 flex items-center justify-around select-none transition-colors"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule px-3 py-1 flex items-center justify-around select-none transition-colors"
         style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
       >
         {/* 1. Executive Dashboard */}
@@ -135,20 +132,20 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('dashboard');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'dashboard'
-              ? 'text-[#0f532a] font-black'
-              : 'text-slate-500 hover:text-[#062612]'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <div
-            className={`p-1 rounded-xl transition ${
-              activeTab === 'dashboard' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            className={`p-1 rounded-md transition-colors ${
+              activeTab === 'dashboard' ? 'bg-paper-2 text-accent' : ''
             }`}
           >
             <LayoutDashboard className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
+          <span className="text-xs mt-0.5 leading-tight">Dashboard</span>
         </button>
 
         {/* 2. Transparency & Oversight */}
@@ -159,20 +156,20 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('transparency');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'transparency'
-              ? 'text-[#0f532a] font-black'
-              : 'text-slate-500 hover:text-[#062612]'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <div
-            className={`p-1 rounded-xl transition ${
-              activeTab === 'transparency' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            className={`p-1 rounded-md transition-colors ${
+              activeTab === 'transparency' ? 'bg-paper-2 text-accent' : ''
             }`}
           >
             <Eye className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Transparency</span>
+          <span className="text-xs mt-0.5 leading-tight">Transparency</span>
         </button>
 
         {/* 3. Case Narrative & Outcomes */}
@@ -183,20 +180,20 @@ export const MobileBottomNav: React.FC = () => {
             setActiveTab('annual_narrative');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             activeTab === 'annual_narrative'
-              ? 'text-[#0f532a] font-black'
-              : 'text-slate-500 hover:text-[#062612]'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <div
-            className={`p-1 rounded-xl transition ${
-              activeTab === 'annual_narrative' ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            className={`p-1 rounded-md transition-colors ${
+              activeTab === 'annual_narrative' ? 'bg-paper-2 text-accent' : ''
             }`}
           >
             <BookOpenCheck className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Narrative</span>
+          <span className="text-xs mt-0.5 leading-tight">Narrative</span>
         </button>
 
         {/* 4. Menu Drawer Toggle */}
@@ -204,33 +201,31 @@ export const MobileBottomNav: React.FC = () => {
           id="mobile-nav-drawer-toggle"
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
             isMobileMenuOpen
-              ? 'text-[#0f532a] font-black'
-              : 'text-slate-500 hover:text-[#062612]'
+              ? 'text-accent font-semibold'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <div
-            className={`p-1 rounded-xl transition ${
-              isMobileMenuOpen ? 'bg-emerald-50/90 border border-amber-300/50' : ''
+            className={`p-1 rounded-md transition-colors ${
+              isMobileMenuOpen ? 'bg-paper-2 text-accent' : ''
             }`}
           >
             <Menu className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-tight">Menu</span>
+          <span className="text-xs mt-0.5 leading-tight">Menu</span>
         </button>
       </nav>
     );
   }
 
-  // MDRRMO Responders & Field Operations View (Dashboard, Incidents, Elevated New, GIS Map, Menu)
+  // MDRRMO Responders & Field Operations View (Dashboard, Incidents, Cases Graph, Menu)
   return (
     <nav
       id="bconnect-mobile-bottom-nav"
       aria-label="Mobile Bottom Navigation"
-      className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1.5 flex items-center justify-around select-none transition-colors ${
-        isMdrrmo ? 'border-orange-100' : 'border-emerald-100'
-      }`}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper border-t border-rule px-2 py-1 flex items-center justify-around select-none transition-colors"
       style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom, 0px))' }}
     >
       {/* 1. Dashboard */}
@@ -241,28 +236,20 @@ export const MobileBottomNav: React.FC = () => {
           setActiveTab('dashboard');
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
           activeTab === 'dashboard'
-            ? isMdrrmo
-              ? 'text-orange-700 font-bold'
-              : 'text-emerald-700 font-bold'
-            : isMdrrmo
-            ? 'text-slate-500 hover:text-orange-800'
-            : 'text-slate-500 hover:text-emerald-800'
+            ? 'text-accent font-semibold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         <div
-          className={`p-1 rounded-xl transition ${
-            activeTab === 'dashboard'
-              ? isMdrrmo
-                ? 'bg-orange-50'
-                : 'bg-emerald-50'
-              : ''
+          className={`p-1 rounded-md transition-colors ${
+            activeTab === 'dashboard' ? 'bg-paper-2 text-accent' : ''
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">Dashboard</span>
+        <span className="text-xs mt-0.5 leading-tight">Dashboard</span>
       </button>
 
       {/* 2. Incidents */}
@@ -273,28 +260,20 @@ export const MobileBottomNav: React.FC = () => {
           setActiveTab('cases');
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
           activeTab === 'cases'
-            ? isMdrrmo
-              ? 'text-orange-700 font-bold'
-              : 'text-emerald-700 font-bold'
-            : isMdrrmo
-            ? 'text-slate-500 hover:text-orange-800'
-            : 'text-slate-500 hover:text-emerald-800'
+            ? 'text-accent font-semibold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         <div
-          className={`p-1 rounded-xl transition ${
-            activeTab === 'cases'
-              ? isMdrrmo
-                ? 'bg-orange-50'
-                : 'bg-emerald-50'
-              : ''
+          className={`p-1 rounded-md transition-colors ${
+            activeTab === 'cases' ? 'bg-paper-2 text-accent' : ''
           }`}
         >
           <FileSpreadsheet className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">{isMdrrmo ? 'Incidents' : 'Cases'}</span>
+        <span className="text-xs mt-0.5 leading-tight">{isMdrrmo ? 'Incidents' : 'Cases'}</span>
       </button>
 
       {/* 3. Resident Cases Graph */}
@@ -305,28 +284,20 @@ export const MobileBottomNav: React.FC = () => {
           setActiveTab('incident_graph');
           setIsMobileMenuOpen(false);
         }}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
           activeTab === 'incident_graph'
-            ? isMdrrmo
-              ? 'text-orange-700 font-bold'
-              : 'text-emerald-700 font-bold'
-            : isMdrrmo
-            ? 'text-slate-500 hover:text-orange-800'
-            : 'text-slate-500 hover:text-emerald-800'
+            ? 'text-accent font-semibold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         <div
-          className={`p-1 rounded-xl transition ${
-            activeTab === 'incident_graph'
-              ? isMdrrmo
-                ? 'bg-orange-50'
-                : 'bg-emerald-50'
-              : ''
+          className={`p-1 rounded-md transition-colors ${
+            activeTab === 'incident_graph' ? 'bg-paper-2 text-accent' : ''
           }`}
         >
           <Share2 className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">Cases Graph</span>
+        <span className="text-xs mt-0.5 leading-tight">Cases graph</span>
       </button>
 
       {/* 4. Menu Drawer Toggle */}
@@ -334,28 +305,20 @@ export const MobileBottomNav: React.FC = () => {
         id="mobile-nav-drawer-toggle"
         type="button"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className={`flex flex-col items-center justify-center flex-1 py-1 transition cursor-pointer ${
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${
           isMobileMenuOpen
-            ? isMdrrmo
-              ? 'text-orange-700 font-bold'
-              : 'text-emerald-700 font-bold'
-            : isMdrrmo
-            ? 'text-slate-500 hover:text-orange-800'
-            : 'text-slate-500 hover:text-emerald-800'
+            ? 'text-accent font-semibold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         <div
-          className={`p-1 rounded-xl transition ${
-            isMobileMenuOpen
-              ? isMdrrmo
-                ? 'bg-orange-50'
-                : 'bg-emerald-50'
-              : ''
+          className={`p-1 rounded-md transition-colors ${
+            isMobileMenuOpen ? 'bg-paper-2 text-accent' : ''
           }`}
         >
           <Menu className="w-5 h-5" />
         </div>
-        <span className="text-[10px] mt-0.5 leading-tight">Menu</span>
+        <span className="text-xs mt-0.5 leading-tight">Menu</span>
       </button>
     </nav>
   );

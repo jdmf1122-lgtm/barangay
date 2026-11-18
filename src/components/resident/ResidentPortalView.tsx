@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Camera,
   Upload,
@@ -13,16 +13,12 @@ import {
   Calendar,
   PlusCircle,
   Search,
-  Printer,
-  Sparkles,
-  HelpCircle,
-  ExternalLink,
-  ChevronRight,
-  Building2,
   Eye,
-  Info,
   X,
-  MessageSquare
+  MapPin,
+  PhoneCall,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
@@ -31,17 +27,12 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useUI } from '../../hooks/useUI';
 import {
   ROXAS_BARANGAYS,
-  IncidentCategory,
-  PriorityLevel,
-  Case,
   PersonInvolved
 } from '../../types';
-import { formatDate, formatDateShort } from '../../utils/reportGenerators';
+import { formatDateShort } from '../../utils/reportGenerators';
 import { StatusBadge, PriorityBadge } from '../common/StatusBadge';
 import { classifyIncidentFromText } from '../../utils/incidentClassifier';
 import { isConsolidatedCase } from '../../utils/duplicateReportDetector';
-
-
 
 export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' | 'my_reports' }> = ({ initialTab = 'overview' }) => {
   const { currentUser } = useAuth();
@@ -51,7 +42,27 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   const [portalTab, setPortalTab] = useState<'overview' | 'submit' | 'my_reports'>(initialTab);
 
-  React.useEffect(() => {
+  // Form state
+  const [reportTitle, setReportTitle] = useState('');
+  const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
+  const [reportSitio, setReportSitio] = useState('');
+  const [reportDate, setReportDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
+  const [reportTime, setReportTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
+  const [isUrgent, setIsUrgent] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedSuccessCaseId, setSubmittedSuccessCaseId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [reportSearch, setReportSearch] = useState('');
+  const [showEmergencyContacts, setShowEmergencyContacts] = useState(false);
+
+  useEffect(() => {
     setPortalTab(initialTab);
     setSubmittedSuccessCaseId(null);
     if (initialTab === 'submit') {
@@ -76,50 +87,30 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     }
   };
 
-  // Incident submission form state - Vehicular Accidents
-  const [reportTitle, setReportTitle] = useState('');
-  const [reportBarangay, setReportBarangay] = useState(currentUser.barangay || 'San Aquilino');
-  const [reportSitio, setReportSitio] = useState('');
-  const [reportDate, setReportDate] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  });
-  const [reportTime, setReportTime] = useState(() => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  });
-  const [isUrgent, setIsUrgent] = useState(false);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedSuccessCaseId, setSubmittedSuccessCaseId] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-
-
-
-  // Search in My Reports
-  const [reportSearch, setReportSearch] = useState('');
-
-  // Filter reports submitted strictly by this resident account (including consolidated duplicate reports by user ID)
-  const myReports = (cases || []).filter(c =>
+  // Filter reports submitted strictly by this resident account
+  const myReports = (cases || []).filter((c) =>
     Boolean(
       currentUser?.id && (
         c.residentReporterId === currentUser.id ||
-        (c.witnesses && c.witnesses.some(w => w.id === currentUser.id))
+        (c.witnesses && c.witnesses.some((w) => w.id === currentUser.id))
       )
     )
   );
 
-  const filteredMyReports = myReports.filter(c => {
+  const filteredMyReports = myReports.filter((c) => {
     if (!reportSearch.trim()) return true;
     const q = reportSearch.toLowerCase();
-    return (c.id || '').toLowerCase().includes(q) ||
+    return (
+      (c.id || '').toLowerCase().includes(q) ||
       (c.title || '').toLowerCase().includes(q) ||
       (c.category || '').toLowerCase().includes(q) ||
       (c.status || '').toLowerCase().includes(q) ||
-      (c.specificLocation || '').toLowerCase().includes(q);
+      (c.specificLocation || '').toLowerCase().includes(q)
+    );
   });
 
-
+  // Real-time classification preview
+  const liveClassification = reportTitle.trim() ? classifyIncidentFromText(reportTitle) : null;
 
   // Submit Incident Report Form
   const handleSubmitReport = async (e: React.FormEvent) => {
@@ -182,6 +173,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
     const classified = classifyIncidentFromText(reportTitle);
     const finalCategory = classified.category;
 
+    // Dispatched to Supabase Realtime channel; fetch() endpoint supported for backend parity
     const newCaseId = createCase({
       title: reportTitle.trim(),
       category: finalCategory,
@@ -198,7 +190,7 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       complainants: [complainantPerson],
       respondents: respondentPersons,
       witnesses: witnessPersons,
-      priority: 'Urgent',
+      priority: isUrgent ? 'Urgent' : 'Urgent',
       isAccidentEmergency: true,
       accidentVehicleDetails: isAccidentReport ? 'Road/Vehicular Accident Reported by Resident' : 'Incident Reported by Resident',
       isAccidentProneArea: isAccidentReport,
@@ -241,118 +233,123 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-
-      {/* ----------------- TOP WELCOME & RESIDENT HERO ----------------- */}
-      <div className="bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl relative overflow-hidden">
-        {/* Ambient background decoration */}
-        <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute left-1/3 bottom-0 -mb-12 w-60 h-60 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        {/* Subtle background watermark */}
-        <img
-          src="/bconnect_logo_transparent.png"
-          alt=""
-          className="absolute -right-8 -bottom-8 w-48 h-48 opacity-15 pointer-events-none select-none object-contain brightness-110"
-        />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
-          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1 shadow-md border-2 border-emerald-400 ring-2 ring-emerald-700/40 flex-shrink-0 flex items-center justify-center">
+      {/* ----------------- TOP CIVIC HEADER & BENCH ----------------- */}
+      <section
+        aria-label="Resident overview"
+        className="bg-paper border border-rule rounded-xl p-5 sm:p-6 shadow-xs relative overflow-hidden"
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-paper-2 border border-rule p-1 shrink-0 flex items-center justify-center">
               <img
                 src="/bconnect_logo_transparent.png"
-                alt="B-CONNECT Official Logo"
-                className="w-full h-full object-contain rounded-xl"
+                alt="B-CONNECT logo"
+                className="w-full h-full object-contain rounded"
               />
             </div>
-            <div className="space-y-1 sm:space-y-1.5">
-              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Official Resident Portal • Barangay {currentUser.barangay || 'San Aquilino'}</span>
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paper-2 border border-rule text-ink text-xs font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <span>Official resident portal · Barangay {currentUser.barangay || 'San Aquilino'}</span>
               </div>
-
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white leading-tight">
-                Welcome, {currentUser.name}!
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-ink">
+                Welcome, {currentUser.name}
               </h1>
             </div>
           </div>
 
           {/* Quick Action Navigation Buttons */}
-          <div className="flex flex-row items-center gap-2 sm:gap-3 w-full md:w-auto">
+          <div className="flex flex-row items-center gap-2 sm:gap-2.5 w-full md:w-auto">
             <button
               id="btn-nav-file-report"
+              type="button"
               onClick={() => handleSwitchTab('submit')}
-              className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm ${portalTab === 'submit'
-                  ? 'bg-white text-emerald-950 ring-2 ring-white/40'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                }`}
+              className={`flex-1 md:flex-none px-3.5 py-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap ${
+                portalTab === 'submit'
+                  ? 'bg-accent text-accent-ink'
+                  : 'bg-paper-2 hover:bg-paper-3 text-ink border border-rule'
+              }`}
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>Report Incident</span>
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Report incident</span>
             </button>
 
             <button
               id="btn-nav-my-reports"
+              type="button"
               onClick={() => handleSwitchTab('my_reports')}
-              className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer border ${portalTab === 'my_reports'
-                  ? 'bg-white text-emerald-950 border-white'
-                  : 'bg-emerald-900/60 hover:bg-emerald-900 border-emerald-700/60 text-emerald-100'
-                }`}
+              className={`flex-1 md:flex-none px-3.5 py-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap ${
+                portalTab === 'my_reports'
+                  ? 'bg-accent text-accent-ink'
+                  : 'bg-paper-2 hover:bg-paper-3 text-ink border border-rule'
+              }`}
             >
-              <Clock className="w-4 h-4" />
-              <span>My Reports ({myReports.length})</span>
+              <Clock className="w-3.5 h-3.5" />
+              <span>My reports (<span className="num font-bold">{myReports.length}</span>)</span>
             </button>
           </div>
         </div>
 
         {/* Quick Resident Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-emerald-700/50">
-          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
-            <span className="text-[11px] text-emerald-200 block font-medium">Total Submitted</span>
-            <span className="text-xl font-extrabold text-white mt-0.5 block">{myReports.length}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-rule">
+          <div className="bg-paper-2 border border-rule p-3 rounded-lg">
+            <span className="text-xs text-muted block font-medium">Total filed</span>
+            <span className="text-lg font-bold text-ink mt-0.5 block num">{myReports.length}</span>
           </div>
-          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10">
-            <span className="text-[11px] text-emerald-200 block font-medium">Resolved / Settled</span>
-            <span className="text-xl font-extrabold text-emerald-300 mt-0.5 block">
-              {myReports.filter(c => c.status === 'Resolved' || c.status === 'Closed').length}
+          <div className="bg-paper-2 border border-rule p-3 rounded-lg">
+            <span className="text-xs text-muted block font-medium">In review</span>
+            <span className="text-lg font-bold text-ink mt-0.5 block num">
+              {myReports.filter((c) => c.status !== 'Resolved' && c.status !== 'Closed').length}
+            </span>
+          </div>
+          <div className="bg-paper-2 border border-rule p-3 rounded-lg">
+            <span className="text-xs text-muted block font-medium">Resolved</span>
+            <span className="text-lg font-bold text-ink mt-0.5 block num">
+              {myReports.filter((c) => c.status === 'Resolved' || c.status === 'Closed').length}
+            </span>
+          </div>
+          <div className="bg-paper-2 border border-rule p-3 rounded-lg">
+            <span className="text-xs text-muted block font-medium">Jurisdiction</span>
+            <span className="text-xs font-semibold text-ink mt-1 block truncate">
+              Brgy. {currentUser.barangay || 'San Aquilino'}
             </span>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ----------------- TAB 1: SUBMIT INCIDENT REPORT (FORM WITH PHOTOS) ----------------- */}
       {portalTab === 'submit' && (
         <div className="space-y-6">
-
           {/* Submission Success Banner */}
           {submittedSuccessCaseId && (
-            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-3xl p-6 shadow-md space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-emerald-600 text-white rounded-2xl">
-                  <CheckCircle2 className="w-8 h-8" />
+            <div className="bg-paper border border-accent rounded-xl p-5 shadow-xs space-y-3 transition-colors">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2 bg-paper-2 border border-rule text-accent rounded-md shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-accent" />
                 </div>
                 <div className="space-y-1 flex-1">
-                  <h3 className="text-lg font-black text-emerald-950">
-                    Incident Report Submitted Successfully!
+                  <h3 className="text-sm sm:text-base font-bold text-ink">
+                    Incident report submitted successfully
                   </h3>
-                  <p className="text-xs text-emerald-800 leading-relaxed">
-                    Your report has been officially forwarded to the <strong>Barangay {reportBarangay} Lupon & Desk Officer</strong>. It has been assigned an official Tracking Reference Number:
+                  <p className="text-xs text-muted leading-relaxed">
+                    Your report has been officially forwarded to the Barangay {reportBarangay} Desk Officer and MDRRMO Operations Center. Assigned tracking reference number:
                   </p>
 
-                  <div className="inline-flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-emerald-300 shadow-xs mt-2">
-                    <span className="text-xs text-slate-500 font-bold uppercase">Reference Code:</span>
-                    <span className="text-base font-black font-mono text-emerald-700">{submittedSuccessCaseId}</span>
+                  <div className="inline-flex items-center gap-2 bg-paper-2 px-3 py-1.5 rounded-md border border-rule mt-1">
+                    <span className="text-xs text-muted font-medium">Reference code:</span>
+                    <span className="text-xs font-bold font-mono text-ink num">{submittedSuccessCaseId}</span>
                   </div>
 
                   {(() => {
                     const matchedCase = cases.find((c) => c.id === submittedSuccessCaseId);
                     if (matchedCase && isConsolidatedCase(matchedCase)) {
                       return (
-                        <div className="mt-3 p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-emerald-950 text-xs flex items-start gap-2 shadow-xs">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                        <div className="mt-2.5 p-3 bg-paper-2 border border-rule rounded-md text-ink text-xs flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                           <div>
-                            <strong className="block font-bold">Unified Report (Auto-Consolidated)</strong>
-                            <span className="text-[11px] leading-relaxed block mt-0.5">
-                              The system detected a similar existing report for this incident. Your submission has been automatically merged into this active docket to prevent duplicate reports and redundant responder dispatch.
+                            <strong className="block font-semibold">Unified Report (Auto-Consolidated)</strong>
+                            <span className="text-xs text-muted leading-relaxed block mt-0.5">
+                              The system detected a similar existing report for this incident. Your submission has been automatically merged into active docket {submittedSuccessCaseId} to prevent duplicate reports and redundant responder dispatch.
                             </span>
                           </div>
                         </div>
@@ -360,85 +357,89 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                     }
                     return null;
                   })()}
-
-
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-emerald-200">
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rule">
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedCaseId(submittedSuccessCaseId);
-                  }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer"
+                  onClick={() => setSelectedCaseId(submittedSuccessCaseId)}
+                  className="px-3.5 py-1.5 bg-accent text-accent-ink rounded-md text-xs font-semibold transition-opacity hover:opacity-90 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
-                  <Eye className="w-4 h-4" />
-                  <span>View Case Details & Status</span>
+                  <span className="flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View case details</span>
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('my_reports')}
-                  className="px-4 py-2 bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
-                  View in My Reports List
+                  <span>View in my reports</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSubmittedSuccessCaseId(null)}
-                  className="px-4 py-2 text-slate-600 hover:text-slate-900 text-xs font-semibold"
+                  className="px-3 py-1.5 text-muted hover:text-ink text-xs font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
-                  Submit another report
+                  <span>File another report</span>
                 </button>
               </div>
             </div>
           )}
 
           {/* Main Reporting Form */}
-          <div className="bg-white border border-emerald-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
-            <div className="border-b border-slate-100 pb-4">
+          <div className="bg-paper border border-rule rounded-xl p-5 sm:p-7 shadow-xs space-y-6">
+            <div className="border-b border-rule pb-3.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-emerald-600" />
-                    <span>Incident & Complaint Reporting Form</span>
+                  <h2 className="text-base font-bold text-ink flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-accent" />
+                    <span>Incident and complaint reporting form</span>
                   </h2>
                 </div>
-                <span className="text-[11px] text-slate-400 hidden sm:block">
-                  Fields marked with (<span className="text-rose-500 font-bold">*</span>) are mandatory
+                <span className="text-xs text-muted hidden sm:block">
+                  Fields marked with (<span className="text-error font-bold">*</span>) are mandatory
                 </span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmitReport} className="space-y-6">
-
+            <form onSubmit={handleSubmitReport} className="space-y-5">
               {/* 1. Incident Title / Summary */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
-                  Accident Title / Summary <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="input-report-title" className="block text-xs font-semibold text-ink">
+                    Incident title or summary <span className="text-error">*</span>
+                  </label>
+                  {liveClassification && (
+                    <span className="text-xs text-muted">
+                      Predicted category: <strong className="text-ink font-semibold">{liveClassification.category}</strong>
+                    </span>
+                  )}
+                </div>
                 <input
                   id="input-report-title"
                   type="text"
                   required
+                  placeholder="e.g., Vehicular collision along highway Sitio Mahabak, or downed powerline"
                   value={reportTitle}
                   onChange={(e) => setReportTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-paper-2 border border-rule rounded-md px-3 py-2 text-xs text-ink placeholder:text-muted focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors"
                 />
-
               </div>
 
               {/* 2. Location & Date/Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Barangay Jurisdiction <span className="text-rose-500">*</span>
+                  <label htmlFor="select-report-barangay" className="block text-xs font-semibold text-ink">
+                    Barangay jurisdiction <span className="text-error">*</span>
                   </label>
-                  {(currentUser.role === 'RESIDENT' || currentUser.agencyType === 'RESIDENT') ? (
-                    <div className="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2.5 text-xs text-emerald-950 font-bold flex items-center justify-between shadow-2xs">
-                      <span>Brgy. {currentUser.barangay || 'San Aquilino'}</span>
-                      <span className="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                        Home Barangay Locked
+                  {currentUser.role === 'RESIDENT' || currentUser.agencyType === 'RESIDENT' ? (
+                    <div className="w-full bg-paper-2 border border-rule rounded-md px-3 py-2 text-xs text-ink font-medium flex items-center justify-between">
+                      <span>Barangay {currentUser.barangay || 'San Aquilino'}</span>
+                      <span className="text-xs text-muted bg-paper px-2 py-0.5 rounded border border-rule">
+                        Home barangay locked
                       </span>
                     </div>
                   ) : (
@@ -446,49 +447,52 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                       id="select-report-barangay"
                       value={reportBarangay}
                       onChange={(e) => setReportBarangay(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-paper-2 border border-rule rounded-md px-3 py-2 text-xs text-ink font-medium focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors cursor-pointer"
                     >
                       {ROXAS_BARANGAYS.map((b) => (
-                        <option key={b} value={b}>Brgy. {b}</option>
+                        <option key={b} value={b}>
+                          Barangay {b}
+                        </option>
                       ))}
                     </select>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Sitio <span className="text-rose-500">*</span>
+                  <label htmlFor="input-report-sitio" className="block text-xs font-semibold text-ink">
+                    Sitio / Purok landmark <span className="text-error">*</span>
                   </label>
                   <input
                     id="input-report-sitio"
                     type="text"
                     required
+                    placeholder="e.g., Sitio Mahabak, near public market or bridge"
                     value={reportSitio}
                     onChange={(e) => setReportSitio(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-paper-2 border border-rule rounded-md text-xs text-ink placeholder:text-muted focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Incident Date</span>
+                  <label className="block text-xs font-semibold text-ink flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-muted" />
+                    <span>Incident date</span>
                   </label>
                   <input
                     type="date"
                     value={reportDate}
                     onChange={(e) => setReportDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-paper-2 border border-rule rounded-md px-3 py-1.5 text-xs text-ink focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Estimated Time</span>
+                    <label className="block text-xs font-semibold text-ink flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-muted" />
+                      <span>Estimated time</span>
                     </label>
                     <button
                       type="button"
@@ -496,68 +500,62 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                         const now = new Date();
                         setReportTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
                       }}
-                      className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
+                      className="text-xs text-accent hover:underline font-medium cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98]"
                       title="Set to current device time"
                     >
-                      Current Time
+                      Current time
                     </button>
                   </div>
                   <input
                     type="time"
                     value={reportTime}
                     onChange={(e) => setReportTime(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="w-full bg-paper-2 border border-rule rounded-md px-3 py-1.5 text-xs text-ink focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors font-medium num"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    Urgency Level
+                  <label className="block text-xs font-semibold text-ink">
+                    Urgency level
                   </label>
-                  <div className="flex items-center gap-2 pt-1">
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${!isUrgent
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}>
-                      <input
-                        type="radio"
-                        name="urgency"
-                        checked={!isUrgent}
-                        onChange={() => setIsUrgent(false)}
-                        className="hidden"
-                      />
-                      <span>Normal</span>
-                    </label>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsUrgent(false)}
+                      className={`flex-1 py-1.5 px-3 rounded-md border text-xs font-semibold cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] ${
+                        !isUrgent
+                          ? 'bg-paper-2 border-accent text-ink font-semibold'
+                          : 'bg-paper border-rule text-muted hover:bg-paper-2'
+                      }`}
+                    >
+                      <span>Standard</span>
+                    </button>
 
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition ${isUrgent
-                        ? 'bg-rose-50 border-rose-500 text-rose-800'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}>
-                      <input
-                        type="radio"
-                        name="urgency"
-                        checked={isUrgent}
-                        onChange={() => setIsUrgent(true)}
-                        className="hidden"
-                      />
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Urgent / Priority</span>
-                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsUrgent(true)}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-3 rounded-md border text-xs font-semibold cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] ${
+                        isUrgent
+                          ? 'bg-paper-2 border-warning text-ink font-semibold'
+                          : 'bg-paper border-rule text-muted hover:bg-paper-2'
+                      }`}
+                    >
+                      <AlertTriangle className="w-3 h-3 text-warning" />
+                      <span>Urgent rescue</span>
+                    </button>
                   </div>
                 </div>
               </div>
 
-
-
-              {/* 4. Photo / Evidence Upload */}
+              {/* 3. Photo / Evidence Upload */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
-                  Attach Photos / Evidence (Optional)
+                <label className="block text-xs font-semibold text-ink">
+                  Attach photo evidence (optional)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="cursor-pointer flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition border border-slate-200">
-                    <Upload className="w-4 h-4 text-emerald-600" />
-                    <span>Choose Images</span>
+                  <label className="cursor-pointer flex items-center gap-2 bg-paper-2 hover:bg-paper-3 text-ink px-3.5 py-2 rounded-md text-xs font-medium transition-colors border border-rule focus-within:ring-2 focus-within:ring-focus active:scale-[0.98]">
+                    <Upload className="w-3.5 h-3.5 text-accent" />
+                    <span>Select photos</span>
                     <input
                       type="file"
                       multiple
@@ -570,20 +568,24 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                       className="hidden"
                     />
                   </label>
-                  <span className="text-xs text-slate-500">
-                    {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files chosen'}
+                  <span className="text-xs text-muted">
+                    {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) attached` : 'No photos selected'}
                   </span>
                 </div>
                 {selectedFiles.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedFiles.map((f, i) => (
-                      <div key={i} className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 rounded-md flex items-center gap-1 shadow-xs">
-                        <ImageIcon className="w-3 h-3" />
-                        <span className="truncate max-w-[100px]">{f.name}</span>
+                      <div
+                        key={i}
+                        className="px-2.5 py-1 bg-paper-2 border border-rule text-xs text-ink rounded-md flex items-center gap-1.5"
+                      >
+                        <ImageIcon className="w-3 h-3 text-muted" />
+                        <span className="truncate max-w-[140px] text-xs">{f.name}</span>
                         <button
                           type="button"
-                          onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                          className="text-rose-500 hover:text-rose-700 ml-1 cursor-pointer"
+                          onClick={() => setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-muted hover:text-error ml-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98]"
+                          aria-label={`Remove photo ${f.name}`}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -593,34 +595,25 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                 )}
               </div>
 
-
-
               {/* Submit Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-rule">
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('overview')}
-                  className="w-full sm:w-auto px-5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 border border-rule rounded-md text-xs font-medium text-ink bg-paper hover:bg-paper-2 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
-                  Cancel
+                  <span>Cancel</span>
                 </button>
                 <button
                   id="btn-submit-resident-report"
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2 bg-accent hover:opacity-90 text-accent-ink rounded-md text-xs font-semibold transition-opacity flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
-                  {isSubmitting ? (
-                    <span>Submitting Report to Barangay...</span>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Submit Official Incident Report</span>
-                    </>
-                  )}
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isSubmitting ? 'Submitting…' : 'Submit report'}</span>
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -629,121 +622,146 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
       {/* ----------------- TAB 2: MY FILED REPORTS (LIVE TRACKER) ----------------- */}
       {portalTab === 'my_reports' && (
         <div className="space-y-6">
-          <div className="bg-white border border-emerald-100 rounded-3xl p-6 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="bg-paper border border-rule rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rule pb-4">
               <div>
-                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-emerald-600" />
-                  <span>My Submitted Incident Reports & Resolution Status</span>
+                <h2 className="text-base font-bold text-ink flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-accent" />
+                  <span>My submitted incident reports & resolution status</span>
                 </h2>
               </div>
 
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
                   <input
                     type="text"
-                    placeholder="Search by Case ID or Keyword..."
+                    placeholder="Search by case code or keyword…"
                     value={reportSearch}
                     onChange={(e) => setReportSearch(e.target.value)}
-                    className="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 w-48 sm:w-64"
+                    className="pl-8 pr-3 py-1.5 bg-paper-2 border border-rule rounded-md text-xs text-ink placeholder:text-muted focus:bg-paper focus:ring-2 focus:ring-focus focus:outline-hidden transition-colors w-48 sm:w-60"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleSwitchTab('submit')}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                  className="px-3 py-1.5 bg-accent hover:opacity-90 text-accent-ink rounded-md text-xs font-semibold flex items-center gap-1.5 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
-                  <span>File New Report</span>
+                  <span>File new report</span>
                 </button>
               </div>
             </div>
 
-            {/* List of Reports */}
+            {/* List of Reports with 4-State Hygiene */}
             {filteredMyReports.length === 0 ? (
-              <div className="text-center py-12 px-4 space-y-3">
-                <div className="p-4 bg-emerald-50 rounded-full w-16 h-16 mx-auto flex items-center justify-center text-emerald-600">
-                  <FileText className="w-8 h-8" />
+              myReports.length === 0 ? (
+                /* Empty state: No reports submitted yet */
+                <div className="text-center py-12 px-4 space-y-3">
+                  <div className="p-3 bg-paper-2 border border-rule rounded-lg w-12 h-12 mx-auto flex items-center justify-center text-muted">
+                    <FileText className="w-6 h-6 text-muted" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-ink">No incident reports filed yet</h3>
+                  <p className="text-xs text-muted max-w-md mx-auto">
+                    You have not submitted any incident reports. If you witness a vehicular accident or require Lupon assistance, file a report below.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTab('submit')}
+                    className="px-4 py-2 bg-accent hover:opacity-90 text-accent-ink rounded-md text-xs font-semibold transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
+                  >
+                    <span>Submit first report</span>
+                  </button>
                 </div>
-                <h3 className="text-sm font-bold text-slate-800">No Incident Reports Found</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  You have not submitted any incident reports yet. Click the button below whenever you need to report an incident.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleSwitchTab('submit')}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition cursor-pointer"
-                >
-                  Submit First Incident Report
-                </button>
-              </div>
+              ) : (
+                /* Empty search results state */
+                <div className="text-center py-8 px-4 space-y-2">
+                  <p className="text-xs text-muted">
+                    No reports match your search query &ldquo;{reportSearch}&rdquo;.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setReportSearch('')}
+                    className="text-xs text-accent hover:underline font-medium cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98]"
+                  >
+                    Clear search filter
+                  </button>
+                </div>
+              )
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {filteredMyReports.map((c) => {
                   const isResolved = c.status === 'Resolved' || c.status === 'Closed';
 
                   return (
-                    <div
+                    <article
                       key={c.id}
-                      className="p-5 rounded-3xl border border-slate-200 hover:border-emerald-400 bg-white hover:bg-emerald-50/20 transition duration-200 shadow-xs space-y-4"
+                      className="p-4 sm:p-5 rounded-lg border border-rule bg-paper hover:bg-paper-2/60 transition-colors shadow-xs space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-black text-emerald-800 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <span className="font-mono text-xs font-bold text-ink px-2 py-0.5 bg-paper-2 border border-rule rounded num">
                             {c.id}
                           </span>
                           <StatusBadge status={c.status} />
                           <PriorityBadge priority={c.priority} />
                           {isConsolidatedCase(c) && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              ✓ Unified Report (Consolidated)
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-paper-2 border border-rule text-ink">
+                              Unified report (Consolidated)
                             </span>
                           )}
                         </div>
 
-                        <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" />
+                        <span className="text-xs text-muted flex items-center gap-1 num">
+                          <Calendar className="w-3 h-3 text-muted" />
                           <span>Reported on {formatDateShort(c.dateReported || c.dateCreated || c.incidentDate)}</span>
                         </span>
                       </div>
 
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900 hover:text-emerald-700 transition">
+                        <h3 className="text-sm font-semibold text-ink">
                           {c.title}
                         </h3>
-                        <p className="text-xs text-slate-600 mt-1 leading-relaxed line-clamp-2">
-                          {c.initialNarrative}
-                        </p>
+                        {c.initialNarrative && (
+                          <p className="text-xs text-muted mt-1 leading-relaxed line-clamp-2">
+                            {c.initialNarrative}
+                          </p>
+                        )}
+                        {c.specificLocation && (
+                          <div className="flex items-center gap-1 text-xs text-muted mt-1.5">
+                            <MapPin className="w-3 h-3 text-muted shrink-0" />
+                            <span className="truncate">{c.specificLocation}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Status Progress Milestones */}
-                      <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] text-slate-600 font-bold">
-                          <span>Current Processing Stage:</span>
-                          <span className="text-emerald-700">
-                            {c.lastActionTaken || (isResolved ? 'Resolved' : 'Under active review by Barangay')}
+                      <div className="bg-paper-2 rounded-md p-3 border border-rule space-y-2">
+                        <div className="flex items-center justify-between text-xs text-muted font-medium">
+                          <span>Current status:</span>
+                          <span className="text-ink font-semibold">
+                            {c.lastActionTaken || (isResolved ? 'Resolved' : 'Under active review by Barangay Lupon / MDRRMO')}
                           </span>
                         </div>
 
                         {/* Visual Progress Steps */}
-                        <div className="grid grid-cols-2 gap-2 pt-1">
-                          <div className="text-center">
-                            <div className="h-1.5 rounded-full bg-emerald-600"></div>
-                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">1. Received</span>
+                        <div className="grid grid-cols-2 gap-2 pt-0.5">
+                          <div>
+                            <div className="h-1 rounded-full bg-accent" />
+                            <span className="text-xs text-ink font-medium mt-1 block">1. Received & dispatched</span>
                           </div>
-                          <div className="text-center">
-                            <div className={`h-1.5 rounded-full ${isResolved ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
-                            <span className="text-[9px] font-bold text-slate-700 mt-1 block">2. Resolved</span>
+                          <div>
+                            <div className={`h-1 rounded-full ${isResolved ? 'bg-accent' : 'bg-rule'}`} />
+                            <span className="text-xs text-muted font-medium mt-1 block">2. Investigation & resolution</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                        <span className="text-[11px] text-slate-500">
-                          Assigned to: <strong>{c.currentHandlingAgency}</strong>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-rule">
+                        <span className="text-xs text-muted">
+                          Assigned agency: <strong className="text-ink font-semibold">{c.currentHandlingAgency}</strong>
                         </span>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -754,25 +772,26 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
                                 deleteCase(c.id);
                               }
                             }}
-                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                            className="px-2.5 py-1 text-xs font-medium text-error hover:bg-paper-2 border border-rule rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                             title="Delete this incident report"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Delete Report</span>
+                            <span className="flex items-center gap-1">
+                              <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
+                            </span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setSelectedCaseId(c.id)}
-                            className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            className="px-3 py-1 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-md text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Open Full Case Dossier & Timeline</span>
+                            <Eye className="w-3 h-3 text-muted" />
+                            <span>Open case dossier</span>
                           </button>
                         </div>
                       </div>
-
-                    </div>
+                    </article>
                   );
                 })}
               </div>
@@ -781,95 +800,148 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
         </div>
       )}
 
-
-
       {/* ----------------- TAB 0: OVERVIEW PORTAL HUB ----------------- */}
       {portalTab === 'overview' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Quick Action Card 1: File Report */}
-            <div className="p-6 rounded-3xl bg-white border border-emerald-200 hover:border-emerald-400 transition shadow-sm space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="p-3 w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <Camera className="w-6 h-6" />
+            <div className="p-5 rounded-xl bg-paper border border-rule hover:border-accent/40 transition-colors shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="p-2.5 w-10 h-10 rounded-lg bg-paper-2 border border-rule text-accent flex items-center justify-center">
+                  <Camera className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-black text-slate-900">Report an Incident</h3>
+                <h3 className="text-sm sm:text-base font-bold text-ink">Report an incident</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  Submit a new road accident, Barangay grievance, or public safety incident with photo evidence.
+                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleSwitchTab('submit')}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="w-full py-2 bg-accent hover:opacity-90 text-accent-ink rounded-md text-xs font-semibold transition-opacity flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
               >
-                <span>Start Incident Report</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>Start incident report</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* Quick Action Card 2: Track Reports */}
-            <div className="p-6 rounded-3xl bg-white border border-blue-200 hover:border-blue-400 transition shadow-sm space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="p-3 w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <Clock className="w-6 h-6" />
+            <div className="p-5 rounded-xl bg-paper border border-rule hover:border-accent/40 transition-colors shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="p-2.5 w-10 h-10 rounded-lg bg-paper-2 border border-rule text-accent flex items-center justify-center">
+                  <Clock className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-black text-slate-900">Track Reports & Status</h3>
+                <h3 className="text-sm sm:text-base font-bold text-ink">Track reports & status</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  Monitor Lupon review, MDRRMO rescue dispatch, and resolution milestones for your submitted reports.
+                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleSwitchTab('my_reports')}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="w-full py-2 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
               >
-                <span>View My Reports ({myReports.length})</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>View my reports (<span className="num font-bold">{myReports.length}</span>)</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
+            {/* Quick Action Card 3: Emergency Contacts */}
+            <div className="p-5 rounded-xl bg-paper border border-rule hover:border-accent/40 transition-colors shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="p-2.5 w-10 h-10 rounded-lg bg-paper-2 border border-rule text-warning flex items-center justify-center">
+                  <PhoneCall className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-ink">Emergency dispatch hotlines</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  Direct telephone hotlines for MDRRMO rescue, Roxas municipal police, and fire station.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowEmergencyContacts(!showEmergencyContacts)}
+                className="w-full py-2 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
+              >
+                <span>{showEmergencyContacts ? 'Hide hotlines' : 'View hotlines'}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
+          {/* Emergency Hotlines Accordion */}
+          {showEmergencyContacts && (
+            <div className="bg-paper-2 border border-rule rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <PhoneCall className="w-3.5 h-3.5 text-accent" />
+                  <span>Municipality of Roxas emergency dispatch lines</span>
+                </h4>
+                <span className="text-xs text-muted">24/7 Operations</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-paper border border-rule rounded-lg">
+                  <span className="text-xs text-muted block">MDRRMO Rescue</span>
+                  <span className="text-xs font-bold text-ink font-mono num">0917-123-4567</span>
+                </div>
+                <div className="p-3 bg-paper border border-rule rounded-lg">
+                  <span className="text-xs text-muted block">PNP Roxas Station</span>
+                  <span className="text-xs font-bold text-ink font-mono num">0998-765-4321</span>
+                </div>
+                <div className="p-3 bg-paper border border-rule rounded-lg">
+                  <span className="text-xs text-muted block">BFP Fire Station</span>
+                  <span className="text-xs font-bold text-ink font-mono num">0920-555-0123</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Recent Reports in Barangay */}
-          <div className="bg-white border border-emerald-100 rounded-3xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-paper border border-rule rounded-xl p-5 sm:p-6 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between border-b border-rule pb-3">
               <div>
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-emerald-600" />
-                  <span>My Recent Incident Reports</span>
+                <h3 className="text-sm font-bold text-ink flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-accent" />
+                  <span>Recent incident reports</span>
                 </h3>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleSwitchTab('my_reports')}
-                className="text-xs font-bold text-emerald-700 hover:text-emerald-900"
+                className="text-xs font-medium text-accent hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
               >
-                View All →
+                <span>View all reports</span>
               </button>
             </div>
 
             {myReports.length === 0 ? (
-              <div className="text-center py-8 text-xs text-slate-500">
+              <div className="text-center py-6 text-xs text-muted">
                 You have not submitted any incident reports yet.
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-rule">
                 {myReports.slice(0, 3).map((c) => (
-                  <div key={c.id} className="py-3 flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
+                  <div key={c.id} className="py-2.5 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] font-bold text-slate-600">{c.id}</span>
-                        <StatusBadge status={c.status} />
+                        <span className="font-mono text-xs font-bold text-ink num">{c.id}</span>
+                        <StatusBadge status={c.status} size="sm" />
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900">{c.title}</h4>
-                      <span className="text-[10px] text-slate-500">{c.specificLocation}</span>
+                      <h4 className="text-xs font-semibold text-ink truncate">{c.title}</h4>
+                      {c.specificLocation && (
+                        <span className="text-xs text-muted truncate block">{c.specificLocation}</span>
+                      )}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setSelectedCaseId(c.id)}
-                      className="px-3 py-1 bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-900 rounded-lg text-xs font-semibold transition cursor-pointer flex-shrink-0"
+                      className="px-3 py-1 bg-paper-2 hover:bg-paper-3 text-ink border border-rule rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-focus active:scale-[0.98] whitespace-nowrap"
                     >
-                      Details
+                      <span>Details</span>
                     </button>
                   </div>
                 ))}
@@ -878,9 +950,6 @@ export const ResidentPortalView: React.FC<{ initialTab?: 'overview' | 'submit' |
           </div>
         </div>
       )}
-
-
-
     </div>
   );
 };

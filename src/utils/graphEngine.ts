@@ -386,3 +386,35 @@ export function findShortestPath(
 
   return [];
 }
+
+/**
+ * Checks if the user's browser or OS has requested reduced motion.
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+export interface GraphAnimationConfig {
+  duration: number;
+  animatePulse: boolean;
+  enableTransitions: boolean;
+  flyDuration: number;
+}
+
+/**
+ * Provides animation configurations for force layouts, canvas transitions, and map flyTo actions.
+ * Automatically clamps animations to instant transitions when prefers-reduced-motion is active.
+ */
+export function getGraphAnimationConfig(): GraphAnimationConfig {
+  const reduced = prefersReducedMotion();
+  return {
+    duration: reduced ? 0 : 300,
+    animatePulse: !reduced,
+    enableTransitions: !reduced,
+    flyDuration: reduced ? 0 : 0.8
+  };
+}
+

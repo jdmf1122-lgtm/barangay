@@ -1,0 +1,24 @@
+{
+  "scanned": "2026-11-17T09:41:00.000Z",
+  "findings": {
+    "fonts": "Plus Jakarta Sans + JetBrains Mono (index.html L16)",
+    "palette": "Tailwind CSS v4 + custom neomorphic emerald styles (src/index.css)",
+    "motion": "Motion 12 + CSS transitions (package.json L30, src/index.css)",
+    "spacing": "Tailwind CSS v4 default scale",
+    "framework": "React 19 + Vite 6"
+  },
+  "preserve": [
+    "brand identity (B-CONNECT, Roxas Oriental Mindoro)",
+    "official logos (bconnect, lgu, mdrrmo)",
+    "authentication and resident registration wiring",
+    "quick agency demo access handlers",
+    "form validation and error states"
+  ],
+  "introduce": [
+    "tokens.css (tokenized palette, neutral scale, semantic colors)",
+    "base.css (Floor-mandated base reset, focus-visible, clip rules)",
+    "Floor compliance (no literal colors, no transition: all, 8-state controls)",
+    "restrained civic/editorial typography without pseudo-3D or tracked small caps",
+    "accessible contrast and reduced-motion support"
+  ]
+}

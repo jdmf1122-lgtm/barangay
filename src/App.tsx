@@ -108,15 +108,7 @@ const AppContent: React.FC = () => {
   const isLgu = currentUser?.agencyType === 'LGU';
 
   return (
-    <div
-      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col font-sans text-slate-900 overflow-hidden antialiased ${isMdrrmo
-          ? 'bg-[#fcfaf8] selection:bg-orange-600 selection:text-white'
-          : isLgu
-            ? 'bg-[#f5fbf7] selection:bg-[#0f532a] selection:text-white'
-            : 'bg-[#f5fbf7] selection:bg-emerald-600 selection:text-white'
-        }`}
-      style={{ backgroundColor: isMdrrmo ? '#fcfaf8' : '#f5fbf7' }}
-    >
+    <div className="h-[100dvh] min-h-[100dvh] w-full flex flex-col font-sans text-ink overflow-hidden antialiased bg-paper">
       {/* Top Header */}
       <Header />
 
@@ -126,7 +118,7 @@ const AppContent: React.FC = () => {
         <Sidebar />
 
         {/* Dynamic Page Container */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-paper">
           <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 space-y-4 sm:space-y-6 pb-24 lg:pb-7">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {renderContent()}
@@ -134,35 +126,25 @@ const AppContent: React.FC = () => {
           </main>
 
           {/* System Footer (Hidden on small phone screens, shown on tablet/laptop) */}
-          <footer
-            className={`hidden sm:flex h-9 lg:h-10 bg-white/90 border-t px-4 sm:px-6 lg:px-8 items-center justify-between text-[10px] font-medium select-none flex-shrink-0 backdrop-blur-xs transition-colors ${isMdrrmo
-                ? 'border-orange-100 text-orange-900/70'
-                : isLgu
-                  ? 'border-emerald-200/90 text-emerald-900/80'
-                  : 'border-emerald-100 text-emerald-800/70'
-              }`}
-          >
+          <footer className="hidden sm:flex h-9 lg:h-10 bg-paper-2 border-t border-rule px-4 sm:px-6 lg:px-8 items-center justify-between text-xs text-muted select-none flex-shrink-0 transition-colors">
             <div className="flex items-center gap-2 sm:gap-4">
-              <span className="hidden md:inline">Last System Audit: 4 mins ago</span>
-              <span className={`hidden md:inline ${isMdrrmo ? 'text-orange-200' : isLgu ? 'text-amber-300' : 'text-emerald-200'}`}>|</span>
-              <span className={`font-mono font-semibold ${isMdrrmo ? 'text-slate-900' : isLgu ? 'text-[#062612]' : 'text-emerald-900'}`}>
+              <span className="hidden md:inline">Last system audit: 4 mins ago</span>
+              <span className="hidden md:inline text-rule">|</span>
+              <span className="font-medium text-ink num">
                 Version 4.2.0-STABLE
               </span>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              <span className={`font-medium truncate ${isMdrrmo ? 'text-slate-900' : isLgu ? 'text-[#062612]' : 'text-emerald-900'}`}>
+              <span className="font-medium truncate text-ink">
                 Roxas Municipal Info Office
               </span>
               <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${isMdrrmo
-                    ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
-                    : isLgu
-                      ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'
-                      : 'bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-                  }`}
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  isMdrrmo ? 'bg-warning' : isLgu ? 'bg-accent' : 'bg-success'
+                }`}
               />
-              <span className={`font-semibold ${isMdrrmo ? 'text-orange-700' : isLgu ? 'text-[#0f532a]' : 'text-emerald-700'}`}>
-                System Fully Encrypted
+              <span className="font-semibold text-ink">
+                System fully encrypted
               </span>
             </div>
           </footer>
